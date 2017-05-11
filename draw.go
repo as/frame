@@ -1,128 +1,239 @@
 package frame
 
 import (
-	"bytes"
-	"golang.org/x/image/font"
+	"github.com/as/frame/box"
 	"golang.org/x/image/math/fixed"
 	"image"
+	"image/color"
 	"image/draw"
 )
 
-// Redraw redraws the entire frame. The caller should check
-// that the frame is Dirty before calling this in a tight
-// loop
-func (f *Frame) Redraw(selecting bool, mouse image.Point ) {
-	dy := f.alignY(f.origin).Y
-	draw.Draw(f.disp, f.Bounds(), f.Colors.Back, image.ZP, draw.Src)
-	for s := f.s[:f.nbytes]; ; {
-		i := len(s)
-		if i == 0 {
-			break
-		}
-		if i > f.Wrap {
-			i = f.Wrap
-		}
-		j := bytes.Index(s[:i], []byte("\n"))
-		if j >= 0 {
-			i = j
-		}
-		f.drawtext(image.Pt(f.origin.X, dy), s[:i])
-		dy += f.FontHeight()
-		if j >= 0 {
-			i++
-		}
-		if i == len(s) {
-			break
-		}
-		s = s[i:]
+func (f *Frame) draw(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point) {
+	f.Cache = append(f.Cache, r)
+	draw.Draw(dst, r, src, sp, draw.Src)
+}
+func (f *Frame) drawover(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point) {
+	f.Cache = append(f.Cache, r)
+	draw.Draw(dst, r, src, sp, draw.Over)
+}
+func (f *Frame) tickat(pt image.Point, ticked bool) {
+	if f.tickoff || f.tick == nil || !pt.In(f.r) {
+		return
 	}
-	if selecting{
-		e := f.IndexOf(mouse)
-		f.Tick.Sweep(e)
+	pt.X--
+	r := f.tick.Bounds().Add(pt)
+	if r.Max.X > f.r.Max.X {
+		r.Max.X = f.r.Max.X
+	} //
+	adj := image.Pt(0, -(f.Font.height / 6))
+	if ticked {
+		f.drawover(f.tickback, f.tickback.Bounds(), f.b, pt.Add(adj))
+		f.drawover(f.b, r.Add(adj), f.tick, image.ZP)
+	} else {
+		f.drawover(f.b, r.Add(adj), f.tickback, image.ZP)
 	}
-	f.Tick.Draw()
-	f.Dirty = false
+	f.ticked = ticked
 }
 
-// drawtext draws the slice s at position p and returns
-// the horizontal displacement dx without line wrapping
-func (f *Frame) drawtext(pt image.Point, s []byte) (dx int) {
-	return f.stringbg(f.disp, pt, f.Colors.Text, image.ZP, f.Font, s, f.Colors.Text, image.ZP)
+func (f *Frame) Redraw() {
+	cols := f.Color
+	if f.P0 == f.P1 {
+		ticked := f.ticked
+		if ticked {
+			f.tickat(f.PtOfChar(f.P0), false)
+		}
+		f.drawsel(f.PtOfChar(0), 0, f.Nchars, cols.Back, cols.Text)
+		if ticked {
+			f.tickat(f.PtOfChar(f.P0), true)
+		}
+		return
+	}
+	pt := f.PtOfChar(0)
+	pt = f.drawsel(pt, 0, f.P0, cols.Back, cols.Text)
+	pt = f.drawsel(pt, f.P0, f.P1, cols.Hi.Back, cols.Hi.Text)
+	pt = f.drawsel(pt, f.P1, f.Nchars, cols.Back, cols.Text)
 }
 
-func (f *Frame) stringbg(dst draw.Image, p image.Point, src image.Image, sp image.Point, font font.Face, s []byte, bg image.Image, bgp image.Point) int {
+func (f *Frame) Draw(pt image.Point) image.Point {
+	n := 0
+	for nb := 0; nb < f.Nbox; nb++ {
+		b := &f.Box[nb]
+		pt = f.LineWrap0(pt, b)
+		if pt.Y == f.r.Max.Y {
+			f.Nchars -= f.Len(nb)
+			f.Run.Delete(nb, f.Nbox-1)
+			break
+		}
+
+		if b.Nrune > 0 {
+			n = f.CanFit(pt, b)
+			if n == 0 {
+				panic("frame: draw: cant fit shit")
+			}
+			if n != b.Nrune {
+				f.Split(nb, n)
+				b = &f.Box[nb]
+			}
+			pt.X += b.Width
+		} else {
+			if b.BC == '\n' {
+				pt.X = f.r.Min.X
+				pt.Y += f.Font.height
+			} else {
+				pt.X += f.NewWid(pt, b)
+			}
+		}
+	}
+	return pt
+}
+
+func (f *Frame) DrawText(pt image.Point, text, back image.Image) {
+	nb := 0
+	for ; nb < f.Nbox; nb++ {
+		b := &f.Box[nb]
+		pt = f.LineWrap(pt, b)
+		//if !f.noredraw && b.nrune >= 0 {
+		if b.Nrune >= 0 {
+			stringbg(f.b, pt, text, image.ZP, f.Font, b.Ptr, back, image.ZP)
+		}
+		pt.X += b.Width
+	}
+}
+
+func (f *Frame) Drawsel(pt image.Point, p0, p1 int64, issel bool) {
+	if f.ticked {
+		f.tickat(f.PtOfChar(f.P0), false)
+	}
+
+	if p0 == p1 {
+		f.tickat(pt, issel)
+		return
+	}
+
+	pal := f.Color.Pallete
+	if issel {
+		pal = f.Color.Hi
+	}
+	f.drawsel(pt, p0, p1, pal.Back, pal.Text)
+}
+
+func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) image.Point {
+	p := int64(0)
+	nr := p
+	w := 0
+	trim := false
+	qt := image.ZP
+	var b *box.Box
+	nb := 0
+	x := 0
+	var ptr []byte
+	for ; nb < f.Nbox && p < p1; nb++ {
+		b = &f.Box[nb]
+		nr = int64(b.Nrune)
+		if nr < 0 {
+			nr = 1
+		}
+		if p+nr <= p0 {
+			goto Continue
+		}
+		if p >= p0 {
+			qt = pt
+			pt = f.LineWrap(pt, b)
+			// fill in the end of a wrapped line
+			if pt.Y > qt.Y {
+				//	cache = append(cache, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y))
+				f.draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt)
+			}
+		}
+		ptr = b.Ptr
+		if p < p0 {
+			ptr = ptr[p0-p:] // todo: runes
+			nr -= p0 - p
+			p = p0
+		}
+
+		trim = false
+		if p+nr > p1 {
+			nr -= (p + nr) - p1
+			trim = true
+		}
+
+		if b.Nrune < 0 || nr == int64(b.Nrune) {
+			w = b.Width
+		} else {
+			// TODO: put stringwidth back
+			w = f.Font.stringwidth(ptr[:nr])
+		}
+		x = pt.X + w
+		if x > f.r.Max.X {
+			x = f.r.Max.X
+		}
+		f.draw(f.b, image.Rect(pt.X, pt.Y, x, pt.Y+f.Font.height), back, pt)
+		if b.Nrune >= 0 {
+			//TODO: must be stringnbg....
+			stringbg(f.b, pt, text, image.ZP, f.Font, ptr[:nr], back, image.ZP)
+		}
+		pt.X += w
+	Continue:
+		b = &f.Box[nb+1]
+		p += nr
+	}
+
+	if p1 > p0 && nb != 0 && nb != f.Nbox && (&f.Box[nb-1]).Nrune > 0 && !trim {
+		qt = pt
+		pt = f.LineWrap(pt, b)
+		if pt.Y > qt.Y {
+			//cache =append(cache, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y))
+			f.draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt)
+		}
+	}
+	return pt
+}
+
+var Rainbow = color.RGBA{255, 0, 0, 255}
+
+func next() {
+	Rainbow = nextcolor(Rainbow)
+}
+
+// nextcolor steps through a gradient
+func nextcolor(c color.RGBA) color.RGBA {
+	switch {
+	case c.R == 255 && c.G == 0 && c.B == 0:
+		c.G += 25
+	case c.R == 255 && c.G != 255 && c.B == 0:
+		c.G += 25
+	case c.G == 255 && c.R != 0:
+		c.R -= 25
+	case c.R == 0 && c.B != 255:
+		c.B += 25
+	case c.B == 255 && c.G != 0:
+		c.G -= 25
+	case c.G == 0 && c.R != 255:
+		c.R += 25
+	default:
+		c.B -= 25
+	}
+	return c
+}
+
+func stringbg(dst draw.Image, p image.Point, src image.Image,
+	sp image.Point, font Font, s []byte, bg image.Image, bgp image.Point) int {
+	h := font.height
+	h = int(float64(h) - float64(h)/float64(5))
 	for _, v := range s {
-		fp := fixed.P(p.X,p.Y)
+		fp := fixed.P(p.X, p.Y)
 		dr, mask, maskp, advance, ok := font.Glyph(fp, rune(v))
 		if !ok {
 			break
 		}
-		h := f.FontHeight()
-		dr.Min.Y += int(float64(h) - float64(h)/float64(5))
-		dr.Max.Y += int(float64(h) - float64(h)/float64(5))
-		draw.DrawMask(dst, dr, src, sp, mask, maskp, draw.Over) 
-		p.X += int((advance + f.Font.Kern(f.last, rune(v))) >> 6)
-		f.last = rune(v)
+		dr.Min.Y += h
+		dr.Max.Y += h
+		//src = image.NewUniform(Rainbow)
+		draw.Draw(dst, dr, bg, bgp, draw.Src)
+		draw.DrawMask(dst, dr, src, sp, mask, maskp, draw.Over)
+		//next()
+		p.X += fix(advance)
 	}
 	return int(p.X)
-}
-
-
-
-// drawsel draws a highlight over points p through q. A highlight
-// is a rectanguloid over three intersecting rectangles representing
-// the highlight bounds.
-func (t *Tick) drawsel(p, q image.Point, bg image.Image){
-	h := t.Fr.FontHeight()
-	m := t.Fr.r.Max
-	o := t.Fr.origin
-
-	// selection spans the same line
-	if p.Y == q.Y{
-		t.draw(p.X, p.Y, q.X, p.Y+h, bg)
-		return
-	}
-	
-	// draw up to three rectangles for the
-	// selection
-	
-	t.draw(p.X, p.Y, m.X, p.Y+h, bg)
-	p.Y += h
-	if p.Y != q.Y {
-		t.draw(o.X, p.Y, m.X, q.Y, bg)
-	}
-	t.draw(o.X, p.Y, q.X, q.Y+h, bg)
-}
-
-func (t *Tick) fill(x, y, xx, yy int){
-	t.drawrect(image.Pt(x,y), image.Pt(xx,yy))
-}
-func (t *Tick) unfill(x, y, xx, yy int){
-	t.deleterect(image.Pt(x,y), image.Pt(xx,yy))
-}
-
-func abs(x int) int{
-	if x <0{
-		return -x
-	}
-	return x
-}
-
-
-// drawrect draws a rectangle over the glyphs p0:p1
-func (t *Tick) draw(x, y, xx, yy int, bg image.Image){
-	r := image.Rect(x, y, xx, yy)
-	draw.Draw(t.Img, r, bg, image.ZP, draw.Src)
-}
-
-// drawrect draws a rectangle over the glyphs p0:p1
-func (t *Tick) drawrect(pt0, pt1 image.Point){
-	r := image.Rect(pt0.X, pt0.Y, pt1.X, pt1.Y)
-	draw.Draw(t.Img, r, t.Fr.Colors.HBack, image.ZP, draw.Src)
-}
-
-// delete draws a rectangle over the glyphs p0:p1
-func (t *Tick) deleterect(pt0, pt1 image.Point){
-	r := image.Rect(pt0.X, pt0.Y, pt1.X, pt1.Y)
-	draw.Draw(t.Img, r, image.Transparent, image.ZP, draw.Src)
 }
