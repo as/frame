@@ -293,17 +293,18 @@ func (w *Win) SetOrigin(org int64, exact bool) {
 		// a bytes to the right; intersects the frame
 		w.Frame.Delete(0, a)
 		fix = true
+		w.Redraw()
 	} else if a < 0 && -a < w.Nchars {
 		// -a bytes to the left; intersects the frame
-		fmt.Printf("-a to left: w.R[%d - %d: %d]\n", org, a, org)
-		i := org + a
+		i := org - a
 		j := org
 		if i > j {
 			i, j = j, i
 		}
 		i = max(0, i)
-		j = max(w.Nr, j)
-		w.Frame.Insert(string(w.R[i:j]), 0)
+		j = min(w.Nr, j)
+		// fmt.Printf("-a=%d to left: w.R[%d:%d]\n", -a, i,j)
+		w.Frame.Insert(w.R[i:j], 0)
 	} else {
 		w.Frame.Delete(0, w.Nchars)
 	}
@@ -327,11 +328,12 @@ func (w *Win) Fill() {
 		if n == 0 {
 			break
 		}
-		fmt.Printf("w.org=%d w.Nchars=%d\n", w.Org, w.Nchars)
-		fmt.Printf("copy(rp, w.R[%d:%d] (len=%d)\n", qep, qep+n, len(w.R))
-		copy(rp, w.R[qep:qep+n])
+		//fmt.Printf("w.org=%d w.Nchars=%d\n", w.Org, w.Nchars)
+		//fmt.Printf("copy(rp, w.R[%d:%d] (len=%d)\n", qep, qep+n, len(w.R))
+		m := copy(rp, w.R[qep:qep+n])
+		//fmt.Printf("copied %q\n", rp[:m])
 		nl := w.MaxLine() - w.Line()
-		m := 0
+		m = 0
 		i := int64(0)
 		for i < n {
 			if rp[i] == '\n' {
@@ -343,8 +345,8 @@ func (w *Win) Fill() {
 			}
 			i++
 		}
-		fmt.Printf("w.Frame.Insert rp[:%d-%d], %d\n", w.Nchars, i, w.Nchars)
-		w.Frame.Insert(string(rp), w.Nchars-i)
+		//fmt.Printf("w.Frame.Insert rp[:%d-%d], %d\n", w.Nchars, i, w.Nchars)
+		w.Frame.Insert(rp[:i], w.Nchars)
 	}
 }
 
@@ -353,7 +355,7 @@ func (w *Win) Delete(q0, q1 int64) {
 	if n == 0 {
 		return
 	}
-	fmt.Printf("copy(w.R[%d:], w.R[%d:%d])\n", q0, q1, w.Nr-q1)
+	//fmt.Printf("copy(w.R[%d:], w.R[%d:%d])\n", q0, q1, w.Nr-q1)
 	copy(w.R[q0:], w.R[q1:][:w.Nr-q1])
 	w.Nr -= n
 	if q0 < w.Q0 {
@@ -386,12 +388,16 @@ func (w *Win) Delete(q0, q1 int64) {
 	}
 }
 
-func (w *Win) Insert(s string, q0 int64) int64 {
+func (w *Win) InsertString(s string, q0 int64) int64{
+	return w.Insert([]byte(s), q0) 
+}
+
+func (w *Win) Insert(s []byte, q0 int64) int64 {
 	// invariant r = p - origin
 	//           5 = 5 - 0
 	//           4 = 5 - 1
-	fmt.Printf("%p: w.Nr=%d\n", w, w.Nr)
-	fmt.Printf("%p: Insert: len(s)=%d\n", w, len(s))
+	//fmt.Printf("%p: w.Nr=%d\n", w, w.Nr)
+	//fmt.Printf("%p: Insert: len(s)=%d\n", w, len(s))
 	n := int64(len(s))
 	if n == 0 {
 		return q0
@@ -410,9 +416,9 @@ func (w *Win) Insert(s string, q0 int64) int64 {
 		} else {
 			w.Q1 = 0
 		}
-		fmt.Printf("%p: A w.Nr bef: %d\n", w.Nr)
+		//fmt.Printf("%p: A w.Nr bef: %d\n", w.Nr)
 		w.Nr -= m
-		fmt.Printf("%p: A w.Nr after: %d\n", w.Nr)
+		//fmt.Printf("%p: A w.Nr after: %d\n", w.Nr)
 		copy(w.R, w.R[m:][:w.Nr])
 		q0 -= m
 	}
@@ -430,10 +436,10 @@ func (w *Win) Insert(s string, q0 int64) int64 {
 	}
 	copy(w.R[q0+n:], w.R[q0:][:w.Nr-q0])
 	copy(w.R[q0:], s[:n])
-	fmt.Printf("%p: B w.Nr bef: %d\n", w, w.Nr)
+	//fmt.Printf("%p: B w.Nr bef: %d\n", w, w.Nr)
 	w.Nr += n
-	fmt.Printf("%p: B w.Nr after: %d\n", w, w.Nr)
-	fmt.Printf("w.Nr = %d\n", w.Nr)
+	//fmt.Printf("%p: B w.Nr after: %d\n", w, w.Nr)
+	//fmt.Printf("w.Nr = %d\n", w.Nr)
 	if q0 <= w.Q1 {
 		w.Q1 += n
 	}
@@ -446,7 +452,7 @@ func (w *Win) Insert(s string, q0 int64) int64 {
 	if q0 < w.Org {
 		w.Org += n
 	} else if q0 <= w.Org+w.Nchars {
-		fmt.Printf("w.Frame.Insert: @ %d -> %q\n", n, s)
+		//fmt.Printf("w.Frame.Insert: @ %d -> %q\n", n, s)
 		n--
 		if n < 0 {
 			n++
@@ -464,7 +470,7 @@ func (w *Win) Erase(p0, p1 int64) {
 	for len(fr.Recycled.Box) != 0 {
 		n0 := len(fr.Recycled.Box) - 1
 		b := &fr.Recycled.Box[n0]
-		n := fr.Insert(string(b.Bytes()), fr.Nchars)
+		n := fr.Insert(b.Bytes(), fr.Nchars)
 		if n == 0 {
 			break
 		}
@@ -480,7 +486,7 @@ func (w *Win) SetFont(ft frame.Font) {
 	w.Clear(true)
 	w.Blank()
 	w.Frame = frame.New(w.Frame.Bounds(), ft, w.b.RGBA(), w.Color)
-	w.Insert(string(b), 0)
+	w.Insert(b, 0)
 	w.Redraw()
 }
 
@@ -496,7 +502,7 @@ func (w *Win) Resize(size image.Point) {
 	w.pad = w2.pad
 	w.scr = w2.scr
 	w.Blank()
-	w.Insert(string(bb), 0)
+	w.Insert(bb, 0)
 }
 
 func (w *Win) Upload() {

@@ -13,7 +13,7 @@ const (
 	TMPSIZE = 256
 )
 
-func (f *Frame) bxscan(s string, ppt image.Point) (image.Point, image.Point) {
+func (f *Frame) bxscan(s []byte, ppt image.Point) (image.Point, image.Point) {
 	var (
 		w, nb, delta,
 		nl, rw int

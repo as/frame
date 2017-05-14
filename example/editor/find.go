@@ -15,12 +15,21 @@ func isany(b byte, s []byte) bool {
 	}
 	return false
 }
+
+func findback(p []byte, i int64, sep []byte) (int64){
+	for ; i-1 >= 0 && isany(p[i-1], sep); i--{
+	}
+	return i
+}
+func find(p []byte, j int64, sep []byte) (int64){
+	for ; j != int64(len(p)) && isany(p[j], sep); j++{
+	}
+	return j
+}
+
 func FindAlpha(p []byte, i int64) (int64, int64) {
-	j := i
-	for ; i-1 >= 0 && isany(p[i-1], AlphaNum); i-- {
-	}
-	for ; j != int64(len(p)) && isany(p[j], AlphaNum); j++ {
-	}
+	j := find(p, i, AlphaNum)
+	i = findback(p, i, AlphaNum)
 	return i, j
 }
 

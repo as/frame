@@ -20,7 +20,7 @@ func (f *Frame) Mark() {
 	f.modified = true
 }
 
-func (f *Frame) Insert(s string, p0 int64) (wrote int64) {
+func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 	var (
 		pt0, pt1,
 		ppt0, ppt1,
@@ -133,10 +133,10 @@ func (f *Frame) Insert(s string, p0 int64) (wrote int64) {
 		q0 := pt0.Y + h
 		q1 := pt1.Y + h
 		f.Nlines += (q1 - q0) / h
-		//		if f.Nlines >= f.maxlines {
+		if f.Nlines >= f.maxlines {
 		//TODO: Theres a name collision with chop for the box version of chop
 		f.ChopFrame(ppt1, p0, nn0)
-		//		}
+		}
 		if pt1.Y < y {
 			r = f.r
 			r.Min.Y = q1

@@ -4,7 +4,6 @@ import (
 	"sync"
 	//	"github.com/as/clip"
 	//
-	"bufio"
 	"bytes"
 	"fmt"
 	"image"
@@ -21,7 +20,7 @@ import (
 	"github.com/as/frame"
 	"github.com/as/frame/win"
 	window "github.com/as/ms/win"
-	"golang.org/x/exp/shiny/driver"
+		"golang.org/x/exp/shiny/driver"
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/image/font/gofont/gomono"
 	"golang.org/x/mobile/event/key"
@@ -33,7 +32,7 @@ import (
 
 var (
 	wg      sync.WaitGroup
-	winSize = image.Pt(2560, 1300)
+	winSize = image.Pt(1920, 1000)
 	ClipBuf = make([]byte, 8192)
 	Clip    *clip.Clip
 )
@@ -101,7 +100,7 @@ func (c *Cell) Dirty() bool {
 	return c.dirty
 }
 
-var fsize = 15
+var fsize = 12
 
 func main() {
 	driver.Main(func(src screen.Screen) {
@@ -109,7 +108,6 @@ func main() {
 		wind.Send(paint.Event{})
 		focused := false
 		focused = focused
-		fsize := 15
 		ft := mkfont(fsize)
 		filename := "/dev/stdin"
 		if len(os.Args) > 1 {
@@ -130,11 +128,11 @@ func main() {
 		cols.Back = Yellow
 		w := win.New(src, ft, wind, image.Pt(0, tagY*2), winSize.Sub(image.Pt(0, tagY*2)), pad, cols)
 
-		wtag.Insert(filename+"\tPut Del Exit", 0)
+		wtag.InsertString(filename+"\tPut Del Exit", 0)
 		wtag.Redraw()
 
 		if len(os.Args) > 1 {
-			s := string(readfile(filename))
+			s := readfile(filename)
 			fmt.Printf("files size is %d\n", len(s))
 			w.Insert(s, w.Q1)
 		}
@@ -170,7 +168,7 @@ func main() {
 				if e.Button == mouse.ButtonWheelUp {
 					act.FrameScroll(1)
 					act.Send(paint.Event{})
-					fmt.Println(e)
+					continue
 				}
 				if e.Button == mouse.ButtonWheelDown {
 					act.FrameScroll(-1)
@@ -183,73 +181,19 @@ func main() {
 						buttonsdown |= 1 << bt
 					}
 				}
-				if e.Direction == mouse.DirPress {
-					if e.Button == 2 && buttonsdown&(1<<1) != 0 {
-						ClipBuf = ClipBuf[:cap(ClipBuf)]
-						n, err := w.Read(ClipBuf)
-						fmt.Printf("clip: read %d (err = %s)\n", n, err)
-						if n > 0 {
-							fmt.Printf("clip: %q\n", ClipBuf[:n])
-						}
-						ClipBuf = ClipBuf[:n]
-						io.Copy(Clip, bytes.NewReader(toUTF16(ClipBuf)))
-						act.Delete(act.Q0, act.Q1)
-						act.Send(paint.Event{})
-						fmt.Println("snarf")
-					}
-					if e.Button == 3 {
-						if buttonsdown&(1<<1) != 0 {
-							fmt.Println("paste")
-							x := act.Q0
-							act.Insert(string(toUTF16(ClipBuf)), act.Q0)
-							act.Q0 = x
-							act.Redraw()
-							act.Send(paint.Event{})
-						} else {
-
-							//	act.P0, act.P1 = FindSpecial(NewReader(act.Frame), act.P0)
-							//	act.Redraw()
-							//	act.Send(paint.Event{})
+				switch e.Direction{
+				case mouse.DirPress:
+					if false && buttonsdown&(1<<1) != 0 {
+						if e.Button == 2 {
+							snarf(act, wtag, e)
+						} else if e.Button == 3 {
+							paste(act, wtag, e)
 						}
 					}
-				}
-				if e.Button == 1 {
-					switch e.Direction {
-					case mouse.DirPress:
-						act.Selectq = act.Org + act.IndexOf(pt)
-						act.Select(pt, act, act.Upload)
-						act.Q0 = act.Org + act.P0
-						act.Q1 = act.Org + act.P1
-						act.Redraw()
-						act.Send(paint.Event{})
-					case mouse.DirRelease:
-					}
-				}
-				if (e.Button == 2 || e.Button == 3) && e.Direction == mouse.DirRelease {
-					act.Selectq = act.Org + act.IndexOf(pt)
-					fmt.Printf("index of %s is %d\n", pt, act.IndexOf(pt))
-					act.Q0, act.Q1 = Expand(act.Bytes(), act.Selectq)
-					act.P0, act.P1 = act.Q0-act.Org, act.Q1-act.Org
-					x := act.Rdsel()
-					if e.Button == 3 {
-						act.Q0, act.Q1 = Next(act.Bytes(), act.Q1, x)
-						act.P0, act.P1 = act.Q0-act.Org, act.Q1-act.Org
-						moveMouse(act.PtOfChar(act.P0).Add(act.Sp))
-					} else if e.Button == 2 {
-						println(string(x))
-						switch string(x) {
-						case "Put":
-							name, err := bufio.NewReader(bytes.NewReader(wtag.Bytes())).ReadString('\t')
-							name = strings.TrimSpace(name)
-							if err != nil {
-								log.Printf("save: err: %s\n", err)
-							}
-							writefile(name, w.Bytes())
-						default:
-							println("Unknown command:", string(x))
-						}
-					}
-					act.Redraw()
+					press(act, wtag, e)
+					act.Send(paint.Event{})
+				case mouse.DirRelease:
+					release(w, wtag, e)
 					act.Send(paint.Event{})
 				}
 			case key.Event:
@@ -301,6 +245,16 @@ func main() {
 					act.Send(paint.Event{})
 					continue
 				}
+				if e.Rune == '\x17' {
+					fmt.Printf("%d\n", e.Rune)
+					si := act.Q0-1
+					if isany(act.Bytes()[si], AlphaNum){
+						si = findback(act.Bytes(), act.Q0, AlphaNum)
+					}
+					act.Delete(si, act.Q1)
+					act.Send(paint.Event{})
+					continue
+				}
 				if e.Rune == '\x08' {
 					si := act.Q0
 					ei := act.Q1
@@ -319,7 +273,7 @@ func main() {
 					act.Delete(act.Q0, act.Q1)
 				}
 				fmt.Printf("outside %p: w.Nr=%d\n", act, act.Nr)
-				act.Insert(string(e.Rune), act.Q1)
+				act.Insert([]byte(string(e.Rune)), act.Q1)
 				act.Q0 = act.Q1
 				act.Send(paint.Event{})
 			case size.Event:
@@ -354,10 +308,6 @@ func main() {
 			}
 		}
 	})
-}
-
-func Expand(p []byte, i int64) (int64, int64) {
-	return FindAlpha(p, i)
 }
 
 func Next(p []byte, i int64, sep []byte) (int64, int64) {
