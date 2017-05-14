@@ -1,13 +1,13 @@
 package win
 
 import (
-	"fmt"
-	"github.com/as/frame"
-	"golang.org/x/exp/shiny/screen"
-	"golang.org/x/mobile/event/mouse"
 	"image"
 	"image/draw"
 	"sync"
+
+	"github.com/as/frame"
+	"golang.org/x/exp/shiny/screen"
+	"golang.org/x/mobile/event/mouse"
 )
 
 const (
@@ -192,7 +192,7 @@ func (w *Win) Select(){
 			for mc.Buttons == b{
 				w.Readmouse()
 			}
-		//clickwin =nil
+		//clickwin =nil // Put
 		}
 }
 */
@@ -204,7 +204,7 @@ func (w *Win) FrameScroll(dl int) {
 	q0 := int64(0)
 	if dl < 0 {
 		q0 = w.BackNL(w.Org, -dl)
-		fmt.Printf("fs1 q0 = %d\n", q0)
+		//fmt.Printf("fs1 q0 = %d\n", q0)
 		if w.Selectq < w.Org+w.P0 {
 			w.SetSelect(w.Org+w.P0, w.Selectq)
 		} else {
@@ -216,14 +216,14 @@ func (w *Win) FrameScroll(dl int) {
 		}
 		r := w.Frame.Bounds()
 		q0 = w.Org + w.IndexOf(image.Pt(r.Min.X, r.Min.Y+dl*w.Font.Dy()))
-		fmt.Printf("fs2 q0 = %d\n", q0)
+		//fmt.Printf("fs2 q0 = %d\n", q0)
 		if w.Selectq >= w.Org+w.P1 {
 			w.SetSelect(w.Org+w.P1, w.Selectq)
 		} else {
 			w.SetSelect(w.Selectq, w.Org+w.P1)
 		}
 	}
-	fmt.Printf("fs3 q0 = %d\n", q0)
+	//fmt.Printf("fs3 q0 = %d\n", q0)
 	w.SetOrigin(q0, true)
 }
 
@@ -275,7 +275,7 @@ func (w *Win) SetSelect(q0, q1 int64) {
 }
 
 func (w *Win) SetOrigin(org int64, exact bool) {
-	fmt.Printf("SetOrigin: %d %v\n", org, exact)
+	//fmt.Printf("SetOrigin: %d %v\n", org, exact)
 	org = clamp(org, 0, w.Nr)
 	if org > 0 && !exact {
 		for i := 0; i < 256 && org < w.Nr; i++ {
@@ -286,7 +286,7 @@ func (w *Win) SetOrigin(org int64, exact bool) {
 			org++
 		}
 	}
-	fmt.Printf("SetOrigin: found %d %v\n", org, exact)
+	//fmt.Printf("SetOrigin: found %d %v\n", org, exact) Put
 	a := org - w.Org // distance to new origin
 	fix := false
 	if a >= 0 && a < w.Nchars {
@@ -388,8 +388,8 @@ func (w *Win) Delete(q0, q1 int64) {
 	}
 }
 
-func (w *Win) InsertString(s string, q0 int64) int64{
-	return w.Insert([]byte(s), q0) 
+func (w *Win) InsertString(s string, q0 int64) int64 {
+	return w.Insert([]byte(s), q0)
 }
 
 func (w *Win) Insert(s []byte, q0 int64) int64 {

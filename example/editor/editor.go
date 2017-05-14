@@ -14,6 +14,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/as/clip"
 	"github.com/as/cursor"
@@ -32,9 +33,12 @@ import (
 
 var (
 	wg      sync.WaitGroup
-	winSize = image.Pt(1920, 1000)
+	winSize = image.Pt(2560,1440)
 	ClipBuf = make([]byte, 8192)
 	Clip    *clip.Clip
+
+	ticking = false
+	scrolldy = 0
 )
 
 func readfile(s string) []byte {
@@ -103,6 +107,10 @@ func (c *Cell) Dirty() bool {
 var fsize = 12
 
 func main() {
+	type scrollEvent struct{
+		dy int
+		 wind *win.Win
+	}
 	driver.Main(func(src screen.Screen) {
 		wind, _ := src.NewWindow(&screen.NewWindowOptions{winSize.X, winSize.Y})
 		wind.Send(paint.Event{})
@@ -137,12 +145,15 @@ func main() {
 			w.Insert(s, w.Q1)
 		}
 
-		// lambda to paint only rectangles changed during a sweep of the mouse
-
+		// lambda to paint only rectangles changed during a sweep of the mouse 
+		// Put
 		act := w
 		buttonsdown := 0x00000000
 		for {
 			switch e := act.NextEvent().(type) {
+			case scrollEvent:
+				e.wind.FrameScroll(e.dy)
+				e.wind.Send(paint.Event{})
 			case mouse.Event:
 				pt := image.Pt(int(e.X), int(e.Y))
 				if e.Direction == mouse.DirRelease {
@@ -165,14 +176,27 @@ func main() {
 						}
 					}
 				}
-				if e.Button == mouse.ButtonWheelUp {
-					act.FrameScroll(1)
-					act.Send(paint.Event{})
-					continue
-				}
-				if e.Button == mouse.ButtonWheelDown {
-					act.FrameScroll(-1)
-					act.Send(paint.Event{})
+// Put
+				if e.Button == mouse.ButtonWheelUp || e.Button == mouse.ButtonWheelDown{
+					dy := 1
+					if e.Button == mouse.ButtonWheelUp{
+						dy = -1
+					}
+					if !ticking {
+						act := act
+						act.SendFirst(scrollEvent{dy: dy, wind: act,})
+						ticking = true
+						time.AfterFunc(time.Millisecond*15, func(){
+							ticking=false
+							if scrolldy == 0{
+								return
+							}
+							act.SendFirst(scrollEvent{dy: scrolldy, wind: act})
+							scrolldy=0
+						})
+					} else {
+						scrolldy += dy
+					}
 					continue
 				}
 				if e.Direction == mouse.DirPress {
