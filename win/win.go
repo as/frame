@@ -1,6 +1,15 @@
 package win
 
+/*
+	Put
+	optimization for SetSelect broken
+	hold mouse and move up - broken (cache upload)
+	TODO - print statements in set select, why is selection not working until mouse let go?
+
+ */
+
 import (
+	//"fmt"
 	"image"
 	"image/draw"
 	"sync"
@@ -8,6 +17,7 @@ import (
 	"github.com/as/frame"
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/mobile/event/mouse"
+	"time"
 )
 
 const (
@@ -33,6 +43,7 @@ type Win struct {
 	Maxr    int64
 	Mc      Mc
 	Selectq int64
+	Scrollr image.Rectangle
 }
 
 func (w *Win) Buffer() screen.Buffer {
@@ -197,15 +208,53 @@ func (w *Win) Select(){
 }
 */
 
+/*
+func (w *Win) Scroll(mp image.Point, but int){
+	s := w.Scrollr.Inset(1)
+	h := s.Dy()
+	x := (s.Min.X+s.Max.X)/2
+	oldp0 := int64(^0)
+	p0 := oldp0
+	first := true
+	for{
+		//flush
+		if mp.X < s.Min.X && s.Max.X <= mp.X{
+			p0 = w.BackNL(w.Org, (mp.Y-s.Min.Y)/w.Dy())
+			if p0 != oldp0 {
+				w.SetOrigin(p0, true)
+			}
+			oldp0 = p0
+		}
+		switch e := ed.NextEvent().(type) {
+		case ScrollEvent:
+		case mouse.Event:f
+			if e.Button == 1 && e.Direction == 2 || e.Button == 2 || e.Button == 3 {
+				ed.SendFirst(e)
+				return
+			}
+			mp = image.Pt(int(e.X), int(e.Y))
+		case interface{}:
+			ed.SendFirst(e)
+			return
+		}
+		select {
+		case <-clock60hz:
+			paintfn()
+		default:
+		}
+	}
+}
+*/
 func (w *Win) FrameScroll(dl int) {
 	if dl == 0 {
+		time.Sleep(15*time.Millisecond)
 		return
 	}
 	q0 := int64(0)
 	if dl < 0 {
 		q0 = w.BackNL(w.Org, -dl)
 		//fmt.Printf("fs1 q0 = %d\n", q0)
-		if w.Selectq < w.Org+w.P0 {
+		if w.Selectq > w.Org+w.P0 {
 			w.SetSelect(w.Org+w.P0, w.Selectq)
 		} else {
 			w.SetSelect(w.Selectq, w.Org+w.P0)
@@ -225,6 +274,39 @@ func (w *Win) FrameScroll(dl int) {
 	}
 	//fmt.Printf("fs3 q0 = %d\n", q0)
 	w.SetOrigin(q0, true)
+}
+
+// Put
+func (w *Win) SetSelect(q0, q1 int64) {
+	// selection algorithm for window is currently broken
+	// so i disabled it
+	//fmt.Printf("SetSelect: [%d:%d]\n", q0, q1)
+	return
+
+	w.Q0, w.Q1 = q0, q1
+	p0 := clamp(q0-w.Org, 0, w.Nchars)
+	p1 := clamp(q1-w.Org, 0, w.Nchars)
+	if p0 == w.P0 && p1 == w.P1 {
+		return
+	}
+	if  true || w.P1 <= p0 || p1 <= w.P0 || p0 == p1 || w.P1 == w.P0 {
+		w.Drawsel(w.PtOfChar(w.P0), w.P0, w.P1, false)
+		w.Drawsel(w.PtOfChar(p0), p0, p1, true)
+	} else {
+		step := func(i, j int64) {
+			//
+			// TODO: Try print statements here
+			if i < j {
+				w.Drawsel(w.PtOfChar(i), i, j, true)
+			} else if i > j {
+				w.Drawsel(w.PtOfChar(j), j, i, false)
+			}
+		}
+		step(p0, w.P0) // trim or extend origin
+		step(w.P1, p1) // trim or extend insertion
+	}
+	w.P0 = p0
+	w.P1 = p1
 }
 
 func (w *Win) BackNL(p int64, n int) int64 {
@@ -247,32 +329,16 @@ func (w *Win) BackNL(p int64, n int) int64 {
 	return p
 }
 
-func (w *Win) SetSelect(q0, q1 int64) {
-	// selection algorithm for window is currently broken
-	// so i disabled it
-	return
-
-	w.Q0, w.Q1 = q0, q1
-	p0 := clamp(q0-w.Org, 0, w.Nchars)
-	p1 := clamp(q1-w.Org, 0, w.Nchars)
-	if p0 == w.P0 && p1 == w.P1 {
-		return
-	}
-	if w.P1 <= p0 || p1 <= w.P0 || p0 == p1 || w.P1 == w.P0 {
-		w.Drawsel(w.PtOfChar(w.P0), w.P0, w.P1, false)
-		w.Drawsel(w.PtOfChar(p0), p0, p1, true)
-		return
-	}
-	step := func(i, j int64) {
-		if i < j {
-			w.Drawsel(w.PtOfChar(i), i, j, true)
-		} else if i > j {
-			w.Drawsel(w.PtOfChar(j), j, i, false)
-		}
-	}
-	step(p0, w.P0) // trim or extend origin
-	step(p1, w.P1) // trim or extend insertion
+/*
+func (w *Win) Drawscroll(){
+	r := w.Scrollr
+	b := w.Scrolltmp
+	r1 := r
+	r1.Min.X = 0
+	r1.Max.X = r.Dx()
+	r2 := scrpos(r1, w.Org, w.Org+w.Nchars, w.Nr)
 }
+*/
 
 func (w *Win) SetOrigin(org int64, exact bool) {
 	//fmt.Printf("SetOrigin: %d %v\n", org, exact)
@@ -293,9 +359,8 @@ func (w *Win) SetOrigin(org int64, exact bool) {
 		// a bytes to the right; intersects the frame
 		w.Frame.Delete(0, a)
 		fix = true
-		w.Redraw()
 	} else if a < 0 && -a < w.Nchars {
-		// -a bytes to the left; intersects the frame
+		// -a bytes to the left; intersects the frame		
 		i := org - a
 		j := org
 		if i > j {
@@ -303,8 +368,8 @@ func (w *Win) SetOrigin(org int64, exact bool) {
 		}
 		i = max(0, i)
 		j = min(w.Nr, j)
-		// fmt.Printf("-a=%d to left: w.R[%d:%d]\n", -a, i,j)
-		w.Frame.Insert(w.R[i:j], 0)
+		// fmt.Printf("-a=%d to left: w.R[%d:%d]\n", -a, i,j)				
+		w.Frame.Insert(w.R[i:j], 0)		
 	} else {
 		w.Frame.Delete(0, w.Nchars)
 	}
@@ -313,7 +378,7 @@ func (w *Win) SetOrigin(org int64, exact bool) {
 	//w.ScrDraw(w)
 	w.SetSelect(w.Q0, w.Q1)
 	if fix && w.P1 > w.P0 {
-		//w.Drawsel(w.PtOfChar(w.P1-1), w.P1-1, w.P1, true);
+		w.Drawsel(w.PtOfChar(w.P1-1), w.P1-1, w.P1, true);
 	}
 }
 
@@ -321,7 +386,7 @@ func (w *Win) Fill() {
 	if w.Frame.Full() {
 		return
 	}
-	rp := make([]byte, MsgSize)
+	var rp [MsgSize]byte
 	for !w.Frame.Full() {
 		qep := w.Org + w.Nchars
 		n := min(w.Nr-qep, 2000)
@@ -330,7 +395,7 @@ func (w *Win) Fill() {
 		}
 		//fmt.Printf("w.org=%d w.Nchars=%d\n", w.Org, w.Nchars)
 		//fmt.Printf("copy(rp, w.R[%d:%d] (len=%d)\n", qep, qep+n, len(w.R))
-		m := copy(rp, w.R[qep:qep+n])
+		m := copy(rp[:], w.R[qep:qep+n])
 		//fmt.Printf("copied %q\n", rp[:m])
 		nl := w.MaxLine() - w.Line()
 		m = 0
@@ -505,7 +570,12 @@ func (w *Win) Resize(size image.Point) {
 	w.Insert(bb, 0)
 }
 
+func (w *Win) upload() {
+	w.events.Upload(w.Sp.Add(image.Pt(5,5)), w.b, w.Bounds())
+}
 func (w *Win) Upload() {
+///	w.upload()
+//	return
 	var wg sync.WaitGroup
 	wg.Add(len(w.Cache))
 	for _, r := range w.Frame.Cache {
@@ -515,7 +585,7 @@ func (w *Win) Upload() {
 		}(r)
 	}
 	wg.Wait()
-	w.events.Publish()
+	//w.events.Publish()
 	w.Flushcache()
 }
 

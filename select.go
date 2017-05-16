@@ -97,7 +97,7 @@ func (f *Frame) Select(mp image.Point, ed screen.EventDeque, paintfn func()) {
 
 		if sc {
 			ed.Send(ScrollEvent{})
-			//f.Scroll(0)
+			f.Scroll(0)
 		}
 
 		switch e := ed.NextEvent().(type) {

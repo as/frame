@@ -26,12 +26,27 @@ func Expand(w *win.Win, i int64) {
 
 func Select(w *win.Win, q0, q1 int64) {
 	if q0 == w.Q0 && q1 == w.Q1 {
+		println("select is same")
 		return
 	}
 	w.Q0, w.Q1 = q0, q1
+	if !Visible(w, q0, q1){
+		w.SetOrigin(q0, true)
+	}
 	w.P0, w.P1 = q0-w.Org, q1-w.Org
 }
 
+func Visible(w *win.Win, q0, q1 int64) bool{
+	if q0 < w.Org {
+		return false
+	}
+	if q1 > w.Org+w.Frame.Nchars{
+		return false
+	}
+	return true
+}
+
+// Put
 func press(w, wtag *win.Win, e mouse.Event) {
 	if e.Direction != mouse.DirPress {
 		return
@@ -41,6 +56,7 @@ func press(w, wtag *win.Win, e mouse.Event) {
 		w.Selectq = w.Org + w.IndexOf(pt(e))
 		w.Select(pt(e), w, w.Upload)
 		w.Q0, w.Q1 = w.Org+w.P0, w.Org+w.P1
+		w.Selectq = w.Q0
 		w.Redraw()
 	}
 }
@@ -54,7 +70,7 @@ func paste(w, wtag *win.Win, e mouse.Event) {
 }
 
 func snarf(w, wtag *win.Win, e mouse.Event) {
-	ClipBuf = ClipBuf[:cap(ClipBuf)]
+	//ClipBuf = ClipBuf[:cap(ClipBuf)]
 	n, err := w.Read(ClipBuf)
 	if n > 0 {
 		fmt.Printf("clip: %q (%s)\n", ClipBuf[:n], err)
@@ -95,7 +111,7 @@ func release(w, wtag *win.Win, e mouse.Event) {
 			println("Unknown command:", string(x))
 		}
 	case 3:
-		q0, q1 := Next(w.Bytes(), w.Q1, w.Rdsel())
+		q0, q1 := Next(w.Bytes(), w.Q0, w.Q1)
 		Select(w, q0, q1)
 		moveMouse(w.PtOfChar(w.P0).Add(w.Sp))
 	}

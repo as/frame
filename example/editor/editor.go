@@ -21,7 +21,7 @@ import (
 	"github.com/as/frame"
 	"github.com/as/frame/win"
 	window "github.com/as/ms/win"
-		"golang.org/x/exp/shiny/driver"
+	"golang.org/x/exp/shiny/driver"
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/image/font/gofont/gomono"
 	"golang.org/x/mobile/event/key"
@@ -31,13 +31,17 @@ import (
 	"golang.org/x/mobile/event/size"
 )
 
+// amink
+
+// amink Put
+
 var (
 	wg      sync.WaitGroup
-	winSize = image.Pt(2560,1440)
+	winSize = image.Pt(1900,1000)
 	ClipBuf = make([]byte, 8192)
 	Clip    *clip.Clip
 
-	ticking = false
+	ticking  = false
 	scrolldy = 0
 )
 
@@ -104,12 +108,13 @@ func (c *Cell) Dirty() bool {
 	return c.dirty
 }
 
-var fsize = 12
+var fsize = 24
 
 func main() {
-	type scrollEvent struct{
-		dy int
-		 wind *win.Win
+	type scrollEvent struct {
+		dy        int
+		wind      *win.Win
+		flushwith func(e interface{})
 	}
 	driver.Main(func(src screen.Screen) {
 		wind, _ := src.NewWindow(&screen.NewWindowOptions{winSize.X, winSize.Y})
@@ -145,15 +150,28 @@ func main() {
 			w.Insert(s, w.Q1)
 		}
 
-		// lambda to paint only rectangles changed during a sweep of the mouse 
+		// lambda to paint only rectangles changed during a sweep of the mouse
 		// Put
 		act := w
 		buttonsdown := 0x00000000
+		go func(){
+			cnt := int64(1000)
+			for {
+				//act.Send(cnt)
+				cnt--
+			
+			time.Sleep(1*time.Second/100)
+			}
+		}()
 		for {
+			// Put
 			switch e := act.NextEvent().(type) {
+			case int64:
+				act.SetSelect(0, e)
+				act.Send(paint.Event{})
 			case scrollEvent:
 				e.wind.FrameScroll(e.dy)
-				e.wind.Send(paint.Event{})
+				e.flushwith(paint.Event{})
 			case mouse.Event:
 				pt := image.Pt(int(e.X), int(e.Y))
 				if e.Direction == mouse.DirRelease {
@@ -176,23 +194,20 @@ func main() {
 						}
 					}
 				}
-// Put
-				if e.Button == mouse.ButtonWheelUp || e.Button == mouse.ButtonWheelDown{
+				// Put
+				if e.Button == mouse.ButtonWheelUp || e.Button == mouse.ButtonWheelDown {
 					dy := 1
-					if e.Button == mouse.ButtonWheelUp{
+					if e.Button == mouse.ButtonWheelUp {
 						dy = -1
 					}
 					if !ticking {
 						act := act
-						act.SendFirst(scrollEvent{dy: dy, wind: act,})
+						act.SendFirst(scrollEvent{dy: dy, wind: act, flushwith: act.SendFirst})
 						ticking = true
-						time.AfterFunc(time.Millisecond*15, func(){
-							ticking=false
-							if scrolldy == 0{
-								return
-							}
-							act.SendFirst(scrollEvent{dy: scrolldy, wind: act})
-							scrolldy=0
+						time.AfterFunc(time.Millisecond*30, func() {
+							ticking = false
+							act.Send(scrollEvent{dy: scrolldy, wind: act, flushwith: act.SendFirst})
+							scrolldy = 0
 						})
 					} else {
 						scrolldy += dy
@@ -205,15 +220,15 @@ func main() {
 						buttonsdown |= 1 << bt
 					}
 				}
-				switch e.Direction{
+				switch e.Direction {
 				case mouse.DirPress:
-					if false && buttonsdown&(1<<1) != 0 {
+					if false || buttonsdown&(1<<1) != 0 {
 						if e.Button == 2 {
 							snarf(act, wtag, e)
 						} else if e.Button == 3 {
 							paste(act, wtag, e)
 						}
-					}
+					} 
 					press(act, wtag, e)
 					act.Send(paint.Event{})
 				case mouse.DirRelease:
@@ -249,14 +264,18 @@ func main() {
 					continue
 				}
 				if e.Code == key.CodeUpArrow || e.Code == key.CodePageUp || e.Code == key.CodeDownArrow || e.Code == key.CodePageDown {
-					n := 1
-					if e.Code == key.CodeUpArrow || e.Code == key.CodePageUp {
-						n = -1
+					q0 := w.Org					
+					n := act.MaxLine()/7
+					if e.Code == key.CodeUpArrow || e.Code == key.CodePageUp {					
+						q0 = act.BackNL(w.Org, n)
 					}
-					if e.Code == key.CodePageUp || e.Code == key.CodePageDown {
-						n *= 10
+// Put
+					if e.Code == key.CodeDownArrow || e.Code == key.CodePageDown {
+						r := w.Bounds()
+						q0 += w.IndexOf(image.Pt(r.Min.X, r.Min.Y+n*w.Frame.Dy()))
 					}
-					act.FrameScroll(n)
+					
+					act.SetOrigin(q0, true)
 					act.Send(paint.Event{})
 					continue
 				}
@@ -271,8 +290,8 @@ func main() {
 				}
 				if e.Rune == '\x17' {
 					fmt.Printf("%d\n", e.Rune)
-					si := act.Q0-1
-					if isany(act.Bytes()[si], AlphaNum){
+					si := act.Q0 - 1
+					if isany(act.Bytes()[si], AlphaNum) {
 						si = findback(act.Bytes(), act.Q0, AlphaNum)
 					}
 					act.Delete(si, act.Q1)
@@ -334,15 +353,26 @@ func main() {
 	})
 }
 
-func Next(p []byte, i int64, sep []byte) (int64, int64) {
-	x := int64(bytes.Index(p[i:], sep))
-	if x == -1 {
-		x = int64(bytes.Index(p[:i], sep))
+func Next(p []byte, i, j int64) (q0 int64, q1 int64) {
+	defer func(r0, r1 int64) {
+		fmt.Printf("Next: [%d:%d]->[%d:%d]\n", r0, r1, q0, q1)
+	}(i, j)
+	x := p[i:j]
+	q0 = int64(bytes.Index(p[j:], x))
+	if q0 == -1 {
+		println("a")
+		q0 = int64(bytes.Index(p[:i], x))
+		if q0 < 0 {
+			println("b")
+			return i, j
+		}
+	} else {
+		println("c")
+		q0 += j
 	}
-	if x != -1 {
-		i += x
-	}
-	return i, i + int64(len(sep))
+	q1 = q0 + int64(len(x))
+	println("d")
+	return q0, q1
 }
 
 func drawBorder(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, thick int) {
