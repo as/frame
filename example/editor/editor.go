@@ -108,7 +108,8 @@ func (c *Cell) Dirty() bool {
 	return c.dirty
 }
 
-var fsize = 24
+var fsize = 13
+var buttonsdown = 0
 
 func main() {
 	type scrollEvent struct {
@@ -153,7 +154,6 @@ func main() {
 		// lambda to paint only rectangles changed during a sweep of the mouse
 		// Put
 		act := w
-		buttonsdown := 0x00000000
 		go func(){
 			cnt := int64(1000)
 			for {
@@ -174,10 +174,6 @@ func main() {
 				e.flushwith(paint.Event{})
 			case mouse.Event:
 				pt := image.Pt(int(e.X), int(e.Y))
-				if e.Direction == mouse.DirRelease {
-					bt := uint(e.Button)
-					buttonsdown &^= 1 << bt
-				}
 				if (e.Direction == mouse.DirNone || e.Direction == mouse.DirPress) && buttonsdown == 0 {
 					apt := act.Sp.Add(pt)
 					if !apt.In(image.Rectangle{act.Sp, act.Sp.Add(act.Size())}) {
@@ -214,21 +210,8 @@ func main() {
 					}
 					continue
 				}
-				if e.Direction == mouse.DirPress {
-					bt := uint(e.Button)
-					if e.Direction == mouse.DirPress {
-						buttonsdown |= 1 << bt
-					}
-				}
 				switch e.Direction {
 				case mouse.DirPress:
-					if false || buttonsdown&(1<<1) != 0 {
-						if e.Button == 2 {
-							snarf(act, wtag, e)
-						} else if e.Button == 3 {
-							paste(act, wtag, e)
-						}
-					} 
 					press(act, wtag, e)
 					act.Send(paint.Event{})
 				case mouse.DirRelease:
@@ -266,6 +249,9 @@ func main() {
 				if e.Code == key.CodeUpArrow || e.Code == key.CodePageUp || e.Code == key.CodeDownArrow || e.Code == key.CodePageDown {
 					q0 := w.Org					
 					n := act.MaxLine()/7
+					if e.Code == key.CodePageUp || e.Code == key.CodePageDown{
+						n*=100
+					}
 					if e.Code == key.CodeUpArrow || e.Code == key.CodePageUp {					
 						q0 = act.BackNL(w.Org, n)
 					}

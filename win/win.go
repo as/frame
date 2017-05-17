@@ -9,7 +9,7 @@ package win
  */
 
 import (
-	//"fmt"
+	"fmt"
 	"image"
 	"image/draw"
 	"sync"
@@ -295,7 +295,7 @@ func (w *Win) SetSelect(q0, q1 int64) {
 	} else {
 		step := func(i, j int64) {
 			//
-			// TODO: Try print statements here
+			fmt.Printf("step %d,%d %b\n",i,j,i<j)
 			if i < j {
 				w.Drawsel(w.PtOfChar(i), i, j, true)
 			} else if i > j {
@@ -384,10 +384,11 @@ func (w *Win) SetOrigin(org int64, exact bool) {
 
 func (w *Win) Fill() {
 	if w.Frame.Full() {
+		fmt.Println("already full")
 		return
 	}
 	var rp [MsgSize]byte
-	for !w.Frame.Full() {
+	for  !w.Frame.Full() {
 		qep := w.Org + w.Nchars
 		n := min(w.Nr-qep, 2000)
 		if n == 0 {
@@ -634,3 +635,4 @@ func clamp(v, l, h int64) int64 {
 	}
 	return v
 }
+// Put

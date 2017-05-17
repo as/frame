@@ -23,7 +23,7 @@ func Expand(w *win.Win, i int64) {
 	q0, q1 := FindAlpha(p, i)
 	Select(w, q0, q1)
 }
-
+// Put	active
 func Select(w *win.Win, q0, q1 int64) {
 	if q0 == w.Q0 && q1 == w.Q1 {
 		println("select is same")
@@ -31,7 +31,8 @@ func Select(w *win.Win, q0, q1 int64) {
 	}
 	w.Q0, w.Q1 = q0, q1
 	if !Visible(w, q0, q1){
-		w.SetOrigin(q0, true)
+		org := w.BackNL(q0, 2)
+		w.SetOrigin(org, true)
 	}
 	w.P0, w.P1 = q0-w.Org, q1-w.Org
 }
@@ -51,6 +52,8 @@ func press(w, wtag *win.Win, e mouse.Event) {
 	if e.Direction != mouse.DirPress {
 		return
 	}
+	buttonsdown |= 1<<uint(e.Button)
+	fmt.Printf("press %d %08x\n", e.Button, buttonsdown)
 	switch e.Button {
 	case 1:
 		w.Selectq = w.Org + w.IndexOf(pt(e))
@@ -58,35 +61,53 @@ func press(w, wtag *win.Win, e mouse.Event) {
 		w.Q0, w.Q1 = w.Org+w.P0, w.Org+w.P1
 		w.Selectq = w.Q0
 		w.Redraw()
+	case 2:
+		if down(1) {
+			snarf(w, wtag, e)
+		}
+	case 3:
+		if down(1){
+			paste(w, wtag, e)
+		}
 	}
 }
 
+func down(but uint) bool{
+	return buttonsdown & (1<<but) != 0
+}
+
 func paste(w, wtag *win.Win, e mouse.Event) {
-	x := w.Q0
-	w.Insert(toUTF16(ClipBuf), w.Q0)
-	w.Q0 = x
+	fmt.Println("paste")
+	//x := w.Q0
+	n, _ := Clip.Read(ClipBuf)
+	s := fromUTF16(ClipBuf[:n])
+	fmt.Printf("paste: %s\n", s)
+	q0 := w.Q0
+	w.Insert(s, q0)
+	Select(w, q0, q0+int64(len(s)))
+	//w.Q1 = x
 	w.Redraw()
 	w.Send(paint.Event{})
 }
 
 func snarf(w, wtag *win.Win, e mouse.Event) {
-	//ClipBuf = ClipBuf[:cap(ClipBuf)]
-	n, err := w.Read(ClipBuf)
-	if n > 0 {
-		fmt.Printf("clip: %q (%s)\n", ClipBuf[:n], err)
-	}
-	ClipBuf = ClipBuf[:n]
-	io.Copy(Clip, bytes.NewReader(toUTF16(ClipBuf)))
+	fmt.Println("snarf")
+	n := copy(ClipBuf, toUTF16([]byte(w.Rdsel())))
+	io.Copy(Clip, bytes.NewReader(ClipBuf[:n]))
 	w.Delete(w.Q0, w.Q1)
 	w.Redraw()
 	w.Send(paint.Event{})
 }
 
 func release(w, wtag *win.Win, e mouse.Event) {
+	fmt.Printf("release %d %08x", e.Button, buttonsdown)
+	defer func(){
+			buttonsdown &^= 1<<uint(e.Button)
+	}()
 	if e.Direction != mouse.DirRelease {
 		return
 	}
-	if e.Button == 1{
+	if e.Button == 1 || down(1) {
 		return
 	}
 	w.Selectq = w.Org + w.IndexOf(pt(e))
@@ -111,9 +132,9 @@ func release(w, wtag *win.Win, e mouse.Event) {
 			println("Unknown command:", string(x))
 		}
 	case 3:
-		q0, q1 := Next(w.Bytes(), w.Q0, w.Q1)
-		Select(w, q0, q1)
-		moveMouse(w.PtOfChar(w.P0).Add(w.Sp))
+			q0, q1 := Next(w.Bytes(), w.Q0, w.Q1)
+			Select(w, q0, q1)
+			moveMouse(w.PtOfChar(w.P0).Add(w.Sp))
 	}
 	w.Redraw()
 }
