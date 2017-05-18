@@ -1,17 +1,19 @@
 package frame
 
 import (
-	//	"fmt"
 	"image"
+	"fmt"
 )
 
+func (f *Frame) setlines(s string, i int){
+	fmt.Printf("[%p] %s\t%d ->%d\n", f, s, f.Nlines, i)
+	f.Nlines = i
+}
+
 func (f *Frame) ChopFrame(pt image.Point, p int64, bn int) {
-	//	fmt.Printf("nlines=%d maxlines=%d\n", f.Nlines, f.maxlines)
-	//	fmt.Printf("chop at pt=%s p=%d bn=%d\n", pt, p, bn)
 	for ; bn < f.Nbox; bn++ {
 		b := &f.Box[bn]
 		pt = f.LineWrap(pt, b)
-		//fmt.Printf("%d >= %d\n", pt, f.r.Max.Y)
 		if pt.Y >= f.r.Max.Y {
 			break
 		}
@@ -20,7 +22,9 @@ func (f *Frame) ChopFrame(pt image.Point, p int64, bn int) {
 	}
 	f.Nchars = p
 	f.Nlines = f.maxlines
+//	f.setlines("ChopFrame", f.maxlines)
 	if bn < f.Nbox {
 		f.Run.Delete(bn, f.Nbox-1)
 	}
 }
+// Put

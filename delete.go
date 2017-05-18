@@ -3,7 +3,9 @@ package frame
 import (
 	"github.com/as/frame/box"
 	"image"
+	"fmt"
 )
+// Put
 
 func (f *Frame) Delete(p0, p1 int64) int {
 	var (
@@ -101,7 +103,7 @@ func (f *Frame) Delete(p0, p1 int64) int {
 	if pt1.Y != pt0.Y {
 		pt2 := f.PtOfCharPtBox(32767, pt1, n1)
 		if pt2.Y > f.r.Max.Y {
-			//panic("delete: PtOfCharPtBox")
+			panic(fmt.Sprintf("delete: PtOfCharPtBox %s > %s", pt2, f.r.Max))
 		}
 		if n1 < f.Nbox {
 			h := f.Font.height
@@ -153,7 +155,8 @@ func (f *Frame) Delete(p0, p1 int64) int {
 	if pt0.X > f.r.Min.X {
 		extra = 1
 	}
-	extra = 1 // todo
+	
+//	f.setlines("Delete",(pt0.Y-f.r.Min.Y)/f.Font.height + extra)
 	f.Nlines = (pt0.Y-f.r.Min.Y)/f.Font.height + extra
 	return n - f.Nlines
 }

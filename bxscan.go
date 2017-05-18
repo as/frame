@@ -6,8 +6,6 @@ import (
 	//	"log"
 )
 
-var fr Frame
-
 const (
 	DELTA   = 25
 	TMPSIZE = 256
@@ -21,7 +19,8 @@ func (f *Frame) bxscan(s []byte, ppt image.Point) (image.Point, image.Point) {
 		tmp [TMPSIZE + 3]byte
 	)
 	//	log.Printf("bxscan: s=%s ppt=%s\n", s, ppt)
-	(&fr).Reset(f.r, f.b, f.Font)
+	fr := f.fr
+	fr.Reset(f.r, f.b, f.Font)
 	fr.maxtab = 4 * f.Dx(" ")
 	fr.Color = f.Color
 	delta = DELTA
@@ -29,7 +28,7 @@ func (f *Frame) bxscan(s []byte, ppt image.Point) (image.Point, image.Point) {
 
 	for nb = 0; len(s) > 0 && nl <= f.maxlines; nb, fr.Nbox = nb+1, fr.Nbox+1 {
 		if nb == fr.Nalloc {
-			(&fr).Grow(delta)
+			fr.Grow(delta)
 			if delta < 10000 {
 				delta *= 2
 			}
@@ -83,5 +82,5 @@ func (f *Frame) bxscan(s []byte, ppt image.Point) (image.Point, image.Point) {
 	//	log.Printf("bxscan: ppt=%s\n",  ppt)
 	ppt = f.LineWrap0(ppt, &fr.Box[0])
 	//	log.Printf("bxscan: ppt (wrap)=%s\n",  ppt)
-	return ppt, (&fr).Draw(ppt)
+	return ppt, fr.Draw(ppt)
 }

@@ -37,10 +37,12 @@ import (
 
 var (
 	wg      sync.WaitGroup
-	winSize = image.Pt(1900,1000)
+	winSize = image.Pt(2500,1300)
+	pad = image.Pt(0,0)
 	ClipBuf = make([]byte, 8192)
 	Clip    *clip.Clip
 
+	fsize = 12
 	ticking  = false
 	scrolldy = 0
 )
@@ -91,7 +93,6 @@ type Cell struct {
 
 func NewCell(src screen.Screen, wind screen.Window,
 	sp, size image.Point, cols frame.Color) *Cell {
-	pad := image.Pt(4, 4)
 	b, _ := src.NewBuffer(size)
 	w := win.New(src, mkfont(fsize), wind, sp, size, pad, cols)
 	return &Cell{w, sp, size, make(chan string), b, wind, src, true}
@@ -108,7 +109,6 @@ func (c *Cell) Dirty() bool {
 	return c.dirty
 }
 
-var fsize = 13
 var buttonsdown = 0
 
 func main() {
@@ -128,7 +128,6 @@ func main() {
 			filename = strings.Join(os.Args[1:], " ")
 		}
 		cols := frame.Acme
-		pad := image.Pt(4, 4)
 
 		// Make the main tag
 		tagY := fsize * 2
@@ -154,21 +153,10 @@ func main() {
 		// lambda to paint only rectangles changed during a sweep of the mouse
 		// Put
 		act := w
-		go func(){
-			cnt := int64(1000)
-			for {
-				//act.Send(cnt)
-				cnt--
-			
-			time.Sleep(1*time.Second/100)
-			}
-		}()
+		shifty := 0
 		for {
 			// Put
 			switch e := act.NextEvent().(type) {
-			case int64:
-				act.SetSelect(0, e)
-				act.Send(paint.Event{})
 			case scrollEvent:
 				e.wind.FrameScroll(e.dy)
 				e.flushwith(paint.Event{})
@@ -200,9 +188,10 @@ func main() {
 						act := act
 						act.SendFirst(scrollEvent{dy: dy, wind: act, flushwith: act.SendFirst})
 						ticking = true
-						time.AfterFunc(time.Millisecond*30, func() {
+						time.AfterFunc(time.Millisecond*15, func() {
 							ticking = false
-							act.Send(scrollEvent{dy: scrolldy, wind: act, flushwith: act.SendFirst})
+		act.SendFirst(scrollEvent{dy: scrolldy, wind: act, flushwith: act.SendFirst})
+							shifty = scrolldy
 							scrolldy = 0
 						})
 					} else {
@@ -250,7 +239,7 @@ func main() {
 					q0 := w.Org					
 					n := act.MaxLine()/7
 					if e.Code == key.CodePageUp || e.Code == key.CodePageDown{
-						n*=100
+						n*=10
 					}
 					if e.Code == key.CodeUpArrow || e.Code == key.CodePageUp {					
 						q0 = act.BackNL(w.Org, n)

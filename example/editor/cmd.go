@@ -57,7 +57,9 @@ func press(w, wtag *win.Win, e mouse.Event) {
 	switch e.Button {
 	case 1:
 		w.Selectq = w.Org + w.IndexOf(pt(e))
+		w.Sweep = true
 		w.Select(pt(e), w, w.Upload)
+		w.Sweep = false
 		w.Q0, w.Q1 = w.Org+w.P0, w.Org+w.P1
 		w.Selectq = w.Q0
 		w.Redraw()

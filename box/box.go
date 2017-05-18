@@ -14,7 +14,7 @@ func (b *Box) Len() int {
 	if b.Nrune < 0 {
 		return 1
 	}
-	return len(b.Ptr) // todo return nrune instead
+	return b.Nrune
 }
 
 func (b *Box) Bytes() []byte {

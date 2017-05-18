@@ -13,16 +13,16 @@ const (
 	HIGH  = 3
 
 	TickWidth = 3
+	TickOff = 0
+	TickOn  = 1
 )
 
 type Frame struct {
 	box.Run
 	Color
 	Font         Font
-	disp         draw.Image
-	b            draw.Image
-	r            image.Rectangle
-	entire       image.Rectangle
+	disp, b      draw.Image
+	r, entire    image.Rectangle
 	maxtab       int
 	lastlinefull int
 
@@ -39,10 +39,12 @@ type Frame struct {
 	noredraw  bool
 	op        draw.Op
 
+	npts     int
+	pts      []Pts
 	Cache    []image.Rectangle
-	Recycled box.Run
 
 	Scroll func(int)
+	fr *Frame
 }
 
 func New(r image.Rectangle, ft Font, b draw.Image, cols Color) *Frame {
@@ -56,6 +58,7 @@ func New(r image.Rectangle, ft Font, b draw.Image, cols Color) *Frame {
 	f.setrects(r, b)
 	f.cacheinit()
 	f.inittick()
+	f.fr = new(Frame)
 	return f
 }
 
@@ -76,11 +79,6 @@ func (f *Frame) Dy() int {
 func (f *Frame) Bounds() image.Rectangle {
 	return f.r.Bounds()
 }
-
-const (
-	TickOff = 0
-	TickOn  = 1
-)
 
 func (f *Frame) SetTick(style int) {
 	f.tickoff = style == TickOff

@@ -3,6 +3,7 @@ package frame
 import (
 	"github.com/as/frame/box"
 	"image"
+	//"fmt"
 )
 
 func (f *Frame) PtOfCharPtBox(p int64, pt image.Point, bn int) (x image.Point) {
@@ -15,6 +16,7 @@ func (f *Frame) PtOfCharPtBox(p int64, pt image.Point, bn int) (x image.Point) {
 		b = &f.Box[bn]
 		pt = f.LineWrap(pt, b)
 		l = b.Len()
+		//fmt.Printf("bn=%d nbox=%d pt=%s p=%d\n", bn, f.Nbox, pt, p)
 		if p < int64(l) {
 			if b.Nrune > 0 {
 				for s := b.Ptr; p > 0; p, s = p-1, s[w:] {

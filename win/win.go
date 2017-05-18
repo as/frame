@@ -5,7 +5,7 @@ package win
 	optimization for SetSelect broken
 	hold mouse and move up - broken (cache upload)
 	TODO - print statements in set select, why is selection not working until mouse let go?
-
+	Delete
  */
 
 import (
@@ -17,7 +17,7 @@ import (
 	"github.com/as/frame"
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/mobile/event/mouse"
-	"time"
+	// "golang.org/x/mobile/event/paint"	
 )
 
 const (
@@ -44,6 +44,7 @@ type Win struct {
 	Mc      Mc
 	Selectq int64
 	Scrollr image.Rectangle
+	Sweep bool
 }
 
 func (w *Win) Buffer() screen.Buffer {
@@ -126,134 +127,39 @@ func (w *Win) Readmouse(e mouse.Event) {
 }
 
 /*
-func (w *Win) Select(){
-	q0 := w.Q0
-	q1 := w.Q1
-	w.w.Selectq = w.Org+w.IndexOf(w.Mc.XY)
-	b := w.Mc.Buttons
-	if w.Mc.Msec < 500{
-		if q0 == q1 && w.w.Selectq == w.Q0{
-			q0, q1 = w.DoubleClick(q0, q1)
-			w.SetSelect(q0, q1)
-			//flushimage
-			xy := w.Mc.XY
-			Loop:
-			for{
-				switch e := w.NextEvent().(type) {
-				case mouse.Event:
-					w.Readmouse(e)
-					if w.Mc.Buttons != b || !xy.In(image.Rect(-3,-3,3,3).Add(w.Mc.XY) {
-						if w.Mc.Buttons != b{
-							w.SendFirst(e)
-						}
-						break Loop
-					}
-				}
-			}
-			w.Mc.XY = xy
-			q0 = w.Q0
-			q1 = w.Q1
-			w.w.Selectq = q0
-		}
-		if w.Mc.Buttons == b{
-			w.Frame.Scroll = framescroll
-			w.Mc = w.Frame.Select(w, w.Mc)
-			if w.Selectq > w.Nr{
-				w.Selectq = w.Org + w.P0
-			} else if w.Selectq < w.Org {
-				q0 = w.Selectq
-			} else {
-				q0 = w.Org + w.P0
-			}
-			if w.Selectq > w.Org+w.Nchars{
-				q1 = w.Selectq
-			} else {
-				q1 = w.Org+w.P1
-			}
-		}
 
-		if q0 == q1{
-			if q0==w.Q0 && w.Mc.Msec-clickmsec<500{
-				q0, q1 = w.DoubleClick(q0, q1)
-				//clickwin = nil
-			} else {
-				//clickwin = w
-				clickmsec = w.Mc.Msec
-			}
-		} else {
-			//clickwin = nil
-		}
-		w.SetSelect(q0, q1)
-		for w.Mc.Buttons != 0{
-			w.Mc.Msec = 0
-			b = w.Mc.Buttons
-			if b & 6{
-				if b & 2{
-					w.Snarf()
-					w.Cut()
-				} else {
-					if first {
-						first = false
-						getsnarf()
-					}
-					w.Paste()
-				}
-			}
-			// w.Scrdraw()
-			for mc.Buttons == b{
-				w.Readmouse()
-			}
-		//clickwin =nil // Put
-		}
-}
 */
 
 /*
-func (w *Win) Scroll(mp image.Point, but int){
-	s := w.Scrollr.Inset(1)
-	h := s.Dy()
-	x := (s.Min.X+s.Max.X)/2
-	oldp0 := int64(^0)
-	p0 := oldp0
-	first := true
-	for{
-		//flush
-		if mp.X < s.Min.X && s.Max.X <= mp.X{
-			p0 = w.BackNL(w.Org, (mp.Y-s.Min.Y)/w.Dy())
-			if p0 != oldp0 {
-				w.SetOrigin(p0, true)
-			}
-			oldp0 = p0
-		}
-		switch e := ed.NextEvent().(type) {
-		case ScrollEvent:
-		case mouse.Event:f
-			if e.Button == 1 && e.Direction == 2 || e.Button == 2 || e.Button == 3 {
-				ed.SendFirst(e)
-				return
-			}
-			mp = image.Pt(int(e.X), int(e.Y))
-		case interface{}:
-			ed.SendFirst(e)
-			return
-		}
-		select {
-		case <-clock60hz:
-			paintfn()
-		default:
-		}
+FrameScroll
+	//fmt.Printf("fs3 q0 = %d\n", q0)
+
+	w.SetOrigin(q0, true)
+	//w.Redraw()
+	//w.Drawsel(w.Frame.PtOfChar(w.P0), w.P0, w.P1, true)
+	r := w.Bounds()
+	sp := image.Pt(1,1).Add(w.Sp)
+	N  := 4
+	Ny := r.Dy()/4
+	for i := 0; i < N; i++{
+		r0 := image.Rect(r.Min.X, r.Min.Y+(Ny*i), r.Max.X, Ny*(i+1))
+		go func(i int, r0 image.Rectangle){
+			w.events.Upload(sp.Add(image.Pt(0, Ny*3)), w.b, r0); 
+			wg.Done()
+		}(i, r0)
 	}
-}
+	wg.Wait()
 */
+
 func (w *Win) FrameScroll(dl int) {
 	if dl == 0 {
-		time.Sleep(15*time.Millisecond)
+		//time.Sleep(15*time.Millisecond)
 		return
 	}
 	q0 := int64(0)
+	
 	if dl < 0 {
 		q0 = w.BackNL(w.Org, -dl)
-		//fmt.Printf("fs1 q0 = %d\n", q0)
 		if w.Selectq > w.Org+w.P0 {
 			w.SetSelect(w.Org+w.P0, w.Selectq)
 		} else {
@@ -265,7 +171,6 @@ func (w *Win) FrameScroll(dl int) {
 		}
 		r := w.Frame.Bounds()
 		q0 = w.Org + w.IndexOf(image.Pt(r.Min.X, r.Min.Y+dl*w.Font.Dy()))
-		//fmt.Printf("fs2 q0 = %d\n", q0)
 		if w.Selectq >= w.Org+w.P1 {
 			w.SetSelect(w.Org+w.P1, w.Selectq)
 		} else {
@@ -274,14 +179,18 @@ func (w *Win) FrameScroll(dl int) {
 	}
 	//fmt.Printf("fs3 q0 = %d\n", q0)
 	w.SetOrigin(q0, true)
+	if w.Sweep {
+		w.flush()
+	}
+	
 }
 
-// Put
+// Put	sp.Add	Upload
 func (w *Win) SetSelect(q0, q1 int64) {
 	// selection algorithm for window is currently broken
 	// so i disabled it
 	//fmt.Printf("SetSelect: [%d:%d]\n", q0, q1)
-	return
+
 
 	w.Q0, w.Q1 = q0, q1
 	p0 := clamp(q0-w.Org, 0, w.Nchars)
@@ -289,13 +198,13 @@ func (w *Win) SetSelect(q0, q1 int64) {
 	if p0 == w.P0 && p1 == w.P1 {
 		return
 	}
-	if  true || w.P1 <= p0 || p1 <= w.P0 || p0 == p1 || w.P1 == w.P0 {
+	if w.P1 <= p0 || p1 <= w.P0 || p0 == p1 || w.P1 == w.P0 {
 		w.Drawsel(w.PtOfChar(w.P0), w.P0, w.P1, false)
 		w.Drawsel(w.PtOfChar(p0), p0, p1, true)
 	} else {
 		step := func(i, j int64) {
 			//
-			fmt.Printf("step %d,%d %b\n",i,j,i<j)
+			// fmt.Printf("step %d,%d %b\n",i,j,i<j)
 			if i < j {
 				w.Drawsel(w.PtOfChar(i), i, j, true)
 			} else if i > j {
@@ -357,6 +266,7 @@ func (w *Win) SetOrigin(org int64, exact bool) {
 	fix := false
 	if a >= 0 && a < w.Nchars {
 		// a bytes to the right; intersects the frame
+		// fmt.Printf("Delete(%d,%d)\n", 0,a)
 		w.Frame.Delete(0, a)
 		fix = true
 	} else if a < 0 && -a < w.Nchars {
@@ -382,9 +292,14 @@ func (w *Win) SetOrigin(org int64, exact bool) {
 	}
 }
 
+func (w *Win) filldebug(){
+	// Put
+	fmt.Printf("lines/maxlines = %d/%d\n", w.Line(), w.MaxLine())
+}
+
 func (w *Win) Fill() {
+	//w.filldebug()
 	if w.Frame.Full() {
-		fmt.Println("already full")
 		return
 	}
 	var rp [MsgSize]byte
@@ -449,6 +364,7 @@ func (w *Win) Delete(q0, q1 int64) {
 		} else {
 			p0 = q0 - w.Org
 		}
+		fmt.Printf("w.Frame.Delete(%d,%d)\n", p0, p1)
 		w.Frame.Delete(p0, p1)
 		w.Fill()
 	}
@@ -529,24 +445,6 @@ func (w *Win) Insert(s []byte, q0 int64) int64 {
 	return q0
 }
 
-/*
-func (w *Win) Erase(p0, p1 int64) {
-	fr := w.Frame
-	fr.Delete(p0, p1)
-	for len(fr.Recycled.Box) != 0 {
-		n0 := len(fr.Recycled.Box) - 1
-		b := &fr.Recycled.Box[n0]
-		n := fr.Insert(b.Bytes(), fr.Nchars)
-		if n == 0 {
-			break
-		}
-		fr.Recycled.Box = fr.Recycled.Box[:n0]
-	}
-	fr.Redraw()
-	fr.P1 = fr.P0
-}
-*/
-
 func (w *Win) SetFont(ft frame.Font) {
 	b := w.Bytes()
 	w.Clear(true)
@@ -574,19 +472,38 @@ func (w *Win) Resize(size image.Point) {
 func (w *Win) upload() {
 	w.events.Upload(w.Sp.Add(image.Pt(5,5)), w.b, w.Bounds())
 }
+func (w *Win) flush(){
+	r := w.Bounds()
+	sp := image.Pt(1,1).Add(w.Sp)
+	Ny := r.Dy()/4
+	r0 := image.Rect(r.Min.X, r.Min.Y,        r.Max.X, r.Min.Y+Ny)
+	r1 := image.Rect(r.Min.X, r.Min.Y+(Ny),   r.Max.X, r.Min.Y+Ny*2)
+	r2 := image.Rect(r.Min.X, r.Min.Y+(Ny*2), r.Max.X, r.Min.Y+Ny*3)
+	r3 := image.Rect(r.Min.X, r.Min.Y+(Ny*3), r.Max.X, r.Min.Y+Ny*4)
+	var wg sync.WaitGroup
+	wg.Add(4)
+	go func(){w.events.Upload(sp, w.b, r0); wg.Done()}()
+	go func(){w.events.Upload(sp.Add(image.Pt(0, Ny)), w.b, r1); wg.Done()}()
+	go func(){w.events.Upload(sp.Add(image.Pt(0, Ny*2)), w.b, r2); wg.Done()}()
+	go func(){w.events.Upload(sp.Add(image.Pt(0, Ny*3)), w.b, r3); wg.Done()}()	
+	w.Flushcache()
+	wg.Wait()
+}
+// Put
 func (w *Win) Upload() {
 ///	w.upload()
 //	return
 	var wg sync.WaitGroup
 	wg.Add(len(w.Cache))
 	for _, r := range w.Frame.Cache {
+		//fmt.Printf("upload %s\n", r)
 		go func(r image.Rectangle) {
 			w.events.Upload(w.Sp.Add(r.Min), w.b, r)
 			wg.Done()
 		}(r)
 	}
+	//w.events.Upload(w.Sp.Add(image.Pt(0,0)), w.b, image.Rect(0,0,500,500))
 	wg.Wait()
-	//w.events.Publish()
 	w.Flushcache()
 }
 

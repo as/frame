@@ -6,7 +6,7 @@ import (
 	"image"
 	"image/draw"
 )
-
+// Put
 type Pts struct {
 	pt0, pt1 image.Point
 }
@@ -33,9 +33,6 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 		back, text    image.Image
 
 		r image.Rectangle
-	)
-	var (
-		npts = 0
 	)
 
 	if p0 > f.Nchars || len(s) == 0 || f.b == nil {
@@ -74,20 +71,20 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 	// Find the points where all the old x and new x line up
 	// Invariants:
 	//   pt0 is where the next box (b, n0) is now
-	//   pt1 is where it will be after intsertion
+	//   pt1 is where it will be after insertion	ChopF
 	// If pt1 goes off the rect, toss everything from there on
-	npts = 0
+	f.npts = 0
 	if n0 < f.Nbox {
 		b = &f.Box[n0]
 	}
-	for ; pt1.X != pt0.X && pt1.Y != f.r.Max.Y && n0 < f.Nbox; n0, npts = n0+1, npts+1 {
+	for ; pt1.X != pt0.X && pt1.Y != f.r.Max.Y && n0 < f.Nbox; n0, f.npts = n0+1, f.npts+1 {
 		b = &f.Box[n0]
 		pt0 = f.LineWrap(pt0, b)
 		pt1 = f.LineWrap0(pt1, b)
 
 		if b.Nrune > 0 {
 			n = f.CanFit(pt1, b)
-			//				fmt.Println("i can fit %d runes in this box from pt %s\n", n, pt1)
+			//				fmt.Println("can fit %d in box from pt %s\n", n, pt1)
 			if n == 0 {
 				panic("f. ==0")
 			}
@@ -97,13 +94,13 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 			}
 		}
 
-		if npts == Nalloc {
+		if f.npts == Nalloc {
 			pts = append(pts, make([]Pts, DELTA)...)
 			Nalloc += DELTA
 			b = &f.Box[n0]
 		}
-		pts[npts].pt0 = pt0
-		pts[npts].pt1 = pt1
+		pts[f.npts].pt0 = pt0
+		pts[f.npts].pt1 = pt1
 		// check for text overflow off the frame
 		if pt1.Y == f.r.Max.Y {
 			break
@@ -120,22 +117,28 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 		f.Nchars -= f.Len(n0)
 		f.Run.Delete(n0, f.Nbox-1)
 	}
-
+// Put
 	h := f.Font.height
 	if n0 == f.Nbox {
 		extra := 0
 		if pt1.X > f.r.Min.X {
 			extra = 1
 		}
-		f.Nlines = (pt.Y-f.r.Min.Y)/h + extra
+		f.Nlines = (pt1.Y-f.r.Min.Y)/h + extra
+// f.setlines("Insert: 1/2", (pt1.Y-f.r.Min.Y)/h + extra)
+// lines = (pt.Y-f.r.Min.Y)/h + extra
 	} else if pt1.Y != pt0.Y {
 		y = f.r.Max.Y
 		q0 := pt0.Y + h
 		q1 := pt1.Y + h
+// fmt.Printf("pt1(%s) != pt0(%s)\n", pt1, pt0)
+// fmt.Printf("y=%d q0:q1=%d:%d\n", y,q0,q1)
 		f.Nlines += (q1 - q0) / h
-		if f.Nlines >= f.maxlines {
-		//TODO: Theres a name collision with chop for the box version of chop
-		f.ChopFrame(ppt1, p0, nn0)
+// f.setlines("Insert: 2/2", f.Nlines+((q1 - q0) / h))
+// lines += (q1 - q0) / h
+		if f.Nlines > f.maxlines {
+// fmt.Printf("lines/max = %d/%d\n", f.Nlines, f.maxlines)
+			f.ChopFrame(ppt1, p0, nn0)
 		}
 		if pt1.Y < y {
 			r = f.r
@@ -158,21 +161,21 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 		y = 0
 	}
 
-	npts--
-	for ctr := n0; npts >= 0; npts-- {
+	f.npts--
+	for ctr := n0; f.npts >= 0; f.npts-- {
 		ctr--
 		b = &f.Box[ctr]
-		pt = pts[npts].pt1
-		//		fmt.Printf("npts=%d selected point = %s\n", npts, pt)
+		pt = pts[f.npts].pt1
+//		fmt.Printf("npts=%d selected point = %s\n", npts, pt)
 		if b.Nrune > 0 {
 			r.Min = pt
 			r.Max = r.Min
 			r.Max.X += b.Width
 			r.Max.Y += f.Font.height
-			draw.Draw(f.b, r, f.b, pts[npts].pt0, draw.Src)
+			draw.Draw(f.b, r, f.b, pts[f.npts].pt0, draw.Src)
 
 			// clear bit hanging off right
-			if npts == 0 && pt.Y > pt0.Y {
+			if f.npts == 0 && pt.Y > pt0.Y {
 				// first new char bigger than first char displaced
 				// so line wrap happened
 				r.Min = opt0
@@ -229,6 +232,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 		text = f.Color.Text
 		back = f.Color.Back
 	}
+	fr := *f.fr
 
 	f.SelectPaint(ppt0, ppt1, back)
 	(&fr).DrawText(ppt0, text, back)

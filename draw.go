@@ -2,13 +2,16 @@ package frame
 
 import (
 	"github.com/as/frame/box"
-	"golang.org/x/image/math/fixed"
+	
+//"fmt"
+"golang.org/x/image/math/fixed"
 	"image"
 	"image/color"
 	"image/draw"
 )
-
+// Put
 func (f *Frame) draw(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point) {
+	//fmt.Printf("addcache %s <- %s\n", r, sp)
 	f.Cache = append(f.Cache, r)
 	draw.Draw(dst, r, src, sp, draw.Src)
 }
