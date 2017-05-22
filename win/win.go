@@ -5,7 +5,7 @@ package win
 	optimization for SetSelect broken
 	hold mouse and move up - broken (cache upload)
 	TODO - print statements in set select, why is selection not working until mouse let go?
-	Delete
+	Delete	SetSe
  */
 
 import (
@@ -13,6 +13,7 @@ import (
 	"image"
 	"image/draw"
 	"sync"
+	//"time"
 
 	"github.com/as/frame"
 	"golang.org/x/exp/shiny/screen"
@@ -127,10 +128,7 @@ func (w *Win) Readmouse(e mouse.Event) {
 }
 
 /*
-
-*/
-
-/*
+flush
 FrameScroll
 	//fmt.Printf("fs3 q0 = %d\n", q0)
 
@@ -157,13 +155,20 @@ func (w *Win) FrameScroll(dl int) {
 		return
 	}
 	q0 := int64(0)
-	
 	if dl < 0 {
 		q0 = w.BackNL(w.Org, -dl)
-		if w.Selectq > w.Org+w.P0 {
-			w.SetSelect(w.Org+w.P0, w.Selectq)
-		} else {
-			w.SetSelect(w.Selectq, w.Org+w.P0)
+		if w.Sweep{
+			if w.Selectq > w.Org+w.P0 {
+				//fmt.Printf("a\n")
+				 x := w.Selectq
+				//x := w.Org+w.P1
+				w.SetSelect(w.Org+w.P0, x)
+			} else {
+				//fmt.Printf("b %d:%d\n", w.Selectq, w.Org+w.P1)	// was w.P0 for both
+				// x := w.Selectq
+				x := w.Org+w.P0
+				w.SetSelect(x, w.Org+w.P1)
+			}
 		}
 	} else {
 		if w.Org+w.Nchars == w.Nr {
@@ -171,24 +176,24 @@ func (w *Win) FrameScroll(dl int) {
 		}
 		r := w.Frame.Bounds()
 		q0 = w.Org + w.IndexOf(image.Pt(r.Min.X, r.Min.Y+dl*w.Font.Dy()))
-		if w.Selectq >= w.Org+w.P1 {
-			w.SetSelect(w.Org+w.P1, w.Selectq)
-		} else {
-			w.SetSelect(w.Selectq, w.Org+w.P1)
+		if w.Sweep{
+			if w.Selectq >= w.Org+w.P1 {
+				w.SetSelect(w.Org+w.P1, w.Selectq)
+			} else {
+				w.SetSelect(w.Selectq, w.Org+w.P1)
+			}
 		}
 	}
 	//fmt.Printf("fs3 q0 = %d\n", q0)
-	w.SetOrigin(q0, true)
 	if w.Sweep {
 		w.flush()
 	}
+	w.SetOrigin(q0, true)
 	
 }
 
 // Put	sp.Add	Upload
 func (w *Win) SetSelect(q0, q1 int64) {
-	// selection algorithm for window is currently broken
-	// so i disabled it
 	//fmt.Printf("SetSelect: [%d:%d]\n", q0, q1)
 
 
@@ -238,7 +243,7 @@ func (w *Win) BackNL(p int64, n int) int64 {
 	return p
 }
 
-/*
+/*	SetS
 func (w *Win) Drawscroll(){
 	r := w.Scrollr
 	b := w.Scrolltmp
@@ -290,6 +295,7 @@ func (w *Win) SetOrigin(org int64, exact bool) {
 	if fix && w.P1 > w.P0 {
 		w.Drawsel(w.PtOfChar(w.P1-1), w.P1-1, w.P1, true);
 	}
+	//fmt.Printf("p[%d:%d]\n", w.P0, w.P1)
 }
 
 func (w *Win) filldebug(){
@@ -474,7 +480,7 @@ func (w *Win) upload() {
 }
 func (w *Win) flush(){
 	r := w.Bounds()
-	sp := image.Pt(1,1).Add(w.Sp)
+	sp := image.Pt(1,1).Add(w.Sp).Add(w.pad)
 	Ny := r.Dy()/4
 	r0 := image.Rect(r.Min.X, r.Min.Y,        r.Max.X, r.Min.Y+Ny)
 	r1 := image.Rect(r.Min.X, r.Min.Y+(Ny),   r.Max.X, r.Min.Y+Ny*2)

@@ -15,7 +15,6 @@ import (
 	"os"
 	"strings"
 	"time"
-	"bufio"
 
 	"github.com/as/clip"
 	"github.com/as/cursor"
@@ -32,7 +31,7 @@ import (
 	"golang.org/x/mobile/event/size"
 )
 
-// amink
+// amink	cmd
 
 // amink Put
 
@@ -150,61 +149,14 @@ func main() {
 			fmt.Printf("files size is %d\n", len(s))
 			w.Insert(s, w.Q1)
 		}
-
+		qi := int64(0)
 		// lambda to paint only rectangles changed during a sweep of the mouse
 		// Put
 		act := w
 		shifty := 0
-		
-		type a struct{
-			Q1 int64
-			Data string
-		}
-		type d struct{
-			Q0, Q1 int64
-		}
-		type sel struct{
-			Addr
-		}
-		go func(){
-			sc := bufio.NewScanner(os.Stdin)
-			for sc.Scan() {
-				s := sc.Text()
-				cmd := cmdparse(s)
-				if cmd.kind == "a"{
-					act.SendFirst(a{act.Q1, cmd.data.(string)})
-				} else if cmd.kind == "d"{
-					act.SendFirst(d{act.Q0, act.Q1})	
-				} else if cmd.kind == "s"{
-					a := cmd.data.(Addr)
-					fmt.Println(a)
-					act.SendFirst(sel{a})	
-				}
-			}
-		}()
 		for {
 			// Put
 			switch e := act.NextEvent().(type) {
-			case a:
-				act.InsertString(e.Data, e.Q1)
-				act.Q0 = act.Q1
-				act.Send(paint.Event{})
-			case d:
-				act.Delete(act.Q0, act.Q1)
-				act.Send(paint.Event{})
-			case sel:
-				clamp := func(l, h, n int64) int64{
-					if n < l {
-						n = l
-					} else if n > h {
-						n = h
-					}
-					return n
-				}
-				q0 := clamp(0, act.Nr, e.Q0)
-				q1 := clamp(0, act.Nr, e.Q1)
-				act.SetSelect(q0,q1)
-				act.Send(paint.Event{})
 			case scrollEvent:
 				e.wind.FrameScroll(e.dy)
 				e.flushwith(paint.Event{})
@@ -238,7 +190,7 @@ func main() {
 						ticking = true
 						time.AfterFunc(time.Millisecond*15, func() {
 							ticking = false
-		act.SendFirst(scrollEvent{dy: scrolldy, wind: act, flushwith: act.SendFirst})
+							act.SendFirst(scrollEvent{dy: scrolldy, wind: act, flushwith: act.SendFirst})
 							shifty = scrolldy
 							scrolldy = 0
 						})
@@ -341,6 +293,11 @@ func main() {
 				fmt.Printf("outside %p: w.Nr=%d\n", act, act.Nr)
 				act.Insert([]byte(string(e.Rune)), act.Q1)
 				act.Q0 = act.Q1
+				if e.Rune == '\n'{
+					cmd := act.R[qi:act.Nr]
+					fmt.Printf("command: R[%d:%d] -> %q\n", qi, act.Nr, cmd)
+					qi = act.Nr
+				}
 				act.Send(paint.Event{})
 			case size.Event:
 				pt := image.Pt(e.WidthPx, e.HeightPx)
