@@ -55,17 +55,6 @@ func (w *Win) Size() image.Point {
 	return w.size
 }
 
-/*
-func Save(f *frame.Frame, file string) (err error) {
-	fd, err := os.Create(file)
-	if err != nil {
-		return err
-	}
-	defer fd.Close()
-	_, err = io.Copy(fd, f.R[:f.Nr])
-	return err
-}
-*/
 func New(scr screen.Screen, ft frame.Font, events screen.Window,
 	sp, size, pad image.Point, cols frame.Color) *Win {
 	b, err := scr.NewBuffer(size)
@@ -148,6 +137,12 @@ FrameScroll
 	}
 	wg.Wait()
 */
+
+func (w *Win) Dot() (q0, q1 int64){
+	q0 = clamp(w.Q0, 0, w.Nr)
+	q1 = clamp(w.Q1, 0, w.Nr)
+	return
+}
 
 func (w *Win) FrameScroll(dl int) {
 	if dl == 0 {

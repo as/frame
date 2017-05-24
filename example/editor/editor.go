@@ -38,12 +38,12 @@ import (
 
 var (
 	wg      sync.WaitGroup
-	winSize = image.Pt(1000,700)
+	winSize = image.Pt(1400,1400)
 	pad = image.Pt(5,5)
 	ClipBuf = make([]byte, 8192)
 	Clip    *clip.Clip
 
-	fsize = 12
+	fsize = 15
 	ticking  = false
 	scrolldy = 0
 )
@@ -167,43 +167,22 @@ func main() {
 			Addr
 		}
 		go func(){
-			sc := bufio.NewScanner(os.Stdin)
+			 sc := bufio.NewScanner(os.Stdin)
 			for sc.Scan() {
-				s := sc.Text()
-				cmd := cmdparse(s)
-				if cmd.kind == "a"{
-					act.SendFirst(a{act.Q1, cmd.data.(string)})
-				} else if cmd.kind == "d"{
-					act.SendFirst(d{act.Q0, act.Q1})	
-				} else if cmd.kind == "s"{
-					a := cmd.data.(Addr)
-					fmt.Println(a)
-					act.SendFirst(sel{a})	
-				}
+				act.SendFirst(cmdparse(sc.Text()))	
 			}
 		}()
 		for {
 			// Put
 			switch e := act.NextEvent().(type) {
-			case a:
-				act.InsertString(e.Data, e.Q1)
-				act.Q0 = act.Q1
-				act.Send(paint.Event{})
-			case d:
-				act.Delete(act.Q0, act.Q1)
-				act.Send(paint.Event{})
-			case sel:
-				clamp := func(l, h, n int64) int64{
-					if n < l {
-						n = l
-					} else if n > h {
-						n = h
-					}
-					return n
+			case *command:
+				fmt.Printf("command %#v\n", e)
+				if e == nil{
+					panic("command is nil")
 				}
-				q0 := clamp(0, act.Nr, e.Q0)
-				q1 := clamp(0, act.Nr, e.Q1)
-				act.SetSelect(q0,q1)
+				if e.fn != nil{
+					e.fn(act)
+				}
 				act.Send(paint.Event{})
 			case scrollEvent:
 				e.wind.FrameScroll(e.dy)
