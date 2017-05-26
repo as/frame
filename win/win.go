@@ -13,7 +13,7 @@ import (
 	"image"
 	"image/draw"
 	"sync"
-	//"time"
+	"time"
 
 	"github.com/as/frame"
 	"golang.org/x/exp/shiny/screen"
@@ -43,6 +43,7 @@ type Win struct {
 	R       []byte
 	Maxr    int64
 	Mc      Mc
+	Lastclick time.Time
 	Selectq int64
 	Scrollr image.Rectangle
 	Sweep bool
@@ -74,6 +75,29 @@ func New(scr screen.Screen, ft frame.Font, events screen.Window,
 	w.Frame.Scroll = w.FrameScroll
 	w.Blank()
 	return w
+}
+
+/*
+func (w *Win) SetFont(ft frame.Font) {
+	b := w.Bytes()
+	w.Clear(true)
+	w.Blank()
+	w.Frame = frame.New(w.Frame.Bounds(), ft, w.b.RGBA(), w.Color)
+	w.Insert(b, 0)
+	w.Redraw()
+}
+*/
+
+func (w *Win) SetFont(ft frame.Font){
+	P0, P1 := w.Frame.P0, w.Frame.P1
+	r := image.Rectangle{w.pad, w.size}.Inset(1)
+	w.Frame = frame.New(r, ft, w.b.RGBA(), w.Frame.Color)
+	w.Frame.Scroll = w.FrameScroll
+//	w.Blank()
+	w.Frame.Insert(w.R[w.Org:w.Nchars], 0)
+	w.P0, w.P1 = P0, P1
+	w.Mark()
+	w.Redraw()
 }
 
 func (w *Win) NextEvent() (e interface{}) {
@@ -111,32 +135,6 @@ type Mc struct {
 	Msec    int
 	XY      image.Point
 }
-
-func (w *Win) Readmouse(e mouse.Event) {
-
-}
-
-/*
-flush
-FrameScroll
-	//fmt.Printf("fs3 q0 = %d\n", q0)
-
-	w.SetOrigin(q0, true)
-	//w.Redraw()
-	//w.Drawsel(w.Frame.PtOfChar(w.P0), w.P0, w.P1, true)
-	r := w.Bounds()
-	sp := image.Pt(1,1).Add(w.Sp)
-	N  := 4
-	Ny := r.Dy()/4
-	for i := 0; i < N; i++{
-		r0 := image.Rect(r.Min.X, r.Min.Y+(Ny*i), r.Max.X, Ny*(i+1))
-		go func(i int, r0 image.Rectangle){
-			w.events.Upload(sp.Add(image.Pt(0, Ny*3)), w.b, r0); 
-			wg.Done()
-		}(i, r0)
-	}
-	wg.Wait()
-*/
 
 func (w *Win) Dot() (q0, q1 int64){
 	q0 = clamp(w.Q0, 0, w.Nr)
@@ -187,11 +185,7 @@ func (w *Win) FrameScroll(dl int) {
 	
 }
 
-// Put	sp.Add	Upload
 func (w *Win) SetSelect(q0, q1 int64) {
-	//fmt.Printf("SetSelect: [%d:%d]\n", q0, q1)
-
-
 	w.Q0, w.Q1 = q0, q1
 	p0 := clamp(q0-w.Org, 0, w.Nchars)
 	p1 := clamp(q1-w.Org, 0, w.Nchars)
@@ -203,8 +197,6 @@ func (w *Win) SetSelect(q0, q1 int64) {
 		w.Drawsel(w.PtOfChar(p0), p0, p1, true)
 	} else {
 		step := func(i, j int64) {
-			//
-			// fmt.Printf("step %d,%d %b\n",i,j,i<j)
 			if i < j {
 				w.Drawsel(w.PtOfChar(i), i, j, true)
 			} else if i > j {
@@ -230,7 +222,7 @@ func (w *Win) BackNL(p int64, n int) int64 {
 		}
 		for j := 128; j-1 > 0 && p > 0; p-- {
 			j--
-			if w.R[p-1] == '\n' {
+			if p-1 < 0 || p-1 > w.Nr || w.R[p-1] == '\n' {
 				break
 			}
 		}
@@ -444,15 +436,6 @@ func (w *Win) Insert(s []byte, q0 int64) int64 {
 	}
 	//	fmt.Printf("buf: %q\n", w.R)
 	return q0
-}
-
-func (w *Win) SetFont(ft frame.Font) {
-	b := w.Bytes()
-	w.Clear(true)
-	w.Blank()
-	w.Frame = frame.New(w.Frame.Bounds(), ft, w.b.RGBA(), w.Color)
-	w.Insert(b, 0)
-	w.Redraw()
 }
 
 func (w *Win) Resize(size image.Point) {

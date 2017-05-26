@@ -1,5 +1,5 @@
 package main
-
+// Put
 import(
 	"fmt"
 	"strings"
@@ -171,6 +171,7 @@ const(
 )
 
 func lexAny(l *lexer) statefn{
+	ignoreSpaces(l)
 	if l.accept(Rdigit+Rop+Rmod){
 		l.backup()
 		return lexAddr

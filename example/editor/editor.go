@@ -32,9 +32,85 @@ import (
 	"golang.org/x/mobile/event/size"
 )
 
-// amink
+// amink 5
 
 // amink Put
+
+type Action []func()
+
+func (in *Invertable) Commit(){
+}
+
+type Invertable struct{
+	*win.Win
+	undo []func()
+	do   []func()
+	p int
+}
+func (in *Invertable) Reset() {
+	in.undo = nil
+	in.do = nil
+	in.p = 0
+	return
+}
+
+func (in *Invertable) Insert(p []byte, at int64) int64{
+	d0, d1 := at, at+int64(len(p))
+	fmt.Printf("Delete(%d, %d)\n", d0, d1)
+	in.do = in.do[:in.p]
+	in.undo = in.undo[:in.p]
+	in.do   = append(in.do,   func(){ in.Win.Insert(p, at)})
+	in.undo = append(in.undo, func(){ in.Win.Delete(d0, d1)})
+	in.p++
+	in.do[in.p-1]()
+	return 1
+}
+func (in *Invertable) Delete(q0, q1 int64){
+	data := append([]byte{}, in.Win.Bytes()[q0:q1]...)
+
+	in.do = in.do[:in.p]
+	in.undo = in.undo[:in.p]
+	in.do   = append(in.do,   func(){ in.Win.Delete(q0, q1)})
+	in.undo = append(in.undo, func(){ in.Win.Insert(data, q0)})
+	in.p++
+	fmt.Printf("Insert(%q, %d)\n", data, q0)
+	in.do[in.p-1]()
+	//in.Win.Delete(q0, q1)
+}
+func (in *Invertable) Undo(){
+	l := len(in.undo)
+	if l == 0{
+		return
+	}
+	in.p--
+	in.undo[in.p]()
+	if in.p < 0{
+		in.p = 0
+	}
+}
+func (in *Invertable) Redo(){
+	l := len(in.undo)
+	if l == 0 || in.p >= l {
+		return
+	}
+	in.p++
+	in.do[in.p-1]()
+}
+func (in *Invertable) SetSelect(q0, q1 int64){
+	w := in.Win
+	w.SetSelect(q0, q1)
+	if Visible(w, q0, q1){
+		return
+	}
+	org := w.BackNL(q0, 2)
+	w.SetOrigin(org, true)
+	w.P0, w.P1 = q0-w.Org, q1-w.Org
+}
+
+// Put
+//ins("a", 0)	del(0,1)
+//ins("b", 1)	del(1,2)
+//ins("c", 2) del(2,3)
 
 var (
 	wg      sync.WaitGroup
@@ -110,12 +186,25 @@ func (c *Cell) Dirty() bool {
 	return c.dirty
 }
 
-var buttonsdown = 0
+type Mouse struct{
+	down int
+	mask int
+	lastclick time.Time
+}
+func (m *Mouse) Clear(){
+	m.down = 0
+	m.mask = 0
+}
+// Put
+var (
+	buttonsdown = 0
+	noselect bool
+)
 
 func main() {
 	type scrollEvent struct {
 		dy        int
-		wind      *win.Win
+		wind      *Invertable
 		flushwith func(e interface{})
 	}
 	driver.Main(func(src screen.Screen) {
@@ -125,22 +214,29 @@ func main() {
 		focused = focused
 		ft := mkfont(fsize)
 		filename := "/dev/stdin"
+		lineexpr := ""
 		if len(os.Args) > 1 {
 			filename = strings.Join(os.Args[1:], " ")
+			x := strings.Index(filename, ":")
+			fmt.Println(x)
+			if x > 0{
+				lineexpr = filename[x+1:]
+				filename = filename[:x]
+			}
 		}
 		cols := frame.Acme
 
 		// Make the main tag
 		tagY := fsize * 2
 		cols.Back = Cyan
-		wmain := win.New(src, ft, wind, image.ZP, image.Pt(winSize.X, tagY), pad, cols)
+		wmain := &Invertable{win.New(src, ft, wind, image.ZP, image.Pt(winSize.X, tagY), pad, cols), nil,nil, 0}
 
 		// Make tag
-		wtag := win.New(src, ft, wind, image.Pt(0, tagY), image.Pt(winSize.X, tagY), pad, cols)
+		wtag := &Invertable{win.New(src, ft, wind, image.Pt(0, tagY), image.Pt(winSize.X, tagY), pad, cols), nil,nil, 0}
 
 		// Make window
 		cols.Back = Yellow
-		w := win.New(src, ft, wind, image.Pt(0, tagY*2), winSize.Sub(image.Pt(0, tagY*2)), pad, cols)
+		w := &Invertable{win.New(src, ft, wind, image.Pt(0, tagY*2), winSize.Sub(image.Pt(0, tagY*2)), pad, cols), nil,nil, 0}
 
 		wtag.InsertString(filename+"\tPut Del Exit", 0)
 		wtag.Redraw()
@@ -149,39 +245,48 @@ func main() {
 			s := readfile(filename)
 			fmt.Printf("files size is %d\n", len(s))
 			w.Insert(s, w.Q1)
+			if lineexpr != ""{
+				w.Send(cmdparse("#0"))
+				w.Send(cmdparse(lineexpr))
+			}
 		}
 
 		// lambda to paint only rectangles changed during a sweep of the mouse
 		// Put
 		act := w
 		shifty := 0
-		
-		type a struct{
-			Q1 int64
-			Data string
-		}
-		type d struct{
-			Q0, Q1 int64
-		}
-		type sel struct{
-			Addr
-		}
+		lastclickpt := image.ZP
 		go func(){
 			 sc := bufio.NewScanner(os.Stdin)
 			for sc.Scan() {
+				if x := sc.Text(); x == "u" || x == "r"{
+					act.SendFirst(x)
+					continue
+				}
 				act.SendFirst(cmdparse(sc.Text()))	
 			}
 		}()
 		for {
 			// Put
 			switch e := act.NextEvent().(type) {
+			case string:
+				if e == "r" {
+					act.Redo()
+				} else if e == "u" {
+					act.Undo()
+				} else if e == "Put"{
+					Put(wtag.Win, w.Win)
+				} else if e == "Get"{
+					Get(wtag.Win, w.Win)
+				}
+				act.Send(paint.Event{})
 			case *command:
 				fmt.Printf("command %#v\n", e)
 				if e == nil{
 					panic("command is nil")
 				}
 				if e.fn != nil{
-					e.fn(act)
+					e.fn(w)	// Always execute on body for now
 				}
 				act.Send(paint.Event{})
 			case scrollEvent:
@@ -192,12 +297,12 @@ func main() {
 				if (e.Direction == mouse.DirNone || e.Direction == mouse.DirPress) && buttonsdown == 0 {
 					apt := act.Sp.Add(pt)
 					if !apt.In(image.Rectangle{act.Sp, act.Sp.Add(act.Size())}) {
-						list := []*win.Win{wmain, wtag, w}
+						list := []*Invertable{wmain, wtag, w}
 						for i, w := range list {
 							r := image.Rectangle{w.Sp, w.Sp.Add(w.Size())}
 							if apt.In(r) {
 								if list[i] != act {
-									fmt.Printf("active %d [because %s is in %s]\n", i, pt, r)
+									fmt.Printf("active %d [because %s is heavier than %s]\n", i, pt, r)
 									act = list[i]
 									break
 								}
@@ -228,11 +333,31 @@ func main() {
 				}
 				switch e.Direction {
 				case mouse.DirPress:
-					press(act, wtag, e)
+					lastclickpt = Pt(e)
+					press(act.Win, wtag.Win, e)
 					act.Send(paint.Event{})
 				case mouse.DirRelease:
-					release(w, wtag, e)
+					lastclickpt = image.Pt(-5,-5)
+					release(act.Win, wtag.Win, e)
 					act.Send(paint.Event{})
+				case mouse.DirNone:
+					if !noselect && down(1) && ones(buttonsdown) == 1 {
+						fmt.Printf("continue selection")
+whatsdown()
+						r := image.Rect(0,0,5,5).Add(lastclickpt)
+						pt := Pt(e)
+						if pt.In(r){
+							continue
+						}
+						// Double click happened so select function
+						// never fired. 
+						act.Sweep = true
+						act.Select(lastclickpt,w,w.Upload)
+						act.Sweep = false
+						act.Q0, w.Q1 = w.Org+w.P0, w.Org+w.P1
+						act.Selectq = w.Q0
+						act.Redraw()
+					}
 				}
 			case key.Event:
 				if e.Direction == key.DirRelease {
@@ -245,7 +370,9 @@ func main() {
 						} else {
 							fsize++
 						}
+						act.Reset()
 						act.SetFont(mkfont(fsize))
+						act.Fill()
 						act.Send(paint.Event{})
 						continue
 					}

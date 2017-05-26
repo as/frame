@@ -1,11 +1,16 @@
+////
+/////////
+////////////	d0
 package main
 // todo: 
 //	1) lexer should fill addresses in the following way
 //		,	rhs: 0, lhs: max
 //        +	rhs: \n, lhs: \n (search backwards)
 //		-	rhs:	
-//
-//
+//	Line
+//	Edit 2,4	Put	find
+//	Edit -2
+//  Edit +2
 
 import(
 	"regexp"
@@ -13,6 +18,10 @@ import(
 	"fmt"
 	"strings"
 	"bytes"
+	"io"
+	"bufio"
+
+	"github.com/as/io/rev"
 )
 type parser struct{
 	in chan item
@@ -26,6 +35,7 @@ type parser struct{
 
 type Address interface{
 	Set(f File)
+	Back() bool
 }
 type Regexp struct{
 	re *regexp.Regexp
@@ -46,6 +56,12 @@ type Compound struct{
 	a0, a1 Address
 	op byte
 }
+// Put
+func (r Regexp) Back() bool{ return r.rel == -1 }
+func (b Byte) Back() bool{ return b.rel == -1 }
+func (l Line) Back() bool{ return l.rel == -1 }
+func (d Dot) Back() bool{ return false}
+func (c Compound) Back() bool{ return c.a1.Back() }
 
 func (p *parser) mustatoi(s string) int64{
 	i, err := strconv.Atoi(s)
@@ -232,14 +248,14 @@ func parseCmd(p *parser) (c *command) {
 					break
 				}
 				x0, x1 = int64(loc[0])+x1, int64(loc[1])+x1
-				f.SetSelect(x0,x1)
+				f.(*Invertable).Win.SetSelect(x0,x1)
 				a := len(f.Bytes())
 				if nextfn := c.Next(); nextfn != nil{
 					nextfn(f)
 				}
-				d0, d1 := f.Dot()
+				//d0, d1 := f.Dot()
 				b := len(f.Bytes()) - a
-				x1 += int64(b) + (d1-d0)
+				x1 += int64(b) //+ (d1-d0)
 				q1 += int64(b)
 				x0 = x1
 			}
@@ -288,13 +304,16 @@ func (p *parser) run() {
 	p.stop <- p.err
 	close(p.stop)
 }
-
+// Put
 func (c *Compound) Set(f File){
 	fmt.Printf("compound %#v\n", c)
 	c.a0.Set(f)
 	q0, _ := f.Dot()
 	c.a1.Set(f)
 	_, r1 := f.Dot()
+	if c.Back(){
+		return
+	}
 	f.SetSelect(q0, r1)
 }
 
@@ -323,8 +342,85 @@ func (r *Regexp) Set(f File){
 	}
 	f.SetSelect(r0,r1)
 }
+// Put
 func (r *Line) Set(f File){
+	p := f.Bytes()
+	switch r.rel{
+	case 0:
+		q0, q1 := findline(r.Q, f.Bytes())
+		f.SetSelect(q0,q1)
+	case 1:
+		_, org := f.Dot()
+		r.Q++
+		if org == 0 || p[org-1] == '\n'{
+			r.Q--
+		}
+		p = p[org:]
+		q0, q1 := findline2(r.Q, bytes.NewReader(p))
+		f.SetSelect(q0+org, q1+org)
+	case -1:
+		org, _ := f.Dot()
+		r.Q = -r.Q+1
+		if org == 0 || p[org-1] == '\n'{
+			//r.Q--
+		}
+		p = p[:org]
+		q0, q1 := findline2(r.Q, rev.NewReader(p))	// 0 = len(p)-1
+		fmt.Printf("Line.Set 1: %d:%d\n", q0,q1)
+		l := q1-q0
+		q0 = org-q1
+		q1 = q0+l
+		q0 = q1-l
+		if q0 >= 0 && q0 < int64(len(f.Bytes())) && f.Bytes()[q0] == '\n'{
+			q0++
+		}
+		fmt.Printf("Line.Set 2: %d:%d\n", q0,q1)
+		f.SetSelect(q0,q1)		
+	}
+}
 
+// Put	Edit 354
+func findline2(N int64, r io.Reader) (q0, q1 int64) {
+	br := bufio.NewReader(r)
+	nl := int64(0)
+	for nl != N {
+		b, err := br.ReadByte()
+		if err != nil{
+			break
+		}
+		q1++
+		if b == '\n'{
+			nl++
+			if nl == N{
+				break
+			}
+			q0 = q1
+		}
+	}
+	return
+}
+
+func findline(N int64, p []byte) (q0, q1 int64) {
+	nl := int64(0)
+	l := int64(len(p))
+	for ; q1 < l ; q1++{
+		if p[q1] != '\n'{
+			continue
+		}
+		nl++
+		if nl == N{
+			if q0 != 0{
+				q0++
+			}
+			q1++
+			break
+		}
+		q0 = q1
+	}
+	if q1 >= l{
+		q0++
+	}
+	return q0, q1
 }
 
 func (Dot) Set(f File){

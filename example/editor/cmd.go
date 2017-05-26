@@ -1,5 +1,5 @@
 package main
-
+// Edit ,x,pt\(,x,pt,c,Pt,
 import (
 	"bufio"
 	"bytes"
@@ -8,13 +8,16 @@ import (
 	"io"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/as/frame/win"
 	"golang.org/x/mobile/event/mouse"
 	"golang.org/x/mobile/event/paint"
 )
 
-func pt(e mouse.Event) image.Point {
+var chorded = false
+
+func Pt(e mouse.Event) image.Point {
 	return image.Pt(int(e.X), int(e.Y))
 }
 
@@ -47,31 +50,53 @@ func Visible(w *win.Win, q0, q1 int64) bool{
 	return true
 }
 
-// Put
 func press(w, wtag *win.Win, e mouse.Event) {
+	fmt.Printf("press (enter) %d %08x\n", e.Button, buttonsdown)
+	defer func(){fmt.Printf("press (leave) %d %08x\n", e.Button, buttonsdown)}()
 	if e.Direction != mouse.DirPress {
 		return
 	}
-	buttonsdown |= 1<<uint(e.Button)
-	fmt.Printf("press %d %08x\n", e.Button, buttonsdown)
+	defer func(){
+		buttonsdown |= 1<<uint(e.Button)
+	}()
 	switch e.Button {
 	case 1:
-		w.Selectq = w.Org + w.IndexOf(pt(e))
-		w.Sweep = true
-		w.Select(pt(e), w, w.Upload)
-		w.Sweep = false
+		if down(1){
+			println("impossible condition")
+		}
+		t := time.Now()
+		dt := t.Sub(w.Lastclick)
+		w.Selectq = w.Org + w.IndexOf(Pt(e))
+		w.Lastclick = t
+		if dt < 250*time.Millisecond && w.Q0 == w.Q1 && w.Q0 == w.Selectq{
+			Expand(w, w.Selectq)
+		} else {
+			w.Sweep = true
+			w.Select(Pt(e), w, w.Upload)
+			w.Sweep = false
+		}
 		w.Q0, w.Q1 = w.Org+w.P0, w.Org+w.P1
 		w.Selectq = w.Q0
 		w.Redraw()
 	case 2:
 		if down(1) {
+			noselect=true
 			snarf(w, wtag, e)
 		}
 	case 3:
 		if down(1){
+			noselect=true
 			paste(w, wtag, e)
 		}
 	}
+}
+
+func ones(n int) (c int){
+	for n != 0{
+		n &= (n-1)
+		c++
+	}
+	return c
 }
 
 func down(but uint) bool{
@@ -101,10 +126,28 @@ func snarf(w, wtag *win.Win, e mouse.Event) {
 	w.Send(paint.Event{})
 }
 
+func region(q0, q1, x int64) int{
+	if x < q0{
+		return -1
+	}
+	if x > q1{
+		return 1
+	}
+	return 0
+}
+
+func whatsdown(){
+	fmt.Printf("down: %08x\n", buttonsdown)
+}
+
 func release(w, wtag *win.Win, e mouse.Event) {
-	fmt.Printf("release %d %08x", e.Button, buttonsdown)
+	 func(){fmt.Printf("release (enter) %d %08x\n", e.Button, buttonsdown)}()
+	defer func(){fmt.Printf("release (leave) %d %08x\n", e.Button, buttonsdown)}()
 	defer func(){
 			buttonsdown &^= 1<<uint(e.Button)
+			if buttonsdown == 0{
+				noselect=false
+			}
 	}()
 	if e.Direction != mouse.DirRelease {
 		return
@@ -112,31 +155,65 @@ func release(w, wtag *win.Win, e mouse.Event) {
 	if e.Button == 1 || down(1) {
 		return
 	}
-	w.Selectq = w.Org + w.IndexOf(pt(e))
-	Expand(w, w.Selectq)
+
+	whatsdown()
+
+	w.Selectq = w.Org + w.IndexOf(Pt(e))
+	if region(w.Q0, w.Q1, w.Selectq) != 0{
+		Expand(w, w.Selectq)
+	}
 	switch e.Button {
 	case 1:
 		return
 	case 2:
-		x := w.Rdsel()
-		switch string(x) {
-		case "Put":
-			if wtag == nil {
-				panic("window has no tag")
+		x := strings.TrimSpace(string(w.Rdsel()))
+		switch {
+		case strings.HasPrefix(x, "Edit"):
+			if x == "Edit"{
+				log.Printf("Edit: empty command\n")
+				break
 			}
-			name, err := bufio.NewReader(bytes.NewReader(wtag.Bytes())).ReadString('\t')
-			name = strings.TrimSpace(name)
-			if err != nil {
-				log.Printf("save: err: %s\n", err)
-			}
-			writefile(name, w.Bytes())
+			w.SendFirst(cmdparse(x[4:]))
 		default:
-			println("Unknown command:", string(x))
+			w.SendFirst(x)
 		}
 	case 3:
+		//w.SendFirst(cmdparse(fmt.Sprintf("/%s/", w.Rdsel())))
+		//break
 			q0, q1 := Next(w.Bytes(), w.Q0, w.Q1)
 			Select(w, q0, q1)
 			moveMouse(w.PtOfChar(w.P0).Add(w.Sp))
 	}
 	w.Redraw()
+}
+
+func filename(wtag *win.Win) (string, error){
+	if wtag == nil {
+		return "", fmt.Errorf("window has no tag")
+	}
+	name, err := bufio.NewReader(bytes.NewReader(wtag.Bytes())).ReadString('\t')
+	if err != nil{
+		return "", err
+	}
+	return strings.TrimSpace(name), nil
+}
+
+func Get(wtag, w *win.Win) (err error){
+	name, err := filename(wtag)
+	if err != nil{
+		return err
+	}
+	w.Delete(0, w.Nr)
+	w.Insert(readfile(name), 0)
+	return nil
+}
+
+func Put(wtag, w *win.Win) (err error){
+	log.Println("Put")
+	name, err := filename(wtag)
+	if err != nil {
+		return err
+	}
+	writefile(name, w.Bytes())
+	return nil
 }
