@@ -1,29 +1,32 @@
 package main
+
 // Put
-import(
+import (
 	"fmt"
 	"strings"
 	"unicode"
 	"unicode/utf8"
 )
 
-type item struct{
-	kind Kind
+type item struct {
+	kind  Kind
 	value string
 }
+
 func (i item) String() string {
 	return fmt.Sprintf("%s %s", i.kind, i.value)
 }
 
-const MaxBytes = 1<<63-1
+const MaxBytes = 1<<63 - 1
 
-func max() string{
+func max() string {
 	return fmt.Sprintf("%v", MaxBytes)
 }
 
 type Kind int
-const(
-	kindOp    Kind = iota
+
+const (
+	kindOp Kind = iota
 	kindString
 	kindSlash
 	kindQuest
@@ -42,40 +45,40 @@ const(
 	kindCmd
 	kindArg
 )
-const(
-	eof = '\x00'
+const (
+	eof   = '\x00'
 	slash = '/'
 	quest = '?'
 	comma = ','
-	plus = "+"
-	dot = '.'
+	plus  = "+"
+	dot   = '.'
 	colon = ':'
-	semi = ';'
-	hash = '#'
+	semi  = ';'
+	hash  = '#'
 )
 
 type statefn func(*lexer) statefn
 
 type lexer struct {
-	name string
-	input	string
-	start int
-	pos int
-	width int
-	items chan item
+	name   string
+	input  string
+	start  int
+	pos    int
+	width  int
+	items  chan item
 	lastop item
-	first bool
+	first  bool
 }
 
 func lex(name, input string) (*lexer, chan item) {
 	l := &lexer{
-		name: name,
-		input: input,
-		items: make(chan item),
+		name:   name,
+		input:  input,
+		items:  make(chan item),
 		lastop: item{kindOp, "+"},
-		first: true,
+		first:  true,
 	}
-	go l.run()	// run state machine
+	go l.run() // run state machine
 	return l, l.items
 }
 
@@ -100,19 +103,19 @@ func (l *lexer) acceptRun(valid string) {
 	l.backup()
 }
 
-func (l *lexer) acceptUntil(delim string){
+func (l *lexer) acceptUntil(delim string) {
 	lim := 8192
 	i := 0
 	for strings.IndexRune(delim, l.next()) < 0 {
 		i++
-		if i > lim{
+		if i > lim {
 			l.errorf("missing terminating char %q: %q\n", delim, l)
 			l.ignore()
 			l.emit(kindEof)
 			return
 		}
 	}
-	l.backup()	
+	l.backup()
 }
 
 func (l *lexer) backup() {
@@ -124,7 +127,7 @@ func (l *lexer) emit(t Kind) {
 	l.start = l.pos
 }
 
-func (l *lexer) inject(it item){
+func (l *lexer) inject(it item) {
 	l.items <- it
 }
 
@@ -148,7 +151,7 @@ func (l *lexer) peek() rune {
 	return r
 }
 
-func (l *lexer) String() string{
+func (l *lexer) String() string {
 	return string(l.input[l.start:l.pos])
 }
 
@@ -163,16 +166,16 @@ func ignoreSpaces(l *lexer) {
 	}
 }
 
-const(
+const (
 	Ralpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	Rdigit = "0123456789"
-	Rop = "+-;,"
-	Rmod = "#/?"
+	Rop    = "+-;,"
+	Rmod   = "#/?"
 )
 
-func lexAny(l *lexer) statefn{
+func lexAny(l *lexer) statefn {
 	ignoreSpaces(l)
-	if l.accept(Rdigit+Rop+Rmod){
+	if l.accept(Rdigit + Rop + Rmod) {
 		l.backup()
 		return lexAddr
 	}
@@ -180,23 +183,22 @@ func lexAny(l *lexer) statefn{
 	return lexCmd
 }
 
-
-func lexAddr(l *lexer) statefn{
+func lexAddr(l *lexer) statefn {
 	ignoreSpaces(l)
-	switch l.peek(){
+	switch l.peek() {
 	case eof:
 		l.next()
 		l.emit(kindEof)
 		return nil
 	case ',', ';':
 		// LHS is empty so use #0
-		if l.first{
+		if l.first {
 			l.inject(item{kindByteOffset, "0"})
 			l.first = false
 		}
 		return lexOp
 	case '+', '-':
-		if l.first{
+		if l.first {
 			l.first = false
 		}
 		l.accept("+-")
@@ -212,33 +214,33 @@ func lexAddr(l *lexer) statefn{
 		l.accept("#")
 		l.ignore()
 		ignoreSpaces(l)
-		if !l.accept(Rdigit){
+		if !l.accept(Rdigit) {
 			return l.errorf("non-numeric offset")
 		}
 		l.acceptRun(Rdigit)
 		l.emit(kindByteOffset)
 		return lexOp
 	default:
-		if l.accept(Rdigit){
+		if l.accept(Rdigit) {
 			l.acceptRun(Rdigit)
 			l.emit(kindLineOffset)
 			return lexOp
-		}		
+		}
 	}
 	return lexCmd
 }
 
-func lexCmd(l *lexer) statefn{
+func lexCmd(l *lexer) statefn {
 	ignoreSpaces(l)
-	if l.peek() == eof{
+	if l.peek() == eof {
 		l.emit(kindEof)
 		return nil
 	}
-	if !l.accept(Ralpha){
+	if !l.accept(Ralpha) {
 		return l.errorf("bad command")
 	}
 	l.emit(kindCmd)
-	switch l.peek(){
+	switch l.peek() {
 	case eof:
 		l.emit(kindEof)
 		return nil
@@ -247,9 +249,9 @@ func lexCmd(l *lexer) statefn{
 	}
 }
 
-func lexOp(l *lexer) statefn{
+func lexOp(l *lexer) statefn {
 	ignoreSpaces(l)
-	if l.peek() == eof{
+	if l.peek() == eof {
 		l.emit(kindEof)
 		return nil
 	}
@@ -257,10 +259,10 @@ func lexOp(l *lexer) statefn{
 	if l.accept(Rop) {
 		op = l.String()
 		l.emit(kindOp)
-	} 
+	}
 	ignoreSpaces(l)
-	if l.accept(Rdigit+Rmod) {
-		if op == ""{
+	if l.accept(Rdigit + Rmod) {
+		if op == "" {
 			l.inject(l.lastop)
 		}
 		l.backup()
@@ -273,31 +275,31 @@ func lexOp(l *lexer) statefn{
 	return lexAddr
 }
 
-func lexArg(l *lexer) statefn{
+func lexArg(l *lexer) statefn {
 	r := string(l.next())
 	l.ignore()
 	l.acceptUntil(r)
 	l.emit(kindArg)
-	if !l.accept(string(r)){
+	if !l.accept(string(r)) {
 		return l.errorf("bad delimiter")
 	}
 	l.ignore()
 	return lexCmd
 }
 
-func lexRegexp(l *lexer) statefn{
+func lexRegexp(l *lexer) statefn {
 	r := l.next()
-	if r != '?' && r != '/'{
+	if r != '?' && r != '/' {
 		return l.errorf("bad regexp delimiter: %q", l)
 	}
 	l.ignore()
 	l.acceptUntil(string(rune(r)))
-	if r == '?'{
+	if r == '?' {
 		l.emit(kindRegexpBack)
 	} else {
 		l.emit(kindRegexp)
 	}
-	if !l.accept(string(rune(r))){
+	if !l.accept(string(rune(r))) {
 		return l.errorf("bad regexp terminator: %q", l)
 	}
 	l.ignore()
@@ -305,7 +307,7 @@ func lexRegexp(l *lexer) statefn{
 }
 
 func (l *lexer) errorf(format string, args ...interface{}) statefn {
-	l.items <- item {
+	l.items <- item{
 		kindErr,
 		fmt.Sprintf(format, args...),
 	}

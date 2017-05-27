@@ -4,19 +4,9 @@ import (
 	"sync"
 	//	"github.com/as/clip"
 	//
+	"bufio"
 	"bytes"
 	"fmt"
-	"image"
-	"image/color"
-	"image/draw"
-	"io"
-	"io/ioutil"
-	"log"
-	"os"
-	"strings"
-	"time"
-	"bufio"
-
 	"github.com/as/clip"
 	"github.com/as/cursor"
 	"github.com/as/frame"
@@ -30,6 +20,15 @@ import (
 	"golang.org/x/mobile/event/mouse"
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
+	"image"
+	"image/color"
+	"image/draw"
+	"io"
+	"io/ioutil"
+	"log"
+	"os"
+	"strings"
+	"time"
 )
 
 // amink 5
@@ -38,15 +37,22 @@ import (
 
 type Action []func()
 
-func (in *Invertable) Commit(){
+func (in *Invertable) Commit() {
 }
 
-type Invertable struct{
+type Scroller struct {
+	*win.Win
+	bar     draw.Image
+	scrollr image.Rectangle
+}
+
+type Invertable struct {
 	*win.Win
 	undo []func()
 	do   []func()
-	p int
+	p    int
 }
+
 func (in *Invertable) Reset() {
 	in.undo = nil
 	in.do = nil
@@ -54,41 +60,41 @@ func (in *Invertable) Reset() {
 	return
 }
 
-func (in *Invertable) Insert(p []byte, at int64) int64{
+func (in *Invertable) Insert(p []byte, at int64) int64 {
 	d0, d1 := at, at+int64(len(p))
 	fmt.Printf("Delete(%d, %d)\n", d0, d1)
 	in.do = in.do[:in.p]
 	in.undo = in.undo[:in.p]
-	in.do   = append(in.do,   func(){ in.Win.Insert(p, at)})
-	in.undo = append(in.undo, func(){ in.Win.Delete(d0, d1)})
+	in.do = append(in.do, func() { in.Win.Insert(p, at) })
+	in.undo = append(in.undo, func() { in.Win.Delete(d0, d1) })
 	in.p++
 	in.do[in.p-1]()
 	return 1
 }
-func (in *Invertable) Delete(q0, q1 int64){
+func (in *Invertable) Delete(q0, q1 int64) {
 	data := append([]byte{}, in.Win.Bytes()[q0:q1]...)
 
 	in.do = in.do[:in.p]
 	in.undo = in.undo[:in.p]
-	in.do   = append(in.do,   func(){ in.Win.Delete(q0, q1)})
-	in.undo = append(in.undo, func(){ in.Win.Insert(data, q0)})
+	in.do = append(in.do, func() { in.Win.Delete(q0, q1) })
+	in.undo = append(in.undo, func() { in.Win.Insert(data, q0) })
 	in.p++
 	fmt.Printf("Insert(%q, %d)\n", data, q0)
 	in.do[in.p-1]()
 	//in.Win.Delete(q0, q1)
 }
-func (in *Invertable) Undo(){
+func (in *Invertable) Undo() {
 	l := len(in.undo)
-	if l == 0{
+	if l == 0 {
 		return
 	}
 	in.p--
 	in.undo[in.p]()
-	if in.p < 0{
+	if in.p < 0 {
 		in.p = 0
 	}
 }
-func (in *Invertable) Redo(){
+func (in *Invertable) Redo() {
 	l := len(in.undo)
 	if l == 0 || in.p >= l {
 		return
@@ -96,30 +102,24 @@ func (in *Invertable) Redo(){
 	in.p++
 	in.do[in.p-1]()
 }
-func (in *Invertable) SetSelect(q0, q1 int64){
+func (in *Invertable) SetSelect(q0, q1 int64) {
 	w := in.Win
 	w.SetSelect(q0, q1)
-	if Visible(w, q0, q1){
+	if Visible(w, q0, q1) {
 		return
 	}
 	org := w.BackNL(q0, 2)
 	w.SetOrigin(org, true)
 	w.P0, w.P1 = q0-w.Org, q1-w.Org
 }
-
-// Put
-//ins("a", 0)	del(0,1)
-//ins("b", 1)	del(1,2)
-//ins("c", 2) del(2,3)
-
 var (
 	wg      sync.WaitGroup
-	winSize = image.Pt(1400,1400)
-	pad = image.Pt(5,5)
+	winSize = image.Pt(1000, 1000)
+	pad     = image.Pt(25, 5)
 	ClipBuf = make([]byte, 8192)
 	Clip    *clip.Clip
 
-	fsize = 15
+	fsize    = 11
 	ticking  = false
 	scrolldy = 0
 )
@@ -186,27 +186,192 @@ func (c *Cell) Dirty() bool {
 	return c.dirty
 }
 
-type Mouse struct{
-	down int
-	mask int
+type Mouse struct {
+	down      int
+	mask      int
 	lastclick time.Time
 }
-func (m *Mouse) Clear(){
+
+func (m *Mouse) Clear() {
 	m.down = 0
 	m.mask = 0
 }
+
 // Put
 var (
 	buttonsdown = 0
-	noselect bool
+	noselect    bool
+	lastclickpt image.Point
+)
+var (
+	wtag *Invertable
 )
 
-func main() {
-	type scrollEvent struct {
-		dy        int
-		wind      *Invertable
-		flushwith func(e interface{})
+type Plane interface {
+	Loc() image.Rectangle
+}
+
+func (in *Invertable) Loc() image.Rectangle {
+	sp, size := in.Win.Sp, in.Win.Size()
+	return image.Rectangle{sp, sp.Add(size)}
+}
+
+func active(e mouse.Event, act Plane, list ...Plane) interface{} {
+	if buttonsdown != 0 {
+		return act
 	}
+	pt := image.Pt(int(e.X), int(e.Y))
+	if act != nil {
+		pt = pt.Add(act.Loc().Min)
+		list = append([]Plane{act}, list...)
+	}
+	for i, w := range list {
+		r := w.Loc()
+		if pt.In(r) {
+			return list[i]
+		}
+	}
+	return act
+}
+
+func scroll(act *Invertable, e mouse.Event) {
+	if e.Button == mouse.ButtonWheelUp || e.Button == mouse.ButtonWheelDown {
+		dy := 1
+		if e.Button == mouse.ButtonWheelUp {
+			dy = -1
+		}
+		if !ticking {
+			act := act
+			act.SendFirst(scrollEvent{dy: dy, wind: act, flushwith: act.SendFirst})
+			ticking = true
+			time.AfterFunc(time.Millisecond*15, func() {
+				ticking = false
+				act.SendFirst(scrollEvent{dy: scrolldy, wind: act, flushwith: act.SendFirst})
+				scrolldy = 0
+			})
+		} else {
+			scrolldy += dy
+		}
+	}
+}
+
+func mousein(act *Invertable, e mouse.Event) {
+	switch e.Direction {
+	case mouse.DirPress:
+		lastclickpt = Pt(e)
+		press(act.Win, wtag.Win, e)
+		act.Send(paint.Event{})
+	case mouse.DirRelease:
+		lastclickpt = image.Pt(-5, -5)
+		release(act.Win, wtag.Win, e)
+		act.Send(paint.Event{})
+	case mouse.DirNone:
+		if !noselect && down(1) && ones(buttonsdown) == 1 {
+			r := image.Rect(0, 0, 5, 5).Add(lastclickpt)
+			pt := Pt(e)
+			if pt.In(r) {
+				return
+			}
+			// Double click happened so select function
+			// never fired.
+			act.Sweep = true
+			act.Select(lastclickpt, act, act.Upload)
+			act.Sweep = false
+			act.Q0, act.Q1 = act.Org+act.P0, act.Org+act.P1
+			act.Selectq = act.Q0
+			act.Redraw()
+		}
+	}
+}
+
+func keyboard(act *Invertable, e key.Event) {
+	if e.Direction == key.DirRelease {
+		return
+	}
+	if e.Rune == '\r' {
+		e.Rune = '\n'
+	}
+	q0, q1 := act.Q0, act.Q1
+	switch e.Code {
+	case key.CodeEqualSign, key.CodeHyphenMinus:
+		if e.Modifiers == key.ModControl {
+			if key.CodeHyphenMinus == e.Code {
+				fsize--
+			} else {
+				fsize++
+			}
+			act.Reset()
+			act.SetFont(mkfont(fsize))
+			act.Fill()
+			act.Send(paint.Event{})
+			return
+		}
+	case key.CodeUpArrow, key.CodePageUp, key.CodeDownArrow, key.CodePageDown:
+		org := act.Org
+		n := act.MaxLine() / 7
+		if e.Code == key.CodePageUp || e.Code == key.CodePageDown {
+			n *= 10
+		}
+		if e.Code == key.CodeUpArrow || e.Code == key.CodePageUp {
+			org = act.BackNL(org, n)
+		}
+		if e.Code == key.CodeDownArrow || e.Code == key.CodePageDown {
+			r := act.Bounds()
+			org += act.IndexOf(image.Pt(r.Min.X, r.Min.Y+n*act.Frame.Dy()))
+		}
+		act.SetOrigin(org, true)
+		act.Send(paint.Event{})
+		return
+	case key.CodeLeftArrow, key.CodeRightArrow:
+		if e.Code == key.CodeLeftArrow {
+			if e.Modifiers&key.ModShift == 0 {
+				q1--
+			}
+			q0--
+		} else {
+			if e.Modifiers&key.ModShift == 0 {
+				q0++
+			}
+			q1++
+		}
+		act.SetSelect(q0, q1)
+		act.Send(paint.Event{})
+		return
+	}
+	switch e.Rune {
+	case -1:
+		return
+	case '\x08', '\x17':
+		if q0 == 0 && q1 == 0 {
+			return
+		}
+		if e.Rune == '\x08' {
+			q0--
+		} else {
+			if isany(act.Bytes()[q0], AlphaNum) {
+				q0 = findback(act.Bytes(), q0, AlphaNum)
+			}
+		}
+		act.Delete(q0, q1)
+		act.Send(paint.Event{})
+		return
+	}
+	if q0 != q1 {
+		act.Delete(q0, q1)
+	}
+	act.Insert([]byte(string(e.Rune)), q1)
+	q1++
+	act.SetSelect(q1, q1)
+	act.Send(paint.Event{})
+}
+
+type scrollEvent struct {
+	dy        int
+	wind      *Invertable
+	flushwith func(e interface{})
+}
+
+func main() {
 	driver.Main(func(src screen.Screen) {
 		wind, _ := src.NewWindow(&screen.NewWindowOptions{winSize.X, winSize.Y})
 		wind.Send(paint.Event{})
@@ -219,7 +384,7 @@ func main() {
 			filename = strings.Join(os.Args[1:], " ")
 			x := strings.Index(filename, ":")
 			fmt.Println(x)
-			if x > 0{
+			if x > 0 {
 				lineexpr = filename[x+1:]
 				filename = filename[:x]
 			}
@@ -229,14 +394,14 @@ func main() {
 		// Make the main tag
 		tagY := fsize * 2
 		cols.Back = Cyan
-		wmain := &Invertable{win.New(src, ft, wind, image.ZP, image.Pt(winSize.X, tagY), pad, cols), nil,nil, 0}
+		wmain := &Invertable{win.New(src, ft, wind, image.ZP, image.Pt(winSize.X, tagY), pad, cols), nil, nil, 0}
 
 		// Make tag
-		wtag := &Invertable{win.New(src, ft, wind, image.Pt(0, tagY), image.Pt(winSize.X, tagY), pad, cols), nil,nil, 0}
+		wtag = &Invertable{win.New(src, ft, wind, image.Pt(0, tagY), image.Pt(winSize.X, tagY), pad, cols), nil, nil, 0}
 
 		// Make window
 		cols.Back = Yellow
-		w := &Invertable{win.New(src, ft, wind, image.Pt(0, tagY*2), winSize.Sub(image.Pt(0, tagY*2)), pad, cols), nil,nil, 0}
+		w := &Invertable{win.New(src, ft, wind, image.Pt(0, tagY*2), winSize.Sub(image.Pt(0, tagY*2)), pad, cols), nil, nil, 0}
 
 		wtag.InsertString(filename+"\tPut Del Exit", 0)
 		wtag.Redraw()
@@ -245,7 +410,7 @@ func main() {
 			s := readfile(filename)
 			fmt.Printf("files size is %d\n", len(s))
 			w.Insert(s, w.Q1)
-			if lineexpr != ""{
+			if lineexpr != "" {
 				w.Send(cmdparse("#0"))
 				w.Send(cmdparse(lineexpr))
 			}
@@ -255,15 +420,14 @@ func main() {
 		// Put
 		act := w
 		shifty := 0
-		lastclickpt := image.ZP
-		go func(){
-			 sc := bufio.NewScanner(os.Stdin)
+		go func() {
+			sc := bufio.NewScanner(os.Stdin)
 			for sc.Scan() {
-				if x := sc.Text(); x == "u" || x == "r"{
+				if x := sc.Text(); x == "u" || x == "r" {
 					act.SendFirst(x)
 					continue
 				}
-				act.SendFirst(cmdparse(sc.Text()))	
+				act.SendFirst(cmdparse(sc.Text()))
 			}
 		}()
 		for {
@@ -274,180 +438,33 @@ func main() {
 					act.Redo()
 				} else if e == "u" {
 					act.Undo()
-				} else if e == "Put"{
+				} else if e == "Put" {
 					Put(wtag.Win, w.Win)
-				} else if e == "Get"{
+				} else if e == "Get" {
 					Get(wtag.Win, w.Win)
 				}
 				act.Send(paint.Event{})
 			case *command:
 				fmt.Printf("command %#v\n", e)
-				if e == nil{
+				if e == nil {
 					panic("command is nil")
 				}
-				if e.fn != nil{
-					e.fn(w)	// Always execute on body for now
+				if e.fn != nil {
+					e.fn(w) // Always execute on body for now
 				}
 				act.Send(paint.Event{})
 			case scrollEvent:
 				e.wind.FrameScroll(e.dy)
 				e.flushwith(paint.Event{})
 			case mouse.Event:
-				pt := image.Pt(int(e.X), int(e.Y))
-				if (e.Direction == mouse.DirNone || e.Direction == mouse.DirPress) && buttonsdown == 0 {
-					apt := act.Sp.Add(pt)
-					if !apt.In(image.Rectangle{act.Sp, act.Sp.Add(act.Size())}) {
-						list := []*Invertable{wmain, wtag, w}
-						for i, w := range list {
-							r := image.Rectangle{w.Sp, w.Sp.Add(w.Size())}
-							if apt.In(r) {
-								if list[i] != act {
-									fmt.Printf("active %d [because %s is heavier than %s]\n", i, pt, r)
-									act = list[i]
-									break
-								}
-							}
-						}
-					}
-				}
-				// Put
-				if e.Button == mouse.ButtonWheelUp || e.Button == mouse.ButtonWheelDown {
-					dy := 1
-					if e.Button == mouse.ButtonWheelUp {
-						dy = -1
-					}
-					if !ticking {
-						act := act
-						act.SendFirst(scrollEvent{dy: dy, wind: act, flushwith: act.SendFirst})
-						ticking = true
-						time.AfterFunc(time.Millisecond*15, func() {
-							ticking = false
-		act.SendFirst(scrollEvent{dy: scrolldy, wind: act, flushwith: act.SendFirst})
-							shifty = scrolldy
-							scrolldy = 0
-						})
-					} else {
-						scrolldy += dy
-					}
-					continue
-				}
-				switch e.Direction {
-				case mouse.DirPress:
-					lastclickpt = Pt(e)
-					press(act.Win, wtag.Win, e)
-					act.Send(paint.Event{})
-				case mouse.DirRelease:
-					lastclickpt = image.Pt(-5,-5)
-					release(act.Win, wtag.Win, e)
-					act.Send(paint.Event{})
-				case mouse.DirNone:
-					if !noselect && down(1) && ones(buttonsdown) == 1 {
-						fmt.Printf("continue selection")
-whatsdown()
-						r := image.Rect(0,0,5,5).Add(lastclickpt)
-						pt := Pt(e)
-						if pt.In(r){
-							continue
-						}
-						// Double click happened so select function
-						// never fired. 
-						act.Sweep = true
-						act.Select(lastclickpt,w,w.Upload)
-						act.Sweep = false
-						act.Q0, w.Q1 = w.Org+w.P0, w.Org+w.P1
-						act.Selectq = w.Q0
-						act.Redraw()
-					}
+				act = active(e, act, w, wtag, wmain).(*Invertable)
+				if e.Button.IsWheel() {
+					scroll(act, e)
+				} else {
+					mousein(act, e)
 				}
 			case key.Event:
-				if e.Direction == key.DirRelease {
-					continue
-				}
-				if e.Code == key.CodeEqualSign || e.Code == key.CodeHyphenMinus {
-					if e.Modifiers == key.ModControl {
-						if key.CodeHyphenMinus == e.Code {
-							fsize--
-						} else {
-							fsize++
-						}
-						act.Reset()
-						act.SetFont(mkfont(fsize))
-						act.Fill()
-						act.Send(paint.Event{})
-						continue
-					}
-				}
-				if e.Rune == '\r' {
-					e.Rune = '\n'
-				}
-				if e.Code == key.CodeLeftArrow {
-					if e.Modifiers&key.ModShift == 0 {
-						act.Q1--
-					}
-					act.Q0--
-					act.Redraw()
-					act.Send(paint.Event{})
-					continue
-				}
-				if e.Code == key.CodeUpArrow || e.Code == key.CodePageUp || e.Code == key.CodeDownArrow || e.Code == key.CodePageDown {
-					q0 := w.Org					
-					n := act.MaxLine()/7
-					if e.Code == key.CodePageUp || e.Code == key.CodePageDown{
-						n*=10
-					}
-					if e.Code == key.CodeUpArrow || e.Code == key.CodePageUp {					
-						q0 = act.BackNL(w.Org, n)
-					}
-// Put
-					if e.Code == key.CodeDownArrow || e.Code == key.CodePageDown {
-						r := w.Bounds()
-						q0 += w.IndexOf(image.Pt(r.Min.X, r.Min.Y+n*w.Frame.Dy()))
-					}
-					
-					act.SetOrigin(q0, true)
-					act.Send(paint.Event{})
-					continue
-				}
-				if e.Code == key.CodeRightArrow {
-					if e.Modifiers&key.ModShift == 0 {
-						act.Q0++
-					}
-					act.Q1++
-					act.Redraw()
-					act.Send(paint.Event{})
-					continue
-				}
-				if e.Rune == '\x17' {
-					fmt.Printf("%d\n", e.Rune)
-					si := act.Q0 - 1
-					if isany(act.Bytes()[si], AlphaNum) {
-						si = findback(act.Bytes(), act.Q0, AlphaNum)
-					}
-					act.Delete(si, act.Q1)
-					act.Send(paint.Event{})
-					continue
-				}
-				if e.Rune == '\x08' {
-					si := act.Q0
-					ei := act.Q1
-					if si == ei && si != 0 {
-						si--
-					}
-					fmt.Printf("si,ei=%d,%d\n", si, ei)
-					act.Delete(si, ei)
-					act.Send(paint.Event{})
-					continue
-				}
-				if e.Rune == -1 {
-					continue
-				}
-				if w.Q0 != w.Q1 {
-					act.Delete(act.Q0, act.Q1)
-				}
-				fmt.Printf("outside %p: w.Nr=%d\n", act, act.Nr)
-				act.Insert([]byte(string(e.Rune)), act.Q1)
-				act.Q0 = act.Q1
-				act.Send(paint.Event{})
+				keyboard(act, e)
 			case size.Event:
 				pt := image.Pt(e.WidthPx, e.HeightPx)
 				if pt.X < fsize || pt.Y < fsize {
@@ -457,11 +474,28 @@ whatsdown()
 				winSize = pt
 				wmain.Resize(image.Pt(winSize.X, tagY))
 				wtag.Resize(image.Pt(winSize.X, tagY))
-				//w.Resize(winSize.Sub(image.Pt(0, tagY*2)))
+				w.Resize(winSize.Sub(image.Pt(0, tagY*2)))
 				act.Send(paint.Event{})
 			case paint.Event:
-				wind.Upload(wmain.Sp, wmain.Buffer(), wmain.Buffer().Bounds())
-				wind.Upload(wtag.Sp, wtag.Buffer(), wtag.Buffer().Bounds())
+				{
+					drawBorder(wmain.Buffer().RGBA(), wmain.Buffer().Bounds(), LtGray, image.ZP, 1)
+					wind.Upload(wmain.Sp, wmain.Buffer(), wmain.Buffer().Bounds())
+					drawBorder(wtag.Buffer().RGBA(), wtag.Buffer().Bounds(), LtGray, image.ZP, 1)
+					wind.Upload(wtag.Sp, wtag.Buffer(), wtag.Buffer().Bounds())
+					w := w.Win
+					pad := pad.Sub(image.Pt(5+3, 0))
+					scrollr := image.Rect(w.Sp.X, 0, w.Sp.X+pad.X, w.Sp.Y+w.Buffer().Bounds().Max.Y)
+					maxy := w.Buffer().Bounds().Max.Y
+					rat0 := float64(w.Org) / float64(w.Nr)          // % scrolled
+					rat1 := float64(w.Org+w.Nchars) / float64(w.Nr) // % covered by screen
+					spY := int(float64(w.Sp.Y+maxy) * rat0)
+					epY := int(float64(w.Sp.Y+maxy) * rat1)
+					bar := image.Rect(w.Sp.X, spY, w.Sp.X+pad.X, epY)
+					draw.Draw(w.Buffer().RGBA(), scrollr, X, image.ZP, draw.Src)
+					draw.Draw(w.Buffer().RGBA(), bar, LtGray, image.ZP, draw.Src)
+					drawBorder(w.Buffer().RGBA(), w.Buffer().Bounds(), LtGray, image.ZP, 1)
+					drawBorder(w.Buffer().RGBA(), scrollr, LtGray, image.ZP, 1)
+				}
 				wind.Upload(w.Sp, w.Buffer(), w.Buffer().Bounds())
 				wind.Publish()
 				w.Flushcache()
@@ -537,6 +571,9 @@ var (
 	Cyan   = image.NewUniform(color.RGBA{234, 255, 255, 255})
 	White  = image.NewUniform(color.RGBA{255, 255, 255, 255})
 	Yellow = image.NewUniform(color.RGBA{255, 255, 224, 255})
+	X      = image.NewUniform(color.RGBA{255 - 32, 255 - 32, 224 - 32, 255})
+
+	LtGray = image.NewUniform(color.RGBA{66 * 2, 66 * 2, 66*2 + 35, 255})
 	Gray   = image.NewUniform(color.RGBA{66, 66, 66, 255})
 	Mauve  = image.NewUniform(color.RGBA{0x99, 0x99, 0xDD, 255})
 )

@@ -1,11 +1,6 @@
 package win
 
 /*
-	Put
-	optimization for SetSelect broken
-	hold mouse and move up - broken (cache upload)
-	TODO - print statements in set select, why is selection not working until mouse let go?
-	Delete	SetSe
  */
 
 import (
@@ -77,24 +72,29 @@ func New(scr screen.Screen, ft frame.Font, events screen.Window,
 	return w
 }
 
-/*
-func (w *Win) SetFont(ft frame.Font) {
-	b := w.Bytes()
-	w.Clear(true)
-	w.Blank()
-	w.Frame = frame.New(w.Frame.Bounds(), ft, w.b.RGBA(), w.Color)
-	w.Insert(b, 0)
+func (w *Win) Resize(size image.Point) {
+	return
+	b, err := w.scr.NewBuffer(size)
+	if err != nil {
+		panic(err)
+	}
+	w.size = size
+	w.b = b
+	r := image.Rectangle{w.pad, w.size}.Inset(1)
+	w.Frame = frame.New(r, w.Frame.Font, w.b.RGBA(), w.Frame.Color)
+	w.Frame.Scroll = w.FrameScroll
+	w.Fill()
+	w.SetSelect(w.Q0, w.Q1)
+	w.Mark()
 	w.Redraw()
 }
-*/
 
 func (w *Win) SetFont(ft frame.Font){
 	P0, P1 := w.Frame.P0, w.Frame.P1
 	r := image.Rectangle{w.pad, w.size}.Inset(1)
 	w.Frame = frame.New(r, ft, w.b.RGBA(), w.Frame.Color)
 	w.Frame.Scroll = w.FrameScroll
-//	w.Blank()
-	w.Frame.Insert(w.R[w.Org:w.Nchars], 0)
+	w.Fill()
 	w.P0, w.P1 = P0, P1
 	w.Mark()
 	w.Redraw()
@@ -152,13 +152,9 @@ func (w *Win) FrameScroll(dl int) {
 		q0 = w.BackNL(w.Org, -dl)
 		if w.Sweep{
 			if w.Selectq > w.Org+w.P0 {
-				//fmt.Printf("a\n")
 				 x := w.Selectq
-				//x := w.Org+w.P1
 				w.SetSelect(w.Org+w.P0, x)
 			} else {
-				//fmt.Printf("b %d:%d\n", w.Selectq, w.Org+w.P1)	// was w.P0 for both
-				// x := w.Selectq
 				x := w.Org+w.P0
 				w.SetSelect(x, w.Org+w.P1)
 			}
@@ -177,7 +173,6 @@ func (w *Win) FrameScroll(dl int) {
 			}
 		}
 	}
-	//fmt.Printf("fs3 q0 = %d\n", q0)
 	if w.Sweep {
 		w.flush()
 	}
@@ -253,12 +248,10 @@ func (w *Win) SetOrigin(org int64, exact bool) {
 			org++
 		}
 	}
-	//fmt.Printf("SetOrigin: found %d %v\n", org, exact) Put
 	a := org - w.Org // distance to new origin
 	fix := false
 	if a >= 0 && a < w.Nchars {
 		// a bytes to the right; intersects the frame
-		// fmt.Printf("Delete(%d,%d)\n", 0,a)
 		w.Frame.Delete(0, a)
 		fix = true
 	} else if a < 0 && -a < w.Nchars {
@@ -269,8 +262,7 @@ func (w *Win) SetOrigin(org int64, exact bool) {
 			i, j = j, i
 		}
 		i = max(0, i)
-		j = min(w.Nr, j)
-		// fmt.Printf("-a=%d to left: w.R[%d:%d]\n", -a, i,j)				
+		j = min(w.Nr, j)			
 		w.Frame.Insert(w.R[i:j], 0)		
 	} else {
 		w.Frame.Delete(0, w.Nchars)
@@ -282,7 +274,6 @@ func (w *Win) SetOrigin(org int64, exact bool) {
 	if fix && w.P1 > w.P0 {
 		w.Drawsel(w.PtOfChar(w.P1-1), w.P1-1, w.P1, true);
 	}
-	//fmt.Printf("p[%d:%d]\n", w.P0, w.P1)
 }
 
 func (w *Win) filldebug(){
@@ -302,10 +293,7 @@ func (w *Win) Fill() {
 		if n == 0 {
 			break
 		}
-		//fmt.Printf("w.org=%d w.Nchars=%d\n", w.Org, w.Nchars)
-		//fmt.Printf("copy(rp, w.R[%d:%d] (len=%d)\n", qep, qep+n, len(w.R))
 		m := copy(rp[:], w.R[qep:qep+n])
-		//fmt.Printf("copied %q\n", rp[:m])
 		nl := w.MaxLine() - w.Line()
 		m = 0
 		i := int64(0)
@@ -319,7 +307,6 @@ func (w *Win) Fill() {
 			}
 			i++
 		}
-		//fmt.Printf("w.Frame.Insert rp[:%d-%d], %d\n", w.Nchars, i, w.Nchars)
 		w.Frame.Insert(rp[:i], w.Nchars)
 	}
 }
@@ -329,7 +316,6 @@ func (w *Win) Delete(q0, q1 int64) {
 	if n == 0 {
 		return
 	}
-	//fmt.Printf("copy(w.R[%d:], w.R[%d:%d])\n", q0, q1, w.Nr-q1)
 	copy(w.R[q0:], w.R[q1:][:w.Nr-q1])
 	w.Nr -= n
 	if q0 < w.Q0 {
@@ -357,7 +343,6 @@ func (w *Win) Delete(q0, q1 int64) {
 		} else {
 			p0 = q0 - w.Org
 		}
-		fmt.Printf("w.Frame.Delete(%d,%d)\n", p0, p1)
 		w.Frame.Delete(p0, p1)
 		w.Fill()
 	}
@@ -368,11 +353,6 @@ func (w *Win) InsertString(s string, q0 int64) int64 {
 }
 
 func (w *Win) Insert(s []byte, q0 int64) int64 {
-	// invariant r = p - origin
-	//           5 = 5 - 0
-	//           4 = 5 - 1
-	//fmt.Printf("%p: w.Nr=%d\n", w, w.Nr)
-	//fmt.Printf("%p: Insert: len(s)=%d\n", w, len(s))
 	n := int64(len(s))
 	if n == 0 {
 		return q0
@@ -391,9 +371,7 @@ func (w *Win) Insert(s []byte, q0 int64) int64 {
 		} else {
 			w.Q1 = 0
 		}
-		//fmt.Printf("%p: A w.Nr bef: %d\n", w.Nr)
 		w.Nr -= m
-		//fmt.Printf("%p: A w.Nr after: %d\n", w.Nr)
 		copy(w.R, w.R[m:][:w.Nr])
 		q0 -= m
 	}
@@ -411,10 +389,7 @@ func (w *Win) Insert(s []byte, q0 int64) int64 {
 	}
 	copy(w.R[q0+n:], w.R[q0:][:w.Nr-q0])
 	copy(w.R[q0:], s[:n])
-	//fmt.Printf("%p: B w.Nr bef: %d\n", w, w.Nr)
 	w.Nr += n
-	//fmt.Printf("%p: B w.Nr after: %d\n", w, w.Nr)
-	//fmt.Printf("w.Nr = %d\n", w.Nr)
 	if q0 <= w.Q1 {
 		w.Q1 += n
 	}
@@ -427,31 +402,15 @@ func (w *Win) Insert(s []byte, q0 int64) int64 {
 	if q0 < w.Org {
 		w.Org += n
 	} else if q0 <= w.Org+w.Nchars {
-		//fmt.Printf("w.Frame.Insert: @ %d -> %q\n", n, s)
 		n--
 		if n < 0 {
 			n++
 		}
 		w.Frame.Insert(s, q0-w.Org)
 	}
-	//	fmt.Printf("buf: %q\n", w.R)
 	return q0
 }
 
-func (w *Win) Resize(size image.Point) {
-	w2 := New(w.scr, w.Font, w.events, w.Sp, size, w.pad, w.Color)
-	bb := w.Bytes()
-	w.b.Release()
-	w.b = w2.b
-	w.Frame = w2.Frame
-	*w = *w2
-	w.Sp = w2.Sp
-	w.size = w2.size
-	w.pad = w2.pad
-	w.scr = w2.scr
-	w.Blank()
-	w.Insert(bb, 0)
-}
 
 func (w *Win) upload() {
 	w.events.Upload(w.Sp.Add(image.Pt(5,5)), w.b, w.Bounds())
@@ -460,10 +419,10 @@ func (w *Win) flush(){
 	r := w.Bounds()
 	sp := image.Pt(1,1).Add(w.Sp).Add(w.pad)
 	Ny := r.Dy()/4
-	r0 := image.Rect(r.Min.X, r.Min.Y,        r.Max.X, r.Min.Y+Ny)
-	r1 := image.Rect(r.Min.X, r.Min.Y+(Ny),   r.Max.X, r.Min.Y+Ny*2)
-	r2 := image.Rect(r.Min.X, r.Min.Y+(Ny*2), r.Max.X, r.Min.Y+Ny*3)
-	r3 := image.Rect(r.Min.X, r.Min.Y+(Ny*3), r.Max.X, r.Min.Y+Ny*4)
+	r0 := image.Rect(r.Min.X, r.Min.Y,      r.Max.X, r.Min.Y+Ny)
+	r1 := image.Rect(r.Min.X, r.Min.Y+Ny,   r.Max.X, r.Min.Y+Ny*2)
+	r2 := image.Rect(r.Min.X, r.Min.Y+Ny*2, r.Max.X, r.Min.Y+Ny*3)
+	r3 := image.Rect(r.Min.X, r.Min.Y+Ny*3, r.Max.X, r.Min.Y+Ny*4)
 	var wg sync.WaitGroup
 	wg.Add(4)
 	go func(){w.events.Upload(sp, w.b, r0); wg.Done()}()
