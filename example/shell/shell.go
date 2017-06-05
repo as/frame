@@ -37,12 +37,12 @@ import (
 
 var (
 	wg      sync.WaitGroup
-	winSize = image.Pt(1000,700)
-	pad = image.Pt(5,5)
+	winSize = image.Pt(1000, 700)
+	pad     = image.Pt(5, 5)
 	ClipBuf = make([]byte, 8192)
 	Clip    *clip.Clip
 
-	fsize = 12
+	fsize    = 12
 	ticking  = false
 	scrolldy = 0
 )
@@ -142,7 +142,7 @@ func main() {
 		w := win.New(src, ft, wind, image.Pt(0, tagY*2), winSize.Sub(image.Pt(0, tagY*2)), pad, cols)
 
 		wtag.InsertString(filename+"\tPut Del Exit", 0)
-		wtag.Redraw()
+		wtag.Refresh()
 
 		if len(os.Args) > 1 {
 			s := readfile(filename)
@@ -231,25 +231,25 @@ func main() {
 						act.Q1--
 					}
 					act.Q0--
-					act.Redraw()
+					act.Refresh()
 					act.Send(paint.Event{})
 					continue
 				}
 				if e.Code == key.CodeUpArrow || e.Code == key.CodePageUp || e.Code == key.CodeDownArrow || e.Code == key.CodePageDown {
-					q0 := w.Org					
-					n := act.MaxLine()/7
-					if e.Code == key.CodePageUp || e.Code == key.CodePageDown{
-						n*=10
+					q0 := w.Org
+					n := act.MaxLine() / 7
+					if e.Code == key.CodePageUp || e.Code == key.CodePageDown {
+						n *= 10
 					}
-					if e.Code == key.CodeUpArrow || e.Code == key.CodePageUp {					
+					if e.Code == key.CodeUpArrow || e.Code == key.CodePageUp {
 						q0 = act.BackNL(w.Org, n)
 					}
-// Put
+					// Put
 					if e.Code == key.CodeDownArrow || e.Code == key.CodePageDown {
 						r := w.Bounds()
 						q0 += w.IndexOf(image.Pt(r.Min.X, r.Min.Y+n*w.Frame.Dy()))
 					}
-					
+
 					act.SetOrigin(q0, true)
 					act.Send(paint.Event{})
 					continue
@@ -259,7 +259,7 @@ func main() {
 						act.Q0++
 					}
 					act.Q1++
-					act.Redraw()
+					act.Refresh()
 					act.Send(paint.Event{})
 					continue
 				}
@@ -293,7 +293,7 @@ func main() {
 				fmt.Printf("outside %p: w.Nr=%d\n", act, act.Nr)
 				act.Insert([]byte(string(e.Rune)), act.Q1)
 				act.Q0 = act.Q1
-				if e.Rune == '\n'{
+				if e.Rune == '\n' {
 					cmd := act.R[qi:act.Nr]
 					fmt.Printf("command: R[%d:%d] -> %q\n", qi, act.Nr, cmd)
 					qi = act.Nr

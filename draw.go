@@ -2,25 +2,40 @@ package frame
 
 import (
 	"github.com/as/frame/box"
-	
-//"fmt"
-"golang.org/x/image/math/fixed"
+
+	//"fmt"
+	"golang.org/x/image/math/fixed"
 	"image"
 	"image/color"
 	"image/draw"
 )
+
 // Put
 func (f *Frame) draw(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point) {
-	//fmt.Printf("addcache %s <- %s\n", r, sp)
-	f.Cache = append(f.Cache, r)
 	draw.Draw(dst, r, src, sp, draw.Src)
+	if len(f.Cache) == 0 {
+		f.Cache = append(f.Cache, r)
+		return
+	}
+	c := f.Cache[len(f.Cache)-1]
+	if r.Min.X == c.Max.X || r.Max.X == c.Min.X || r.Max.Y == c.Min.Y || r.Min.Y == c.Max.Y {
+		f.Cache[0] = f.Cache[0].Union(r)
+	} else {
+		c := f.Cache[0]
+		if c.Dx()*c.Dy() < r.Dx()*r.Dy() {
+			f.Cache = append([]image.Rectangle{r}, f.Cache...)
+		} else {
+			f.Cache = append(f.Cache, r)
+		}
+	}
+	//f.Cache = append(f.Cache, r)
 }
 func (f *Frame) drawover(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point) {
 	f.Cache = append(f.Cache, r)
 	draw.Draw(dst, r, src, sp, draw.Over)
 }
 func (f *Frame) tickat(pt image.Point, ticked bool) {
-	if f.tickoff || f.tick == nil || !pt.In(f.r) {
+	if f.ticked==ticked || f.tick == nil || !pt.In(f.r) {
 		return
 	}
 	pt.X--
@@ -38,30 +53,30 @@ func (f *Frame) tickat(pt image.Point, ticked bool) {
 	f.ticked = ticked
 }
 
-func (f *Frame) Redraw() {
+func (f *Frame) Refresh() {
 	cols := f.Color
-	if f.P0 == f.P1 {
+	if f.p0 == f.p1 {
 		ticked := f.ticked
 		if ticked {
-			f.tickat(f.PtOfChar(f.P0), false)
+			f.tickat(f.PointOf(f.p0), false)
 		}
-		f.drawsel(f.PtOfChar(0), 0, f.Nchars, cols.Back, cols.Text)
+		f.drawsel(f.PointOf(0), 0, f.Nchars, cols.Back, cols.Text)
 		if ticked {
-			f.tickat(f.PtOfChar(f.P0), true)
+			f.tickat(f.PointOf(f.p0), true)
 		}
 		return
 	}
-	pt := f.PtOfChar(0)
-	pt = f.drawsel(pt, 0, f.P0, cols.Back, cols.Text)
-	pt = f.drawsel(pt, f.P0, f.P1, cols.Hi.Back, cols.Hi.Text)
-	pt = f.drawsel(pt, f.P1, f.Nchars, cols.Back, cols.Text)
+	pt := f.PointOf(0)
+	pt = f.drawsel(pt, 0, f.p0, cols.Back, cols.Text)
+	pt = f.drawsel(pt, f.p0, f.p1, cols.Hi.Back, cols.Hi.Text)
+	pt = f.drawsel(pt, f.p1, f.Nchars, cols.Back, cols.Text)
 }
 
-func (f *Frame) Draw(pt image.Point) image.Point {
+func (f *Frame) drawAt(pt image.Point) image.Point {
 	n := 0
 	for nb := 0; nb < f.Nbox; nb++ {
 		b := &f.Box[nb]
-		pt = f.LineWrap0(pt, b)
+		pt = f.lineWrap0(pt, b)
 		if pt.Y == f.r.Max.Y {
 			f.Nchars -= f.Len(nb)
 			f.Run.Delete(nb, f.Nbox-1)
@@ -69,7 +84,7 @@ func (f *Frame) Draw(pt image.Point) image.Point {
 		}
 
 		if b.Nrune > 0 {
-			n = f.CanFit(pt, b)
+			n = f.canFit(pt, b)
 			if n == 0 {
 				panic("frame: draw: cant fit shit")
 			}
@@ -83,18 +98,18 @@ func (f *Frame) Draw(pt image.Point) image.Point {
 				pt.X = f.r.Min.X
 				pt.Y += f.Font.height
 			} else {
-				pt.X += f.NewWid(pt, b)
+				pt.X += f.newWid(pt, b)
 			}
 		}
 	}
 	return pt
 }
 
-func (f *Frame) DrawText(pt image.Point, text, back image.Image) {
+func (f *Frame) Redraw0(pt image.Point, text, back image.Image) {
 	nb := 0
 	for ; nb < f.Nbox; nb++ {
 		b := &f.Box[nb]
-		pt = f.LineWrap(pt, b)
+		pt = f.lineWrap(pt, b)
 		//if !f.noredraw && b.nrune >= 0 {
 		if b.Nrune >= 0 {
 			stringbg(f.b, pt, text, image.ZP, f.Font, b.Ptr, back, image.ZP)
@@ -103,9 +118,9 @@ func (f *Frame) DrawText(pt image.Point, text, back image.Image) {
 	}
 }
 
-func (f *Frame) Drawsel(pt image.Point, p0, p1 int64, issel bool) {
+func (f *Frame) Redraw(pt image.Point, p0, p1 int64, issel bool) {
 	if f.ticked {
-		f.tickat(f.PtOfChar(f.P0), false)
+		f.tickat(f.PointOf(f.p0), false)
 	}
 
 	if p0 == p1 {
@@ -141,7 +156,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 		}
 		if p >= p0 {
 			qt = pt
-			pt = f.LineWrap(pt, b)
+			pt = f.lineWrap(pt, b)
 			// fill in the end of a wrapped line
 			if pt.Y > qt.Y {
 				//	cache = append(cache, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y))
@@ -184,7 +199,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 
 	if p1 > p0 && nb != 0 && nb != f.Nbox && (&f.Box[nb-1]).Nrune > 0 && !trim {
 		qt = pt
-		pt = f.LineWrap(pt, b)
+		pt = f.lineWrap(pt, b)
 		if pt.Y > qt.Y {
 			//cache =append(cache, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y))
 			f.draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt)

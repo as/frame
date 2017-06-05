@@ -97,7 +97,7 @@ func main() {
 		w := win.New(src, ft, wind, image.Pt(0, tagY*2), winSize.Sub(image.Pt(0, tagY*2)), pad, cols)
 
 		wmain.Insert(filename+"\tPut Del Exit", 0)
-		wmain.Redraw()
+		wmain.Refresh()
 
 		if len(os.Args) > 1 {
 			s := string(readfile(filename))
@@ -158,7 +158,7 @@ func main() {
 							x := act.P0
 							act.Insert(string(toUTF16(ClipBuf)), act.P0)
 							act.P0 = x
-							act.Redraw()
+							act.Refresh()
 							act.Send(paint.Event{})
 						} else {
 							//	act.P0, act.P1 = FindSpecial(NewReader(act.Frame), act.P0)
@@ -170,7 +170,7 @@ func main() {
 				if e.Button == 1 {
 					switch e.Direction {
 					case mouse.DirPress:
-						act.Select(pt, act, act.Upload)
+						act.Sweep(pt, act, act.Upload)
 						act.SendFirst(paint.Event{})
 					case mouse.DirRelease:
 					}
@@ -203,7 +203,7 @@ func main() {
 					}
 					act.P0--
 
-					act.Redraw()
+					act.Refresh()
 					act.Send(paint.Event{})
 					continue
 				}
@@ -212,7 +212,7 @@ func main() {
 						act.P0++
 					}
 					act.P1++
-					act.Redraw()
+					act.Refresh()
 					act.Send(paint.Event{})
 					continue
 				}

@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/draw"
 )
+
 // Put
 type Pts struct {
 	pt0, pt1 image.Point
@@ -43,7 +44,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 	n0 = f.Find(0, 0, p0)
 	cn0 = p0
 	nn0 = n0
-	pt0 = f.PtOfCharNBox(p0, n0)
+	pt0 = f.ptOfCharNBox(p0, n0)
 	//	fmt.Printf("insert: f.PtOfCharNBox <- %d: %s\n", p0, pt0)
 	ppt0 = pt0
 	opt0 = pt0
@@ -56,16 +57,16 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 	// Line wrap
 	if n0 < f.Nbox {
 		b = &f.Box[n0]
-		pt0 = f.LineWrap(pt0, b)
-		ppt1 = f.LineWrap0(ppt1, b)
+		pt0 = f.lineWrap(pt0, b)
+		ppt1 = f.lineWrap0(ppt1, b)
 	}
 	f.modified = true
 
 	// pt0, pt1   - start and end of insertion (current; and without line wrap)
 	// ppt0, ppt1 - start and end of insertion when its complete
 
-	if f.P0 == f.P1 {
-		f.tickat(f.PtOfChar(int64(f.P0)), false)
+	if f.p0 == f.p1 {
+		f.tickat(f.PointOf(int64(f.p0)), false)
 	}
 
 	// Find the points where all the old x and new x line up
@@ -79,11 +80,11 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 	}
 	for ; pt1.X != pt0.X && pt1.Y != f.r.Max.Y && n0 < f.Nbox; n0, f.npts = n0+1, f.npts+1 {
 		b = &f.Box[n0]
-		pt0 = f.LineWrap(pt0, b)
-		pt1 = f.LineWrap0(pt1, b)
+		pt0 = f.lineWrap(pt0, b)
+		pt1 = f.lineWrap0(pt1, b)
 
 		if b.Nrune > 0 {
-			n = f.CanFit(pt1, b)
+			n = f.canFit(pt1, b)
 			//				fmt.Println("can fit %d in box from pt %s\n", n, pt1)
 			if n == 0 {
 				panic("f. ==0")
@@ -105,8 +106,8 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 		if pt1.Y == f.r.Max.Y {
 			break
 		}
-		pt0 = f.Advance(pt0, b)
-		pt1.X += f.NewWid(pt1, b)
+		pt0 = f.advance(pt0, b)
+		pt1.X += f.newWid(pt1, b)
 		cn0 += int64(b.Len())
 	}
 
@@ -117,7 +118,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 		f.Nchars -= f.Len(n0)
 		f.Run.Delete(n0, f.Nbox-1)
 	}
-// Put
+	// Put
 	h := f.Font.height
 	if n0 == f.Nbox {
 		extra := 0
@@ -125,20 +126,20 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 			extra = 1
 		}
 		f.Nlines = (pt1.Y-f.r.Min.Y)/h + extra
-// f.setlines("Insert: 1/2", (pt1.Y-f.r.Min.Y)/h + extra)
-// lines = (pt.Y-f.r.Min.Y)/h + extra
+		// f.setlines("Insert: 1/2", (pt1.Y-f.r.Min.Y)/h + extra)
+		// lines = (pt.Y-f.r.Min.Y)/h + extra
 	} else if pt1.Y != pt0.Y {
 		y = f.r.Max.Y
 		q0 := pt0.Y + h
 		q1 := pt1.Y + h
-// fmt.Printf("pt1(%s) != pt0(%s)\n", pt1, pt0)
-// fmt.Printf("y=%d q0:q1=%d:%d\n", y,q0,q1)
+		// fmt.Printf("pt1(%s) != pt0(%s)\n", pt1, pt0)
+		// fmt.Printf("y=%d q0:q1=%d:%d\n", y,q0,q1)
 		f.Nlines += (q1 - q0) / h
-// f.setlines("Insert: 2/2", f.Nlines+((q1 - q0) / h))
-// lines += (q1 - q0) / h
+		// f.setlines("Insert: 2/2", f.Nlines+((q1 - q0) / h))
+		// lines += (q1 - q0) / h
 		if f.Nlines > f.maxlines {
-// fmt.Printf("lines/max = %d/%d\n", f.Nlines, f.maxlines)
-			f.ChopFrame(ppt1, p0, nn0)
+			// fmt.Printf("lines/max = %d/%d\n", f.Nlines, f.maxlines)
+			f.chopFrame(ppt1, p0, nn0)
 		}
 		if pt1.Y < y {
 			r = f.r
@@ -166,7 +167,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 		ctr--
 		b = &f.Box[ctr]
 		pt = pts[f.npts].pt1
-//		fmt.Printf("npts=%d selected point = %s\n", npts, pt)
+		//		fmt.Printf("npts=%d selected point = %s\n", npts, pt)
 		if b.Nrune > 0 {
 			r.Min = pt
 			r.Max = r.Min
@@ -182,7 +183,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 				r.Max = opt0
 				r.Max.X = f.r.Max.X
 				r.Max.Y += f.Font.height
-				if f.P0 <= cn0 && cn0 < f.P1 { // b+1 is in selection
+				if f.p0 <= cn0 && cn0 < f.p1 { // b+1 is in selection
 					back = f.Color.Hi.Back
 				} else {
 					back = f.Color.Back
@@ -193,7 +194,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 				r.Max = pt
 				r.Min.X += b.Width
 				r.Max.Y += f.Font.height
-				if f.P0 <= cn0 && cn0 < f.P1 {
+				if f.p0 <= cn0 && cn0 < f.p1 {
 					back = f.Color.Hi.Back
 				} else {
 					back = f.Color.Back
@@ -211,7 +212,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 				r.Max.X = f.r.Max.X
 			}
 			cn0--
-			if f.P0 <= cn0 && cn0 < f.P1 { // box inside selection
+			if f.p0 <= cn0 && cn0 < f.p1 { // box inside selection
 				back = f.Color.Hi.Back
 			} else {
 				back = f.Color.Back
@@ -225,7 +226,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 	}
 
 	// insertion can extend the selection; different condition
-	if f.P0 < p0 && p0 <= f.P1 {
+	if f.p0 < p0 && p0 <= f.p1 {
 		text = f.Color.Hi.Back
 		back = f.Color.Hi.Text
 	} else {
@@ -234,8 +235,8 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 	}
 	fr := *f.fr
 
-	f.SelectPaint(ppt0, ppt1, back)
-	(&fr).DrawText(ppt0, text, back)
+	f.Paint(ppt0, ppt1, back)
+	(&fr).Redraw0(ppt0, text, back)
 	f.Add(nn0, fr.Nbox)
 	for n = 0; n < fr.Nbox; n++ {
 		f.Box[nn0+n] = fr.Box[n]
@@ -247,26 +248,26 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 
 	n0 += fr.Nbox
 	if n0 < f.Nbox-1 {
-		f.Clean(ppt0, nn0, n0+1)
+		f.clean(ppt0, nn0, n0+1)
 	} else {
-		f.Clean(ppt0, nn0, n0)
+		f.clean(ppt0, nn0, n0)
 	}
 	wrote = fr.Nchars
 	f.Nchars += fr.Nchars
-	if f.P0 >= p0 {
-		f.P0 += fr.Nchars
+	if f.p0 >= p0 {
+		f.p0 += fr.Nchars
 	}
-	if f.P0 > f.Nchars {
-		f.P0 = f.Nchars
+	if f.p0 > f.Nchars {
+		f.p0 = f.Nchars
 	}
-	if f.P1 >= p0 {
-		f.P1 += fr.Nchars
+	if f.p1 >= p0 {
+		f.p1 += fr.Nchars
 	}
-	if f.P1 > f.Nchars {
-		f.P1 = f.Nchars
+	if f.p1 > f.Nchars {
+		f.p1 = f.Nchars
 	}
-	if f.P0 == f.P1 {
-		f.tickat(f.PtOfChar(f.P0), true)
+	if f.p0 == f.p1 {
+		f.tickat(f.PointOf(f.p0), true)
 	}
 	return wrote
 }

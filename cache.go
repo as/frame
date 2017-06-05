@@ -2,7 +2,7 @@ package frame
 
 import "image"
 
-func (f *Frame) Cacheinit() {
+func (f *Frame) cacheinit() {
 	f.Cache = make([]image.Rectangle, 0, 1024)
 }
 func (f *Frame) Flushcache() {

@@ -6,7 +6,7 @@ import (
 	//"fmt"
 )
 
-func (f *Frame) PtOfCharPtBox(p int64, pt image.Point, bn int) (x image.Point) {
+func (f *Frame) ptOfCharPtBox(p int64, pt image.Point, bn int) (x image.Point) {
 	var (
 		b    *box.Box
 		l, w int
@@ -14,7 +14,7 @@ func (f *Frame) PtOfCharPtBox(p int64, pt image.Point, bn int) (x image.Point) {
 	)
 	for ; bn < f.Nbox; bn++ {
 		b = &f.Box[bn]
-		pt = f.LineWrap(pt, b)
+		pt = f.lineWrap(pt, b)
 		l = b.Len()
 		//fmt.Printf("bn=%d nbox=%d pt=%s p=%d\n", bn, f.Nbox, pt, p)
 		if p < int64(l) {
@@ -31,23 +31,23 @@ func (f *Frame) PtOfCharPtBox(p int64, pt image.Point, bn int) (x image.Point) {
 			break
 		}
 		p -= int64(l)
-		pt = f.Advance(pt, b)
+		pt = f.advance(pt, b)
 	}
 	return pt
 }
-func (f *Frame) PtOfCharNBox(p int64, nb int) (pt image.Point) {
+func (f *Frame) ptOfCharNBox(p int64, nb int) (pt image.Point) {
 	Nbox := f.Nbox
 	f.Nbox = nb
-	pt = f.PtOfCharPtBox(p, f.r.Min, 0)
+	pt = f.ptOfCharPtBox(p, f.r.Min, 0)
 	f.Nbox = Nbox
 	return pt
 }
 
-func (f *Frame) PtOfChar(p int64) image.Point {
-	return f.PtOfCharPtBox(p, f.r.Min, 0)
+func (f *Frame) PointOf(p int64) image.Point {
+	return f.ptOfCharPtBox(p, f.r.Min, 0)
 
 }
-func (f *Frame) Grid(pt image.Point) image.Point {
+func (f *Frame) grid(pt image.Point) image.Point {
 	pt.Y -= f.r.Min.Y
 	pt.Y -= pt.Y % f.Font.height
 	pt.Y += f.r.Min.Y
@@ -57,29 +57,29 @@ func (f *Frame) Grid(pt image.Point) image.Point {
 	return pt
 }
 func (f *Frame) IndexOf(pt image.Point) int64 {
-	pt = f.Grid(pt)
+	pt = f.grid(pt)
 	qt := f.r.Min
 	p := int64(0)
 	bn := 0
 	for ; bn < f.Nbox && qt.Y < pt.Y; bn++ {
 		b := &f.Box[bn]
-		qt = f.LineWrap(qt, b)
+		qt = f.lineWrap(qt, b)
 		if qt.Y >= pt.Y {
 			break
 		}
-		qt = f.Advance(qt, b)
+		qt = f.advance(qt, b)
 		p += int64(b.Len())
 	}
 
 	for ; bn < f.Nbox && qt.X <= pt.X; bn++ {
 		b := &f.Box[bn]
-		qt = f.LineWrap(qt, b)
+		qt = f.lineWrap(qt, b)
 		if qt.Y > pt.Y {
 			break
 		}
 		if qt.X+b.Width > pt.X {
 			if b.Nrune < 0 {
-				qt = f.Advance(qt, b)
+				qt = f.advance(qt, b)
 			} else {
 				s := b.Ptr
 				for {
@@ -102,7 +102,7 @@ func (f *Frame) IndexOf(pt image.Point) int64 {
 			}
 		} else {
 			p += int64(b.Len())
-			qt = f.Advance(qt, b)
+			qt = f.advance(qt, b)
 		}
 	}
 	return p

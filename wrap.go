@@ -9,7 +9,7 @@ import (
 // LineWrap checks whether the box would wrap across a line boundary
 // if it were inserted at pt. If it wraps, the line-wrapped point is
 // returned.
-func (f *Frame) LineWrap(pt image.Point, b *box.Box) image.Point {
+func (f *Frame) lineWrap(pt image.Point, b *box.Box) image.Point {
 	width := b.Width
 	if b.Nrune < 0 {
 		width = b.Minwidth
@@ -23,8 +23,8 @@ func (f *Frame) LineWrap(pt image.Point, b *box.Box) image.Point {
 
 // LineWrap0 returns the line-wrapped point if the box doesn't
 // fix on the line
-func (f *Frame) LineWrap0(pt image.Point, b *box.Box) image.Point {
-	if f.CanFit(pt, b) == 0 {
+func (f *Frame) lineWrap0(pt image.Point, b *box.Box) image.Point {
+	if f.canFit(pt, b) == 0 {
 		pt.X = f.r.Min.X
 		pt.Y += f.Font.height
 	}
@@ -33,16 +33,16 @@ func (f *Frame) LineWrap0(pt image.Point, b *box.Box) image.Point {
 
 // NewLineTrim returns the number of characters that would
 // underflow on the left if b terminated at point pt.
-func (f *Frame) CanFitLeft(pt image.Point, b *box.Box) int {
+func (f *Frame) canFitLeft(pt image.Point, b *box.Box) int {
 	pt.X -= b.Width
 	pt.X = f.r.Max.X - pt.X
-	n := f.CanFit(pt, b)
+	n := f.canFit(pt, b)
 	return b.Len() - n
 }
 
 // CanFit returns the number of runes that can fit
 // on the line at pt. A newline yields 1.
-func (f *Frame) CanFit(pt image.Point, b *box.Box) int {
+func (f *Frame) canFit(pt image.Point, b *box.Box) int {
 	left := f.r.Max.X - pt.X
 	w := 0
 	if b.Nrune < 0 {
@@ -68,7 +68,7 @@ func (f *Frame) CanFit(pt image.Point, b *box.Box) int {
 	panic(fmt.Sprintf("CanFit: short box: len=%d left=%d box=%s\n", len(p), left, b))
 }
 
-func (f *Frame) Advance(pt image.Point, b *box.Box) (x image.Point) {
+func (f *Frame) advance(pt image.Point, b *box.Box) (x image.Point) {
 	//	pt0 := pt
 	//	defer func(){fmt.Printf("Advance: pt=%d -> %d\n",pt0,x)}()
 	//	fmt.Println("boxes width: %d", b.width)
@@ -82,11 +82,11 @@ func (f *Frame) Advance(pt image.Point, b *box.Box) (x image.Point) {
 }
 
 // TODO: Naming
-func (f *Frame) NewWid(pt image.Point, b *box.Box) int {
-	b.Width = f.NewWid0(pt, b)
+func (f *Frame) newWid(pt image.Point, b *box.Box) int {
+	b.Width = f.newWid0(pt, b)
 	return b.Width
 }
-func (f *Frame) NewWid0(pt image.Point, b *box.Box) int {
+func (f *Frame) newWid0(pt image.Point, b *box.Box) int {
 	c := f.r.Max.X
 	x := pt.X
 	if b.Nrune >= 0 || b.BC != '\t' {

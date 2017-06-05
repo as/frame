@@ -13,8 +13,8 @@ const (
 	HIGH  = 3
 
 	TickWidth = 3
-	TickOff = 0
-	TickOn  = 1
+	TickOff   = 0
+	TickOn    = 1
 )
 
 type Frame struct {
@@ -26,8 +26,8 @@ type Frame struct {
 	maxtab       int
 	lastlinefull int
 
-	P0 int64
-	P1 int64
+	p0 int64
+	p1 int64
 
 	tick      draw.Image
 	tickback  draw.Image
@@ -39,12 +39,12 @@ type Frame struct {
 	noredraw  bool
 	op        draw.Op
 
-	npts     int
-	pts      []Pts
-	Cache    []image.Rectangle
+	npts  int
+	pts   []Pts
+	Cache []image.Rectangle
 
 	Scroll func(int)
-	fr *Frame
+	fr     *Frame
 }
 
 func New(r image.Rectangle, ft Font, b draw.Image, cols Color) *Frame {
@@ -83,15 +83,6 @@ func (f *Frame) Bounds() image.Rectangle {
 func (f *Frame) SetTick(style int) {
 	f.tickoff = style == TickOff
 }
-func (f *Frame) SetOp(op draw.Op) {
-	f.op = op
-}
-func (f *Frame) cacheinit() {
-	f.Cache = make([]image.Rectangle, 0, 1024)
-}
-func (f *Frame) flushcache() {
-	f.Cache = f.Cache[:0]
-}
 
 func (f *Frame) inittick() {
 	h := f.Font.height + (f.Font.height / 5)
@@ -116,7 +107,7 @@ func (f *Frame) setrects(r image.Rectangle, b draw.Image) {
 	f.maxlines = f.r.Dy() / f.Font.height
 }
 
-func (f *Frame) Clear(freeall bool) {
+func (f *Frame) clear(freeall bool) {
 	if f.Nbox != 0 {
 		f.Run.Delete(0, f.Nbox-1)
 	}
@@ -144,6 +135,17 @@ func (f *Frame) MaxLine() int {
 }
 func (f *Frame) Line() int {
 	return f.Nlines
+}
+
+// Dot returns the range of the selected text
+func (f *Frame) Dot() (p0, p1 int64) {
+	return f.p0, f.p1
+
+}
+
+// Select sets the range of the selected text
+func (f *Frame) Select(p0, p1 int64) {
+	f.p0, f.p1 = p0, p1
 }
 
 func free(i interface{}) {

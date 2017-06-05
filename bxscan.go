@@ -80,7 +80,7 @@ func (f *Frame) bxscan(s []byte, ppt image.Point) (image.Point, image.Point) {
 	}
 
 	//	log.Printf("bxscan: ppt=%s\n",  ppt)
-	ppt = f.LineWrap0(ppt, &fr.Box[0])
+	ppt = f.lineWrap0(ppt, &fr.Box[0])
 	//	log.Printf("bxscan: ppt (wrap)=%s\n",  ppt)
-	return ppt, fr.Draw(ppt)
+	return ppt, fr.drawAt(ppt)
 }

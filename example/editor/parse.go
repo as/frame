@@ -158,7 +158,7 @@ func parseSimpleAddr(p *parser) (a Address) {
 type File interface {
 	Insert(p []byte, at int64) (wrote int64)
 	Delete(q0, q1 int64)
-	SetSelect(q0, q1 int64)
+	Select(q0, q1 int64)
 	Dot() (q0, q1 int64)
 	Bytes() []byte
 }
@@ -251,7 +251,7 @@ func parseCmd(p *parser) (c *command) {
 					break
 				}
 				x0, x1 = int64(loc[0])+x1, int64(loc[1])+x1
-				f.(*Invertable).Win.SetSelect(x0, x1)
+				f.(*Invertable).Win.Select(x0, x1)
 				a := len(f.Bytes())
 				if nextfn := c.Next(); nextfn != nil {
 					nextfn(f)
@@ -318,18 +318,18 @@ func (c *Compound) Set(f File) {
 	if c.Back() {
 		return
 	}
-	f.SetSelect(q0, r1)
+	f.Select(q0, r1)
 }
 
 func (b *Byte) Set(f File) {
 	q0, q1 := f.Dot()
 	q := b.Q
 	if b.rel == -1 {
-		f.SetSelect(q+q0, q+q0)
+		f.Select(q+q0, q+q0)
 	} else if b.rel == 1 {
-		f.SetSelect(q+q1, q+q1)
+		f.Select(q+q1, q+q1)
 	} else {
-		f.SetSelect(q, q)
+		f.Select(q, q)
 	}
 }
 func (r *Regexp) Set(f File) {
@@ -344,7 +344,7 @@ func (r *Regexp) Set(f File) {
 	if r.rel == 1 {
 		r0 = r1
 	}
-	f.SetSelect(r0, r1)
+	f.Select(r0, r1)
 }
 
 // Put
@@ -353,7 +353,7 @@ func (r *Line) Set(f File) {
 	switch r.rel {
 	case 0:
 		q0, q1 := findline(r.Q, f.Bytes())
-		f.SetSelect(q0, q1)
+		f.Select(q0, q1)
 	case 1:
 		_, org := f.Dot()
 		r.Q++
@@ -362,7 +362,7 @@ func (r *Line) Set(f File) {
 		}
 		p = p[org:]
 		q0, q1 := findline2(r.Q, bytes.NewReader(p))
-		f.SetSelect(q0+org, q1+org)
+		f.Select(q0+org, q1+org)
 	case -1:
 		org, _ := f.Dot()
 		r.Q = -r.Q + 1
@@ -380,7 +380,7 @@ func (r *Line) Set(f File) {
 			q0++
 		}
 		fmt.Printf("Line.Set 2: %d:%d\n", q0, q1)
-		f.SetSelect(q0, q1)
+		f.Select(q0, q1)
 	}
 }
 
