@@ -1,5 +1,5 @@
 package main
-
+/* // Put
 import (
 	"fmt"
 	"strconv"
@@ -55,3 +55,4 @@ func number(c string) (int64, bool) {
 	}
 	return int64(i), true
 }
+*/

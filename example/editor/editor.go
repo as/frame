@@ -93,6 +93,7 @@ func (in *Invertable) Insert(p []byte, at int64) int64 {
 	return 1
 }
 func (in *Invertable) Delete(q0, q1 int64) {
+	fmt.Printf("Delete %d:%d len=%d\n", q0,q1,len(in.Bytes()))
 	data := append([]byte{}, in.Win.Bytes()[q0:q1]...)
 
 	in.do = in.do[:in.p]
@@ -133,6 +134,10 @@ func (in *Invertable) Select(q0, q1 int64) {
 	org := w.BackNL(q0, 2)
 	w.SetOrigin(org, true)
 	w.Frame.Select(q0-w.Org, q1-w.Org)
+}
+func (in *Invertable) Loc() image.Rectangle {
+	sp, size := in.Win.Sp, in.Win.Size()
+	return image.Rectangle{sp, sp.Add(size)}
 }
 
 var (
@@ -180,40 +185,11 @@ func moveMouse(pt image.Point) {
 	cursor.MoveTo(window.ClientAbs().Min.Add(pt))
 }
 
-type Cell struct {
-	*win.Win
-	sp    image.Point
-	size  image.Point
-	in    chan string
-	b     screen.Buffer
-	wind  screen.Window
-	src   screen.Screen
-	dirty bool
-}
-
-func NewCell(src screen.Screen, wind screen.Window,
-	sp, size image.Point, cols frame.Color) *Cell {
-	b, _ := src.NewBuffer(size)
-	w := win.New(src, mkfont(fsize), wind, sp, size, pad, cols)
-	return &Cell{w, sp, size, make(chan string), b, wind, src, true}
-}
-func (c *Cell) Upload() {
-	b := c.b
-	c.wind.Upload(c.sp, b, b.Bounds())
-	c.dirty = false
-}
-func (c *Cell) Mark() {
-	c.dirty = true
-}
-func (c *Cell) Dirty() bool {
-	return c.dirty
-}
-
 type Mouse struct {
 	down      int
 	mask      int
 	lastclick time.Time
-}
+} // Put
 
 func (m *Mouse) clear() {
 	m.down = 0
@@ -226,13 +202,11 @@ var (
 	noselect    bool
 	lastclickpt image.Point
 )
-
-func (in *Invertable) Loc() image.Rectangle {
-	sp, size := in.Win.Sp, in.Win.Size()
-	return image.Rectangle{sp, sp.Add(size)}
-}
-
-func active(e mouse.Event, act Plane, list ...Plane) interface{} {
+// Put
+func active(e mouse.Event, act Plane, list ...Plane) (x interface{}) {
+	defer func(){
+		//fmt.Printf("active; %#v\n", x)
+	}()
 	if buttonsdown != 0 {
 		return act
 	}
@@ -259,10 +233,6 @@ func wheeldir(e mouse.Event) int {
 	}
 	return 1
 }
-
-// This fucking around will surely get us nowhere
-//
-//
 var clock15hz = time.NewTicker(time.Millisecond * 5).C
 
 func scroll2(act *Invertable, e mouse.Event) {
@@ -294,229 +264,8 @@ func scroll(act *Invertable, e mouse.Event) {
 	}
 }
 
-func keyboard(act *Invertable, e key.Event) {
-	if e.Direction == key.DirRelease {
-		return
-	}
-	if e.Rune == '\r' {
-		e.Rune = '\n'
-	}
-	q0, q1 := act.Dot()
-	fmt.Println(q0, q1)
-	switch e.Code {
-	case key.CodeEqualSign, key.CodeHyphenMinus:
-		if e.Modifiers == key.ModControl {
-			if key.CodeHyphenMinus == e.Code {
-				fsize--
-			} else {
-				fsize++
-			}
-			act.Reset()
-			act.SetFont(mkfont(fsize))
-			act.Fill()
-			act.Send(paint.Event{})
-			return
-		}
-	case key.CodeUpArrow, key.CodePageUp, key.CodeDownArrow, key.CodePageDown:
-		org := act.Org
-		n := act.MaxLine() / 7
-		if e.Code == key.CodePageUp || e.Code == key.CodePageDown {
-			n *= 10
-		}
-		if e.Code == key.CodeUpArrow || e.Code == key.CodePageUp {
-			org = act.BackNL(org, n)
-		}
-		if e.Code == key.CodeDownArrow || e.Code == key.CodePageDown {
-			r := act.Bounds()
-			org += act.IndexOf(image.Pt(r.Min.X, r.Min.Y+n*act.Frame.Dy()))
-		}
-		act.SetOrigin(org, true)
-		act.Send(paint.Event{})
-		return
-	case key.CodeLeftArrow, key.CodeRightArrow:
-		if e.Code == key.CodeLeftArrow {
-			if e.Modifiers&key.ModShift == 0 {
-				q1--
-			}
-			q0--
-		} else {
-			if e.Modifiers&key.ModShift == 0 {
-				q0++
-			}
-			q1++
-		}
-		act.Select(q0, q1)
-		act.Send(paint.Event{})
-		return
-	}
-	switch e.Rune {
-	case -1:
-		return
-	case '\x08', '\x17':
-		if q0 == 0 && q1 == 0 {
-			return
-		}
-		if e.Rune == '\x08' {
-			q0--
-		} else {
-			if isany(act.Bytes()[q0], AlphaNum) {
-				q0 = findback(act.Bytes(), q0, AlphaNum)
-			}
-		}
-		act.Delete(q0, q1)
-		act.Send(paint.Event{})
-		return
-	}
-	if q0 != q1 {
-		act.Delete(q0, q1)
-	}
-	act.Insert([]byte(string(e.Rune)), q1)
-	q1++
-	act.Select(q1, q1)
-	act.Send(paint.Event{})
-}
 
-type Tag struct {
-	sp        image.Point
-	wtag      *Invertable
-	w         *Invertable
-	Scrolling bool
-}
-
-func NewTag(src screen.Screen, wind screen.Window, ft frame.Font,
-	sp, size, pad image.Point, cols frame.Color) *Tag {
-
-	// Make the main tag
-	tagY := fsize * 2
-	cols.Back = Cyan
-
-	// Make tag
-	wtag := &Invertable{
-		win.New(src, ft, wind,
-			image.Pt(0, tagY),
-			image.Pt(size.X, tagY),
-			pad, cols,
-		), nil, nil, 0,
-	}
-
-	// Make window
-	cols.Back = Yellow
-	w := &Invertable{
-		win.New(src, ft, wind,
-			image.Pt(0, tagY*2),
-			size.Sub(image.Pt(0, tagY*2)),
-			pad, cols),
-		nil, nil, 0,
-	}
-	return &Tag{sp: sp, wtag: wtag, w: w}
-}
-
-func (t *Tag) Resize(pt image.Point) {
-	if pt.X < fsize || pt.Y < fsize {
-		println("ignore daft size request:", pt.String())
-		return
-	}
-	winSize = pt
-	tagY := t.wtag.Loc().Max.Y
-	t.wtag.Resize(image.Pt(winSize.X, tagY))
-	t.w.Resize(winSize.Sub(image.Pt(0, tagY*2)))
-}
-
-func (t *Tag) Open(filename string) {
-	x := strings.Index(filename, ":")
-	lineexpr := ""
-	if x > 0 {
-		lineexpr = filename[x+1:]
-		filename = filename[:x]
-	}
-
-	w := t.w
-	wtag := t.wtag
-
-	wtag.InsertString(filename+"\tPut Del Exit", 0)
-	wtag.Refresh()
-	if len(os.Args) > 1 {
-		s := readfile(filename)
-		fmt.Printf("files size is %d\n", len(s))
-		w.Insert(s, w.Q1)
-		if lineexpr != "" {
-			w.Send(cmdparse("#0"))
-			w.Send(cmdparse(lineexpr))
-		}
-	}
-}
-
-func (t *Tag) MouseIn(act *Invertable, e mouse.Event) {
-	fmt.Printf("act.Scrollr: %s\n", act.Scrollr)
-	fmt.Println(t.w.Dot())
-	pt := Pt(e)
-	if e.Direction == mouse.DirRelease {
-		t.Scrolling = false
-	}
-	if pt.In(act.Scrollr.Sub(act.Sp)) || t.Scrolling {
-		fmt.Printf("mouse.Event: %s\n", e)
-		if e.Direction == mouse.DirRelease {
-			return
-		}
-		if t.Scrolling {
-			act.Clicksb(pt, 0)
-		} else {
-			if e.Button == 2 {
-				t.Scrolling = true
-			}
-			act.Clicksb(pt, int(e.Button)-2)
-		}
-		act.Send(paint.Event{})
-		return
-	}
-	switch e.Direction {
-	case mouse.DirPress:
-		lastclickpt = Pt(e)
-		press(act.Win, t.wtag.Win, e)
-		act.Send(paint.Event{})
-	case mouse.DirRelease:
-		lastclickpt = image.Pt(-5, -5)
-		release(act.Win, t.wtag.Win, e)
-		act.Send(paint.Event{})
-	case mouse.DirNone:
-		if !noselect && down(1) && ones(buttonsdown) == 1 {
-			r := image.Rect(0, 0, 5, 5).Add(lastclickpt)
-			pt := Pt(e)
-			if pt.In(r) {
-				return
-			}
-			// Double click happened so select function
-			// never fired.
-			act.Sweeping = true
-			act.Sweep(lastclickpt, act, act.Upload)
-			act.Sweeping = false
-			P0, P1 := act.Frame.Dot()
-			act.Select(act.Org+P0, act.Org+P1)
-			act.Selectq = act.Org+P0
-			act.Refresh()
-		}
-	}
-}
-
-/*
-func (t *Tag) CmdExec(cmd string){
-	act := t.act
-	w := t.w
-	wtag := t.wtag
-	if e == "r" {
-		act.Redo()
-	} else if e == "u" {
-		act.Undo()
-	} else if e == "Put" {
-		Put(wtag.Win, w.Win)
-	} else if e == "Get" {
-		Get(wtag.Win, w.Win)
-	}
-	act.Send(paint.Event{})
-}
-*/
-//func NewTag(scr screen.Screen, ft frame.Font, events screen.Window,
-//       sp, size, pad image.Point, cols frame.Color) *Tag{
+// Put
 func main() {
 	driver.Main(func(src screen.Screen) {
 		wind, _ := src.NewWindow(&screen.NewWindowOptions{winSize.X, winSize.Y})
@@ -534,7 +283,6 @@ func main() {
 		wn.Open(filename)
 
 		w := wn.w
-		wtag := wn.wtag
 
 		// lambda to paint only rectangles changed during a sweep of the mouse
 		// Put
@@ -552,59 +300,15 @@ func main() {
 		for {
 			// Put
 			switch e := act.NextEvent().(type) {
-			case string:
-				if e == "r" {
-					act.Redo()
-				} else if e == "u" {
-					act.Undo()
-				} else if e == "Put" {
-					wn.Put()
-				} else if e == "Get" {
-					wn.Get()
-				}
-				act.Send(paint.Event{})
-			case *command:
-				fmt.Printf("command %#v\n", e)
-				if e == nil {
-					panic("command is nil")
-				}
-				if e.fn != nil {
-					e.fn(w) // Always execute on body for now
-				}
-				act.Send(paint.Event{})
-			case scrollEvent:
-				e.wind.FrameScroll(e.dy)
-				e.flushwith(paint.Event{})
 			case mouse.Event:
-				act = active(e, act, w, wtag).(*Invertable)
-				if e.Button.IsWheel() {
-					scroll(act, e)
-				} else {
-					wn.MouseIn(act, e)
-				}
-			case key.Event:
-				keyboard(act, e)
+				act = active(e, act, wn.w, wn.wtag).(*Invertable)
+				wn.Handle(act, e)
+			case string, *command, scrollEvent, key.Event:
+				wn.Handle(act, e)
 			case size.Event:
 				wn.Resize(image.Pt(e.WidthPx, e.HeightPx))
 				act.Send(paint.Event{})
 			case paint.Event:
-				if false {
-					drawBorder(wtag.Buffer().RGBA(), wtag.Buffer().Bounds(), LtGray, image.ZP, 1)
-					wind.Upload(wtag.Sp, wtag.Buffer(), wtag.Buffer().Bounds())
-					w := w.Win
-					pad := pad.Sub(image.Pt(5+3, 0))
-					scrollr := image.Rect(w.Sp.X, 0, w.Sp.X+pad.X, w.Sp.Y+w.Buffer().Bounds().Max.Y)
-					maxy := w.Buffer().Bounds().Max.Y
-					rat0 := float64(w.Org) / float64(w.Nr)          // % scrolled
-					rat1 := float64(w.Org+w.Nchars) / float64(w.Nr) // % covered by screen
-					spY := int(float64(w.Sp.Y+maxy) * rat0)
-					epY := int(float64(w.Sp.Y+maxy) * rat1)
-					bar := image.Rect(w.Sp.X, spY, w.Sp.X+pad.X, epY)
-					draw.Draw(w.Buffer().RGBA(), scrollr, X, image.ZP, draw.Src)
-					draw.Draw(w.Buffer().RGBA(), bar, LtGray, image.ZP, draw.Src)
-					drawBorder(w.Buffer().RGBA(), w.Buffer().Bounds(), LtGray, image.ZP, 1)
-					drawBorder(w.Buffer().RGBA(), scrollr, LtGray, image.ZP, 1)
-				}
 				wn.Upload(wind)
 				wind.Publish()
 			case lifecycle.Event:
@@ -620,15 +324,6 @@ func main() {
 			}
 		}
 	})
-}
-
-func (t *Tag) Upload(wind screen.Window) {
-	w := t.w
-	wtag := t.wtag
-	wind.Upload(w.Sp, w.Buffer(), w.Buffer().Bounds())
-	wind.Upload(wtag.Sp, wtag.Buffer(), wtag.Buffer().Bounds())
-	w.Flushcache()
-	wtag.Flushcache()
 }
 
 func Next(p []byte, i, j int64) (q0 int64, q1 int64) {

@@ -225,10 +225,10 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 		}
 	}
 
-	// insertion can extend the selection; different condition
+	// insertion extends the selection
 	if f.p0 < p0 && p0 <= f.p1 {
-		text = f.Color.Hi.Back
-		back = f.Color.Hi.Text
+		text = f.Color.Hi.Text
+		back = f.Color.Hi.Back
 	} else {
 		text = f.Color.Text
 		back = f.Color.Back

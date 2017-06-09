@@ -35,7 +35,7 @@ func (f *Frame) drawover(dst draw.Image, r image.Rectangle, src image.Image, sp 
 	draw.Draw(dst, r, src, sp, draw.Over)
 }
 func (f *Frame) tickat(pt image.Point, ticked bool) {
-	if f.ticked==ticked || f.tick == nil || !pt.In(f.r) {
+	if f.ticked == ticked || f.tick == nil || !pt.In(f.r) {
 		return
 	}
 	pt.X--
