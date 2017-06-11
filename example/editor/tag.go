@@ -163,7 +163,9 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 			return
 		}
 		if e.Rune == '\x08' {
-			q0--
+			if q0 == q1 && q0 != 0{
+				q0--
+			}
 		} else {	// TODO
 			if isany(act.Bytes()[q0], AlphaNum) {
 				q0 = findback(act.Bytes(), q0, AlphaNum)
@@ -176,9 +178,9 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 	if q0 != q1 {
 		act.Delete(q0, q1)
 	}
-	act.Insert([]byte(string(e.Rune)), q0)
-	q1++
-	act.Select(q1, q1)
+	q0 += act.Insert([]byte(string(e.Rune)), q0)
+	q1 = q0
+	act.Select(q0, q1)
 	act.Send(paint.Event{})
 }
 
