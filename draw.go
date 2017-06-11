@@ -2,12 +2,14 @@ package frame
 
 import (
 	"github.com/as/frame/box"
+	"golang.org/x/image/font/gofont/gomono"
 
-	//"fmt"
+	"fmt"
 	"golang.org/x/image/math/fixed"
 	"image"
 	"image/color"
 	"image/draw"
+	"unicode"
 )
 
 // Put
@@ -112,7 +114,7 @@ func (f *Frame) Redraw0(pt image.Point, text, back image.Image) {
 		pt = f.lineWrap(pt, b)
 		//if !f.noredraw && b.nrune >= 0 {
 		if b.Nrune >= 0 {
-			stringbg(f.b, pt, text, image.ZP, f.Font, b.Ptr, back, image.ZP)
+			f.stringbg(f.b, pt, text, image.ZP, f.Font, b.Ptr, back, image.ZP)
 		}
 		pt.X += b.Width
 	}
@@ -189,7 +191,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 		f.draw(f.b, image.Rect(pt.X, pt.Y, x, pt.Y+f.Font.height), back, pt)
 		if b.Nrune >= 0 {
 			//TODO: must be stringnbg....
-			stringbg(f.b, pt, text, image.ZP, f.Font, ptr[:nr], back, image.ZP)
+			f.stringbg(f.b, pt, text, image.ZP, f.Font, ptr[:nr], back, image.ZP)
 		}
 		pt.X += w
 	Continue:
@@ -235,6 +237,54 @@ func nextcolor(c color.RGBA) color.RGBA {
 	return c
 }
 
+func (f *Frame) renderHex(){
+	if f.hexFont == nil{
+		x := NewTTF(gomono.TTF, f.Dy()/4+3)
+		f.hexFont = &x
+	}
+	f.hex = make([]draw.Image, 256)
+	for i := range f.hex{
+		f.hex[i] = image.NewRGBA(image.Rect(0, 0, f.Dx("_"), f.Dy()))
+		pt := image.Pt(1, f.Dy()/5)
+		s := fmt.Sprintf("%02d", i)
+		stringnbg(f.hex[i], pt, f.Color.Text, image.ZP, *f.hexFont, []byte(s), 
+		f.Color.Back, image.ZP)
+	}
+}
+
+func (f *Frame) stringbg(dst draw.Image, p image.Point, src image.Image,
+	sp image.Point, font Font, s []byte, bg image.Image, bgp image.Point) int {
+	h := font.height
+	h = int(float64(h) - float64(h)/float64(5))
+	for _, v := range s {
+		fp := fixed.P(p.X, p.Y)
+		dr, mask, maskp, advance, ok := font.Glyph(fp, rune(v))
+		if v == 0{
+			dr, mask, maskp, advance, ok = font.Glyph(fp, rune(1))
+		} 
+		if !ok {
+			panic("Frame.stringbg")
+			break
+		}
+		dr.Min.Y += h
+		dr.Max.Y += h
+		//src = image.NewUniform(Rainbow)
+		draw.Draw(dst, dr, bg, bgp, draw.Src)
+		if !unicode.IsGraphic(rune(v)){
+			if len(f.hex) == 0{
+				f.renderHex()
+			}
+			draw.Draw(dst, dr, f.hex[byte(v)], bgp, draw.Over)
+		} else {
+			draw.DrawMask(dst, dr, src, sp, mask, maskp, draw.Over)
+		}
+		
+		//next()
+		p.X += fix(advance)
+	}
+	return int(p.X)
+}
+
 func stringbg(dst draw.Image, p image.Point, src image.Image,
 	sp image.Point, font Font, s []byte, bg image.Image, bgp image.Point) int {
 	h := font.height
@@ -243,12 +293,34 @@ func stringbg(dst draw.Image, p image.Point, src image.Image,
 		fp := fixed.P(p.X, p.Y)
 		dr, mask, maskp, advance, ok := font.Glyph(fp, rune(v))
 		if !ok {
+			panic("stringbg")
 			break
 		}
 		dr.Min.Y += h
 		dr.Max.Y += h
 		//src = image.NewUniform(Rainbow)
 		draw.Draw(dst, dr, bg, bgp, draw.Src)
+		draw.DrawMask(dst, dr, src, sp, mask, maskp, draw.Over)
+		//next()
+		p.X += fix(advance)
+	}
+	return int(p.X)
+}
+
+func stringnbg(dst draw.Image, p image.Point, src image.Image,
+	sp image.Point, font Font, s []byte, bg image.Image, bgp image.Point) int {
+	h := font.height
+	h = int(float64(h) - float64(h)/float64(5))
+	for _, v := range s {
+		fp := fixed.P(p.X, p.Y)
+		dr, mask, maskp, advance, ok := font.Glyph(fp, rune(v))
+		if !ok {
+			panic("stringnbg")
+			break
+		}
+		dr.Min.Y += h
+		dr.Max.Y += h
+		//src = image.NewUniform(Rainbow)
 		draw.DrawMask(dst, dr, src, sp, mask, maskp, draw.Over)
 		//next()
 		p.X += fix(advance)

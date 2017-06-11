@@ -40,6 +40,9 @@ func (f Font) stringwidth(p []byte) (w int) {
 	return w
 }
 func (f Font) Measure(r rune) int {
+	if r == 0{
+		r = 1
+	}
 	l, ok := f.Face.GlyphAdvance(r)
 	if !ok {
 		println("warn: glyph missing")

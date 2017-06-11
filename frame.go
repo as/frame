@@ -45,6 +45,9 @@ type Frame struct {
 
 	Scroll func(int)
 	fr     *Frame
+	
+	hexFont *Font
+	hex []draw.Image
 }
 
 func New(r image.Rectangle, ft Font, b draw.Image, cols Color) *Frame {
@@ -59,6 +62,7 @@ func New(r image.Rectangle, ft Font, b draw.Image, cols Color) *Frame {
 	f.cacheinit()
 	f.inittick()
 	f.fr = new(Frame)
+	f.renderHex()
 	return f
 }
 

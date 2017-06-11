@@ -80,7 +80,7 @@ func (t *Tag) Resize(pt image.Point) {
 func (t *Tag) Open(filename string) {
 	x := strings.Index(filename, ":")
 	lineexpr := ""
-	if x > 0 {
+	if x > 1 {
 		lineexpr = filename[x+1:]
 		filename = filename[:x]
 	}
@@ -164,7 +164,7 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 		}
 		if e.Rune == '\x08' {
 			q0--
-		} else {
+		} else {	// TODO
 			if isany(act.Bytes()[q0], AlphaNum) {
 				q0 = findback(act.Bytes(), q0, AlphaNum)
 			}
@@ -176,7 +176,7 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 	if q0 != q1 {
 		act.Delete(q0, q1)
 	}
-	act.Insert([]byte(string(e.Rune)), q1)
+	act.Insert([]byte(string(e.Rune)), q0)
 	q1++
 	act.Select(q1, q1)
 	act.Send(paint.Event{})

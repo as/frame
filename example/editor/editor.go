@@ -142,7 +142,7 @@ func (in *Invertable) Loc() image.Rectangle {
 
 var (
 	wg      sync.WaitGroup
-	winSize = image.Pt(1000, 1000)
+	winSize = image.Pt(1900, 1000)
 	pad     = image.Pt(25, 5)
 	ClipBuf = make([]byte, 8192)
 	Clip    *clip.Clip
