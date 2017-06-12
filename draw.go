@@ -37,7 +37,7 @@ func (f *Frame) drawover(dst draw.Image, r image.Rectangle, src image.Image, sp 
 	draw.Draw(dst, r, src, sp, draw.Over)
 }
 func (f *Frame) tickat(pt image.Point, ticked bool) {
-	if f.ticked == ticked || f.tick == nil || !pt.In(f.r) {
+	if f.Ticked == ticked || f.tick == nil || !pt.In(f.r) {
 		return
 	}
 	pt.X--
@@ -52,13 +52,13 @@ func (f *Frame) tickat(pt image.Point, ticked bool) {
 	} else {
 		f.drawover(f.b, r.Add(adj), f.tickback, image.ZP)
 	}
-	f.ticked = ticked
+	f.Ticked = ticked
 }
 
 func (f *Frame) Refresh() {
 	cols := f.Color
 	if f.p0 == f.p1 {
-		ticked := f.ticked
+		ticked := f.Ticked
 		if ticked {
 			f.tickat(f.PointOf(f.p0), false)
 		}
@@ -121,7 +121,7 @@ func (f *Frame) Redraw0(pt image.Point, text, back image.Image) {
 }
 
 func (f *Frame) Redraw(pt image.Point, p0, p1 int64, issel bool) {
-	if f.ticked {
+	if f.Ticked {
 		f.tickat(f.PointOf(f.p0), false)
 	}
 
@@ -237,18 +237,18 @@ func nextcolor(c color.RGBA) color.RGBA {
 	return c
 }
 
-func (f *Frame) renderHex(){
-	if f.hexFont == nil{
+func (f *Frame) renderHex() {
+	if f.hexFont == nil {
 		x := NewTTF(gomono.TTF, f.Dy()/4+3)
 		f.hexFont = &x
 	}
 	f.hex = make([]draw.Image, 256)
-	for i := range f.hex{
+	for i := range f.hex {
 		f.hex[i] = image.NewRGBA(image.Rect(0, 0, f.Dx("_"), f.Dy()))
 		pt := image.Pt(1, f.Dy()/5)
 		s := fmt.Sprintf("%02d", i)
-		stringnbg(f.hex[i], pt, f.Color.Text, image.ZP, *f.hexFont, []byte(s), 
-		f.Color.Back, image.ZP)
+		stringnbg(f.hex[i], pt, f.Color.Text, image.ZP, *f.hexFont, []byte(s),
+			f.Color.Back, image.ZP)
 	}
 }
 
@@ -259,9 +259,9 @@ func (f *Frame) stringbg(dst draw.Image, p image.Point, src image.Image,
 	for _, v := range s {
 		fp := fixed.P(p.X, p.Y)
 		dr, mask, maskp, advance, ok := font.Glyph(fp, rune(v))
-		if v == 0{
+		if v == 0 {
 			dr, mask, maskp, advance, ok = font.Glyph(fp, rune(1))
-		} 
+		}
 		if !ok {
 			panic("Frame.stringbg")
 			break
@@ -270,15 +270,15 @@ func (f *Frame) stringbg(dst draw.Image, p image.Point, src image.Image,
 		dr.Max.Y += h
 		//src = image.NewUniform(Rainbow)
 		draw.Draw(dst, dr, bg, bgp, draw.Src)
-		if !unicode.IsGraphic(rune(v)){
-			if len(f.hex) == 0{
+		if !unicode.IsGraphic(rune(v)) {
+			if len(f.hex) == 0 {
 				f.renderHex()
 			}
 			draw.Draw(dst, dr, f.hex[byte(v)], bgp, draw.Over)
 		} else {
 			draw.DrawMask(dst, dr, src, sp, mask, maskp, draw.Over)
 		}
-		
+
 		//next()
 		p.X += fix(advance)
 	}

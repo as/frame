@@ -20,10 +20,11 @@ var db = win.Db
 var un = win.Un
 var trace = win.Trace
 
-type doter interface{
+type doter interface {
 	Dot() (int64, int64)
 }
-func whatsdot(d doter) string{
+
+func whatsdot(d doter) string {
 	q0, q1 := d.Dot()
 	return fmt.Sprintf("Dot: [%d:%d]", q0, q1)
 }
@@ -117,10 +118,8 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 			} else {
 				fsize++
 			}
-			act.Reset()
 			act.SetFont(mkfont(fsize))
-			act.Fill()
-			act.Send(paint.Event{})
+			act.SendFirst(paint.Event{})
 			return
 		}
 	case key.CodeUpArrow, key.CodePageUp, key.CodeDownArrow, key.CodePageDown:
@@ -163,10 +162,10 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 			return
 		}
 		if e.Rune == '\x08' {
-			if q0 == q1 && q0 != 0{
+			if q0 == q1 && q0 != 0 {
 				q0--
 			}
-		} else {	// TODO
+		} else { // TODO
 			if isany(act.Bytes()[q0], AlphaNum) {
 				q0 = findback(act.Bytes(), q0, AlphaNum)
 			}
@@ -185,10 +184,10 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 }
 
 func (t *Tag) MouseIn(act *Invertable, e mouse.Event) {
-//	defer un(trace(db, "Tag.Mousein"))
-//	      func(){db.Trace(whatsdot(t.w))}()
-//	defer func(){db.Trace(whatsdot(t.w))}()
-	
+	//	defer un(trace(db, "Tag.Mousein"))
+	//	      func(){db.Trace(whatsdot(t.w))}()
+	//	defer func(){db.Trace(whatsdot(t.w))}()
+
 	pt := Pt(e)
 	if e.Direction == mouse.DirRelease {
 		t.Scrolling = false

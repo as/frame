@@ -460,5 +460,4 @@ func cmdparse(s string) (cmd *command) {
 		panic(err)
 	}
 	return compile(p)
-	//return zcmdparse(s)
 }

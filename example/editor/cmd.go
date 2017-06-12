@@ -54,9 +54,9 @@ func Visible(w *win.Win, q0, q1 int64) bool {
 // w.FrameScroll <--
 //    \--> w.Select
 func press(w, wtag *win.Win, e mouse.Event) {
-//	defer un(trace(db, "press(Tag)"))	// Debug
-//	      func(){db.Trace(whatsdot(w))}()	// Debug
-//	defer func(){db.Trace(whatsdot(w))}()	// Debug
+	//	defer un(trace(db, "press(Tag)"))	// Debug
+	//	      func(){db.Trace(whatsdot(w))}()	// Debug
+	//	defer func(){db.Trace(whatsdot(w))}()	// Debug
 	if e.Direction != mouse.DirPress {
 		return
 	}
@@ -84,7 +84,7 @@ func press(w, wtag *win.Win, e mouse.Event) {
 		}
 		P0, P1 := w.Frame.Dot()
 		q0, q1 := w.Org+P0, w.Org+P1
-		if org > w.Org{
+		if org > w.Org {
 			q1 = w.Selectq
 		} else if org < w.Org {
 			q0 = w.Selectq
@@ -149,6 +149,7 @@ func release(w, wtag *win.Win, e mouse.Event) {
 	}
 	w.Refresh()
 }
+
 // Put
 func ones(n int) (c int) {
 	for n != 0 {

@@ -1,11 +1,12 @@
 package frame
 
 import (
+	"image"
+	"time"
+
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/mobile/event/mouse"
-	"image"
 	//		"golang.org/x/mobile/event/paint"
-	"time"
 )
 
 func Region(a, b int64) int64 {
@@ -34,6 +35,7 @@ func (f *Frame) Sweep(mp image.Point, ed screen.EventDeque, paintfn func()) {
 	for {
 		sc := false
 		if f.Scroll != nil {
+
 			if mp.Y < f.r.Min.Y {
 				f.Scroll(-(f.r.Min.Y - mp.Y) / (f.Dy() - 1))
 				p0 = f.p1
@@ -114,7 +116,9 @@ func (f *Frame) Sweep(mp image.Point, ed screen.EventDeque, paintfn func()) {
 		}
 		select {
 		case <-clock60hz:
-			paintfn()
+			if !sc {
+				paintfn()
+			}
 		default:
 		}
 	}

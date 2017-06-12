@@ -31,7 +31,7 @@ type Frame struct {
 
 	tick      draw.Image
 	tickback  draw.Image
-	ticked    bool
+	Ticked    bool
 	tickscale int
 	tickoff   bool
 	maxlines  int
@@ -45,9 +45,9 @@ type Frame struct {
 
 	Scroll func(int)
 	fr     *Frame
-	
+
 	hexFont *Font
-	hex []draw.Image
+	hex     []draw.Image
 }
 
 func New(r image.Rectangle, ft Font, b draw.Image, cols Color) *Frame {
@@ -126,7 +126,7 @@ func (f *Frame) clear(freeall bool) {
 		f.tickback = nil
 	}
 	f.Box = nil
-	f.ticked = false
+	f.Ticked = false
 }
 
 // Full returns true if the last line in the frame is full

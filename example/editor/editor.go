@@ -93,7 +93,7 @@ func (in *Invertable) Insert(p []byte, at int64) int64 {
 	return 1
 }
 func (in *Invertable) Delete(q0, q1 int64) {
-	fmt.Printf("Delete %d:%d len=%d\n", q0,q1,len(in.Bytes()))
+	fmt.Printf("Delete %d:%d len=%d\n", q0, q1, len(in.Bytes()))
 	data := append([]byte{}, in.Win.Bytes()[q0:q1]...)
 
 	in.do = in.do[:in.p]
@@ -202,9 +202,10 @@ var (
 	noselect    bool
 	lastclickpt image.Point
 )
+
 // Put
 func active(e mouse.Event, act Plane, list ...Plane) (x interface{}) {
-	defer func(){
+	defer func() {
 		//fmt.Printf("active; %#v\n", x)
 	}()
 	if buttonsdown != 0 {
@@ -233,6 +234,7 @@ func wheeldir(e mouse.Event) int {
 	}
 	return 1
 }
+
 var clock15hz = time.NewTicker(time.Millisecond * 5).C
 
 func scroll2(act *Invertable, e mouse.Event) {
@@ -263,7 +265,6 @@ func scroll(act *Invertable, e mouse.Event) {
 		}
 	}
 }
-
 
 // Put
 func main() {
@@ -307,7 +308,7 @@ func main() {
 				wn.Handle(act, e)
 			case size.Event:
 				wn.Resize(image.Pt(e.WidthPx, e.HeightPx))
-				act.Send(paint.Event{})
+				act.SendFirst(paint.Event{})
 			case paint.Event:
 				wn.Upload(wind)
 				wind.Publish()

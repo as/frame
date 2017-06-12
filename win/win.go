@@ -84,7 +84,6 @@ type Win struct {
 
 func (w *Win) Clicksb(pt image.Point, dir int) {
 	n := w.Org
-	fmt.Printf("p.Y, w.Bar() = %d, %s\n", pt.Y, w.bar())
 	switch dir {
 	case -1:
 		rat := float64(w.bar().Max.Y) / float64(pt.Y)
@@ -101,7 +100,6 @@ func (w *Win) Clicksb(pt image.Point, dir int) {
 		delta := int64(float64(w.Nchars) * rat)
 		n += delta
 	}
-	fmt.Printf("net org is %d\n", n)
 	w.SetOrigin(n, true)
 	w.drawsb()
 }
@@ -169,10 +167,7 @@ func New(scr screen.Screen, ft frame.Font, events screen.Window,
 		size:   size,
 		events: events,
 	}
-	w.scrollinit(pad)
-	w.Frame.Scroll = w.FrameScroll
-	w.Blank()
-	w.drawsb()
+	w.init()
 	return w
 }
 
@@ -184,8 +179,17 @@ func (w *Win) scrollinit(pad image.Point) {
 	}
 }
 
+func (w *Win) init(){
+	w.scrollinit(w.pad)
+	w.Frame.Scroll = w.FrameScroll
+	w.Blank()
+	w.Fill()
+	w.Select(w.Q0, w.Q1)
+	w.drawsb()
+	w.Mark()
+}
+
 func (w *Win) Resize(size image.Point) {
-	return
 	b, err := w.scr.NewBuffer(size)
 	if err != nil {
 		panic(err)
@@ -194,23 +198,13 @@ func (w *Win) Resize(size image.Point) {
 	w.b = b
 	r := image.Rectangle{w.pad, w.size}.Inset(1)
 	w.Frame = frame.New(r, w.Frame.Font, w.b.RGBA(), w.Frame.Color)
-	w.Frame.Scroll = w.FrameScroll
-	w.Blank()
-	w.Fill()
-	w.Select(w.Q0, w.Q1)
-	w.Mark()
-	w.Refresh()
+	w.init()
 }
 
 func (w *Win) SetFont(ft frame.Font) {
-	P0, P1 := w.Frame.Dot()
 	r := image.Rectangle{w.pad, w.size}.Inset(1)
 	w.Frame = frame.New(r, ft, w.b.RGBA(), w.Frame.Color)
-	w.Frame.Scroll = w.FrameScroll
-	w.Fill()
-	w.Frame.Select(P0, P1)
-	w.Mark()
-	w.Refresh()
+	w.init()
 }
 
 func (w *Win) NextEvent() (e interface{}) {
@@ -240,6 +234,7 @@ func (w *Win) Blank() {
 		r.Min.Y--
 	}
 	drawBorder(w.b.RGBA(), r, w.Color.Hi.Back, image.ZP, 1)
+	w.upload()
 }
 
 func (w *Win) Dot() (q0, q1 int64) {
@@ -252,15 +247,15 @@ func (w *Win) FrameScroll(dl int) {
 //	defer Un(Trace(Db, fmt.Sprintf("Win.FrameScroll(%d)", dl)))	// Debug
 //	      func(){Db.Trace(whatsdot(w))}()	// Debug
 //	defer func(){Db.Trace(whatsdot(w))}()	// Debug
-	
+	//time.Sleep(200*time.Millisecond)
 	if dl == 0 {
-		//time.Sleep(15*time.Millisecond)
 		return
 	}
 	org := w.Org
 	q0, q1 := w.Dot()
 	if dl < 0 {
 		org = w.BackNL(org, -dl)
+		w.SetOrigin(org, true)
 		if w.Sweeping {
 			if w.Selectq > q0 {
 				w.Select(q0, w.Selectq)
@@ -275,6 +270,7 @@ func (w *Win) FrameScroll(dl int) {
 		}
 		r := w.Frame.Bounds()
 		org += w.IndexOf(image.Pt(r.Min.X, r.Min.Y+dl*w.Font.Dy()))
+		w.SetOrigin(org, true)
 		if w.Sweeping {
 			if w.Selectq >= q1 {
 				w.Select(q1, w.Selectq)
@@ -283,61 +279,26 @@ func (w *Win) FrameScroll(dl int) {
 			}
 		}
 	}
-	//w.SetOrigin(q0, true)
+	//w.SetOrigin(org, true)
 	if w.Sweeping {
 		w.Flushcache()
 		w.flush()
 	}
-	w.SetOrigin(org, true)
-}
-func (w *Win) zFrameScroll(dl int) {
-	if dl == 0 {
-		//time.Sleep(15*time.Millisecond)
-		return
-	}
-	q0 := int64(0)
-	P0, P1 := w.Frame.Dot()
-	if dl < 0 {
-		q0 = w.BackNL(w.Org, -dl)
-		if w.Sweeping {
-			if w.Selectq > w.Org+P0 {
-				x := w.Selectq
-				w.Select(w.Org+P0, x)
-			} else {
-				x := w.Org+P0
-				w.Select(x, w.Org+P1)
-			}
-		}
-	} else {
-		if w.Org+w.Nchars == w.Nr {
-			return
-		}
-		r := w.Frame.Bounds()
-		q0 = w.Org + w.IndexOf(image.Pt(r.Min.X, r.Min.Y+dl*w.Font.Dy()))
-		if w.Sweeping {
-			if w.Selectq >= w.Org+P1 {
-				w.Select(w.Org+P1, w.Selectq)
-			} else {
-				w.Select(w.Selectq, w.Org+P1)
-			}
-		}
-	}
-	if w.Sweeping {
-		w.flush()
-	} 
-	w.SetOrigin(q0, true)
+	
 }
 func (w *Win) Select(q0, q1 int64) {
 //	defer Un(Trace(Db, "Win.Select"))	// Debug
 //	      func(){Db.Trace(whatsdot(w))}()	// Debug
 //	defer func(){Db.Trace(whatsdot(w))}()	// Debug
 	w.Q0, w.Q1 = q0, q1
-	p0 := clamp(q0-w.Org, 0, w.Nchars)
-	p1 := clamp(q1-w.Org, 0, w.Nchars)
+	p0 := q0-w.Org
+	p1 := q1-w.Org
 	pp0, pp1 := w.Frame.Dot()
 	if p0 == pp0 && p1 == pp1 {
 		return
 	}
+	p0 = clamp(p0, 0, w.Nchars)
+	p1 = clamp(p1, 0, w.Nchars)
 	if pp1 <= p0 || p1 <= pp0 || p0 == p1 || pp1 == pp0 {
 		w.Redraw(w.PointOf(pp0), pp0, pp1, false)
 		w.Redraw(w.PointOf(p0), p0, p1, true)
@@ -410,12 +371,15 @@ func (w *Win) SetOrigin(org int64, exact bool) {
 	w.Fill()
 	w.drawsb()
 	w.Select(w.Q0, w.Q1)
-	//(w.Q0, w// Put .Q1)
 	if P0, P1 := w.Frame.Dot(); fix && P1 > P0 {
 		w.Redraw(w.PointOf(P1-1), P1-1, P1, true)
 	}
-	//q0, q1 := w.Dot()
-	//w.Frame.Select(q0-w.Org, q1-w.Org)
+	if w.Q0 < w.Org && w.Q1 < w.Org{
+		p0, p1 := w.Frame.Dot()
+		w.Redraw(w.PointOf(p0), p0, p1, false)
+	}
+	
+
 }
 
 func (w *Win) filldebug() {
@@ -530,7 +494,6 @@ func (w *Win) Insert(s []byte, q0 int64) int64 {
 		}
 	}
 	copy(w.R[q0+n:], w.R[q0:w.Nr])
-	//copy(w.R[q0+n:], w.R[q0:][:w.Nr-q0])
 	copy(w.R[q0:], s)
 	w.Nr += n
 	if q0 <= w.Q1 {
@@ -555,14 +518,14 @@ func (w *Win) Insert(s []byte, q0 int64) int64 {
 }
 
 func (w *Win) upload() {
+	w.events.Upload(w.Sp, w.b, image.Rectangle{image.ZP, w.Size()})
 }
 func (w *Win) flush() {
 	scrollsp := w.Sp
 	s0 := w.Scrollr.Sub(w.Sp)
-	r := image.Rect(20, 25, 1000, 1000)
+	r := image.Rectangle{image.ZP, w.Size()}
 	Ny := r.Dy() / 4
-	sp := image.Pt(20, 25)
-	
+	sp := w.Sp
 	r0 := image.Rect(r.Min.X, r.Min.Y, r.Max.X, r.Min.Y+Ny)
 	r1 := image.Rect(r.Min.X, r.Min.Y+Ny, r.Max.X, r.Min.Y+Ny*2)
 	r2 := image.Rect(r.Min.X, r.Min.Y+Ny*2, r.Max.X, r.Min.Y+Ny*3)
@@ -577,7 +540,7 @@ func (w *Win) flush() {
 	go func() { w.events.Upload(sp.Add(image.Pt(0, Ny*3)), w.b, r3); wg.Done() }()
 	w.Flushcache()
 	wg.Wait()
-	w.events.Publish()
+	//w.events.Publish()
 }
 
 // Put
