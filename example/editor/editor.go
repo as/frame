@@ -46,7 +46,7 @@ type Scroller struct {
 	scrollr image.Rectangle
 }
 
-type scrollEvent struct {
+type ScrollEvent struct {
 	dy        int
 	wind      *Invertable
 	flushwith func(e interface{})
@@ -198,7 +198,7 @@ func (m *Mouse) clear() {
 
 // Put
 var (
-	buttonsdown = 0
+	Buttonsdown = 0
 	noselect    bool
 	lastclickpt image.Point
 )
@@ -208,7 +208,7 @@ func active(e mouse.Event, act Plane, list ...Plane) (x interface{}) {
 	defer func() {
 		//fmt.Printf("active; %#v\n", x)
 	}()
-	if buttonsdown != 0 {
+	if Buttonsdown != 0 {
 		return act
 	}
 	pt := image.Pt(int(e.X), int(e.Y))
@@ -242,7 +242,7 @@ func scroll2(act *Invertable, e mouse.Event) {
 	if dy == 0 {
 		return
 	}
-	act.Send(scrollEvent{dy: dy, wind: act, flushwith: act.SendFirst})
+	act.Send(ScrollEvent{dy: dy, wind: act, flushwith: act.SendFirst})
 }
 
 func scroll(act *Invertable, e mouse.Event) {
@@ -257,7 +257,7 @@ func scroll(act *Invertable, e mouse.Event) {
 			ticking = true
 			time.AfterFunc(time.Millisecond*15, func() { // Put
 				ticking = false
-				act.SendFirst(scrollEvent{dy: scrolldy, wind: act, flushwith: act.SendFirst})
+				act.SendFirst(ScrollEvent{dy: scrolldy, wind: act, flushwith: act.SendFirst})
 				scrolldy = 0
 			})
 		} else {
@@ -304,7 +304,7 @@ func main() {
 			case mouse.Event:
 				act = active(e, act, wn.w, wn.wtag).(*Invertable)
 				wn.Handle(act, e)
-			case string, *command, scrollEvent, key.Event:
+			case string, *command, ScrollEvent, key.Event:
 				wn.Handle(act, e)
 			case size.Event:
 				wn.Resize(image.Pt(e.WidthPx, e.HeightPx))

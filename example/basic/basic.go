@@ -107,16 +107,16 @@ func main() {
 		// lambda to paint only rectangles changed during a sweep of the mouse
 
 		act := w
-		buttonsdown := 0x00000000
+		Buttonsdown := 0x00000000
 		for {
 			switch e := act.NextEvent().(type) {
 			case mouse.Event:
 				pt := image.Pt(int(e.X), int(e.Y))
 				if e.Direction == mouse.DirRelease {
 					bt := uint(e.Button)
-					buttonsdown &^= 1 << bt
+					Buttonsdown &^= 1 << bt
 				}
-				if (e.Direction == mouse.DirNone || e.Direction == mouse.DirPress) && buttonsdown == 0 {
+				if (e.Direction == mouse.DirNone || e.Direction == mouse.DirPress) && Buttonsdown == 0 {
 					apt := act.Sp.Add(pt)
 					if !apt.In(image.Rectangle{act.Sp, act.Sp.Add(act.Size())}) {
 						list := []*win.Win{wmain, wtag, w}
@@ -135,11 +135,11 @@ func main() {
 				if e.Direction == mouse.DirPress {
 					bt := uint(e.Button)
 					if e.Direction == mouse.DirPress {
-						buttonsdown |= 1 << bt
+						Buttonsdown |= 1 << bt
 					}
 				}
 				if e.Direction == mouse.DirPress {
-					if e.Button == 2 && buttonsdown&(1<<1) != 0 {
+					if e.Button == 2 && Buttonsdown&(1<<1) != 0 {
 						ClipBuf = ClipBuf[:cap(ClipBuf)]
 						n, err := w.Read(ClipBuf)
 						fmt.Printf("clip: read %d (err = %s)\n", n, err)
@@ -153,7 +153,7 @@ func main() {
 						fmt.Println("snarf")
 					}
 					if e.Button == 3 {
-						if buttonsdown&(1<<1) != 0 {
+						if Buttonsdown&(1<<1) != 0 {
 							fmt.Println("paste")
 							x := act.P0
 							act.Insert(string(toUTF16(ClipBuf)), act.P0)

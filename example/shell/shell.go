@@ -109,10 +109,10 @@ func (c *Cell) Dirty() bool {
 	return c.dirty
 }
 
-var buttonsdown = 0
+var Buttonsdown = 0
 
 func main() {
-	type scrollEvent struct {
+	type ScrollEvent struct {
 		dy        int
 		wind      *win.Win
 		flushwith func(e interface{})
@@ -157,12 +157,12 @@ func main() {
 		for {
 			// Put
 			switch e := act.NextEvent().(type) {
-			case scrollEvent:
+			case ScrollEvent:
 				e.wind.FrameScroll(e.dy)
 				e.flushwith(paint.Event{})
 			case mouse.Event:
 				pt := image.Pt(int(e.X), int(e.Y))
-				if (e.Direction == mouse.DirNone || e.Direction == mouse.DirPress) && buttonsdown == 0 {
+				if (e.Direction == mouse.DirNone || e.Direction == mouse.DirPress) && Buttonsdown == 0 {
 					apt := act.Sp.Add(pt)
 					if !apt.In(image.Rectangle{act.Sp, act.Sp.Add(act.Size())}) {
 						list := []*win.Win{wmain, wtag, w}
@@ -186,11 +186,11 @@ func main() {
 					}
 					if !ticking {
 						act := act
-						act.SendFirst(scrollEvent{dy: dy, wind: act, flushwith: act.SendFirst})
+						act.SendFirst(ScrollEvent{dy: dy, wind: act, flushwith: act.SendFirst})
 						ticking = true
 						time.AfterFunc(time.Millisecond*15, func() {
 							ticking = false
-							act.SendFirst(scrollEvent{dy: scrolldy, wind: act, flushwith: act.SendFirst})
+							act.SendFirst(ScrollEvent{dy: scrolldy, wind: act, flushwith: act.SendFirst})
 							shifty = scrolldy
 							scrolldy = 0
 						})

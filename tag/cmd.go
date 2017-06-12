@@ -1,4 +1,4 @@
-package main
+package tag
 
 // Edit ,x,pt\(,x,pt,c,Pt,
 import (

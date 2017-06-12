@@ -1,4 +1,4 @@
-package main
+package tag
 
 import (
 	"bufio"
@@ -29,11 +29,28 @@ func whatsdot(d doter) string {
 	return fmt.Sprintf("Dot: [%d:%d]", q0, q1)
 }
 
+// Put
+var (
+	Buttonsdown = 0
+	noselect    bool
+	lastclickpt image.Point
+)
+
 type Tag struct {
 	sp        image.Point
-	wtag      *Invertable
-	w         *Invertable
+	Wtag      *Invertable
+	W         *Invertable
 	Scrolling bool
+	scrolldy  int
+}
+
+func (t *Tag) Loc()image.Rectangle{
+	return image.Rectangle{t.sp, t.sp.Add(
+		image.Pt(
+			t.Wtag.Bounds().Dx(), 
+			t.Wtag.Bounds().Dy()+t.W.Bounds().Dy(),
+		),
+	)}
 }
 
 // Put
@@ -41,7 +58,7 @@ func NewTag(src screen.Screen, wind screen.Window, ft frame.Font,
 	sp, size, pad image.Point, cols frame.Color) *Tag {
 
 	// Make the main tag
-	tagY := fsize * 2
+	tagY := ft.Dy() * 2
 	cols.Back = Cyan
 
 	// Make tag
@@ -54,28 +71,33 @@ func NewTag(src screen.Screen, wind screen.Window, ft frame.Font,
 	}
 
 	sp = sp.Add(image.Pt(0, tagY))
-
+	size = size.Sub(image.Pt(0, tagY))
 	// Make window
 	cols.Back = Yellow
 	w := &Invertable{
 		win.New(src, ft, wind,
 			sp,
-			size.Sub(image.Pt(0, sp.Y)),
+			size,
 			pad, cols),
 		nil, nil, 0,
 	}
-	return &Tag{sp: sp, wtag: wtag, w: w}
+	return &Tag{sp: sp, Wtag: wtag, W: w}
+}
+
+func (t *Tag) Move(pt image.Point){
+	t.Wtag.Move(pt)
+	pt.Y += t.Wtag.Loc().Dy()
+	t.W.Move(pt)
 }
 
 func (t *Tag) Resize(pt image.Point) {
-	if pt.X < fsize || pt.Y < fsize {
+	if pt.X < t.W.Font.Dy() || pt.Y < t.W.Font.Dy() {
 		println("ignore daft size request:", pt.String())
 		return
 	}
-	winSize = pt
-	tagY := t.wtag.Loc().Dy()
-	t.wtag.Resize(image.Pt(winSize.X, tagY))
-	t.w.Resize(winSize.Sub(image.Pt(0, tagY)))
+	tagY := t.Wtag.Loc().Dy()
+	t.Wtag.Resize(image.Pt(pt.X, tagY))
+	t.W.Resize(pt.Sub(image.Pt(0, tagY)))
 }
 
 func (t *Tag) Open(filename string) {
@@ -86,8 +108,8 @@ func (t *Tag) Open(filename string) {
 		filename = filename[:x]
 	}
 
-	w := t.w
-	wtag := t.wtag
+	w := t.W
+	wtag := t.Wtag
 
 	wtag.InsertString(filename+"\tPut Del Exit", 0)
 	wtag.Refresh()
@@ -109,14 +131,17 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 		e.Rune = '\n'
 	}
 	q0, q1 := act.Dot()
-	fmt.Println(q0, q1)
 	switch e.Code {
 	case key.CodeEqualSign, key.CodeHyphenMinus:
+		fsize := act.Font.Dy()
 		if e.Modifiers == key.ModControl {
 			if key.CodeHyphenMinus == e.Code {
-				fsize--
+				fsize-=6
 			} else {
-				fsize++
+				fsize+=3
+			}
+			if fsize < 1{
+				fsize = 1
 			}
 			act.SetFont(mkfont(fsize))
 			act.SendFirst(paint.Event{})
@@ -185,8 +210,8 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 
 func (t *Tag) MouseIn(act *Invertable, e mouse.Event) {
 	//	defer un(trace(db, "Tag.Mousein"))
-	//	      func(){db.Trace(whatsdot(t.w))}()
-	//	defer func(){db.Trace(whatsdot(t.w))}()
+	//	      func(){db.Trace(whatsdot(t.W))}()
+	//	defer func(){db.Trace(whatsdot(t.W))}()
 
 	pt := Pt(e)
 	if e.Direction == mouse.DirRelease {
@@ -211,11 +236,11 @@ func (t *Tag) MouseIn(act *Invertable, e mouse.Event) {
 	switch e.Direction {
 	case mouse.DirPress:
 		lastclickpt = Pt(e)
-		press(act.Win, t.wtag.Win, e)
+		press(act.Win, t.Wtag.Win, e)
 		act.Send(paint.Event{})
 	case mouse.DirRelease:
 		lastclickpt = image.Pt(-5, -5)
-		release(act.Win, t.wtag.Win, e)
+		release(act.Win, t.Wtag.Win, e)
 		act.Send(paint.Event{})
 	case mouse.DirNone:
 		if !noselect && down(1) && ones(Buttonsdown) == 1 {
@@ -238,10 +263,10 @@ func (t *Tag) MouseIn(act *Invertable, e mouse.Event) {
 }
 
 func (t *Tag) FileName() string {
-	if t.wtag == nil {
+	if t.Wtag == nil {
 		return ""
 	}
-	name, err := bufio.NewReader(bytes.NewReader(t.wtag.Bytes())).ReadString('\t')
+	name, err := bufio.NewReader(bytes.NewReader(t.Wtag.Bytes())).ReadString('\t')
 	if err != nil {
 		return ""
 	}
@@ -253,8 +278,8 @@ func (t *Tag) Get() (err error) {
 	if name == "" {
 		return fmt.Errorf("no file")
 	}
-	t.w.Delete(0, t.w.Nr)
-	t.w.Insert(readfile(name), 0)
+	t.W.Delete(0, t.W.Nr)
+	t.W.Insert(readfile(name), 0)
 	return nil
 }
 
@@ -263,7 +288,7 @@ func (t *Tag) Put() (err error) {
 	if name == "" {
 		return fmt.Errorf("no file")
 	}
-	writefile(name, t.w.Bytes())
+	writefile(name, t.W.Bytes())
 	return nil
 }
 
@@ -281,13 +306,13 @@ func (t *Tag) Handle(act *Invertable, e interface{}) {
 			t.Get()
 		}
 		act.Send(paint.Event{})
-	case *command:
+	case *Command:
 		fmt.Printf("command %#v\n", e)
 		if e == nil {
 			panic("command is nil")
 		}
 		if e.fn != nil {
-			e.fn(t.w) // Always execute on body for now
+			e.fn(t.W) // Always execute on body for now
 		}
 		act.Send(paint.Event{})
 	case ScrollEvent:
@@ -306,8 +331,8 @@ func (t *Tag) Handle(act *Invertable, e interface{}) {
 
 func (t *Tag) Upload(wind screen.Window) {
 
-	w := t.w
-	wtag := t.wtag
+	w := t.W
+	wtag := t.Wtag
 	wind.Upload(w.Sp, w.Buffer(), w.Buffer().Bounds())
 	wind.Upload(wtag.Sp, wtag.Buffer(), wtag.Buffer().Bounds())
 

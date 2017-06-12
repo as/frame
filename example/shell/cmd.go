@@ -53,8 +53,8 @@ func press(w, wtag *win.Win, e mouse.Event) {
 	if e.Direction != mouse.DirPress {
 		return
 	}
-	buttonsdown |= 1 << uint(e.Button)
-	fmt.Printf("press %d %08x\n", e.Button, buttonsdown)
+	Buttonsdown |= 1 << uint(e.Button)
+	fmt.Printf("press %d %08x\n", e.Button, Buttonsdown)
 	switch e.Button {
 	case 1:
 		w.Selectq = w.Org + w.IndexOf(pt(e))
@@ -76,7 +76,7 @@ func press(w, wtag *win.Win, e mouse.Event) {
 }
 
 func down(but uint) bool {
-	return buttonsdown&(1<<but) != 0
+	return Buttonsdown&(1<<but) != 0
 }
 
 func paste(w, wtag *win.Win, e mouse.Event) {
@@ -103,9 +103,9 @@ func snarf(w, wtag *win.Win, e mouse.Event) {
 }
 
 func release(w, wtag *win.Win, e mouse.Event) {
-	fmt.Printf("release %d %08x", e.Button, buttonsdown)
+	fmt.Printf("release %d %08x", e.Button, Buttonsdown)
 	defer func() {
-		buttonsdown &^= 1 << uint(e.Button)
+		Buttonsdown &^= 1 << uint(e.Button)
 	}()
 	if e.Direction != mouse.DirRelease {
 		return

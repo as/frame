@@ -18,7 +18,7 @@ import (
 
 var Db = new(Dbg)
 
-type Dbg struct{
+type Dbg struct {
 	indent int
 }
 
@@ -46,13 +46,16 @@ func (p *Dbg) Trace(a ...interface{}) {
 	fmt.Print(dots[0:i])
 	fmt.Println(a...)
 }
-type doter interface{
+
+type doter interface {
 	Dot() (int64, int64)
 }
-func whatsdot(d doter) string{
+
+func whatsdot(d doter) string {
 	q0, q1 := d.Dot()
 	return fmt.Sprintf("Dot: [%d:%d]", q0, q1)
 }
+
 const (
 	HiWater  = 1024 * 1024
 	LoWater  = 2 * 1024
@@ -77,9 +80,9 @@ type Win struct {
 	Lastclick time.Time
 	Selectq   int64
 	Scrollr   image.Rectangle
-	Sweeping     bool
-	dirtysb bool
-	sb      screen.Buffer
+	Sweeping  bool
+	dirtysb   bool
+	sb        screen.Buffer
 }
 
 func (w *Win) Clicksb(pt image.Point, dir int) {
@@ -124,7 +127,7 @@ func (w *Win) drawsb() {
 	drawBorder(w.b.RGBA(), r, LtGray, image.ZP, 1)
 	r.Min.Y = int(dy * rat0)
 	r.Max.Y = int(dy * rat1)
-	draw.Draw(w.b.RGBA(),  r,       LtGray, image.ZP, draw.Src)
+	draw.Draw(w.b.RGBA(), r, LtGray, image.ZP, draw.Src)
 	drawBorder(w.b.RGBA(), r, LtGray, image.ZP, 1)
 }
 
@@ -179,7 +182,7 @@ func (w *Win) scrollinit(pad image.Point) {
 	}
 }
 
-func (w *Win) init(){
+func (w *Win) init() {
 	w.scrollinit(w.pad)
 	w.Frame.Scroll = w.FrameScroll
 	w.Blank()
@@ -199,6 +202,10 @@ func (w *Win) Resize(size image.Point) {
 	r := image.Rectangle{w.pad, w.size}.Inset(1)
 	w.Frame = frame.New(r, w.Frame.Font, w.b.RGBA(), w.Frame.Color)
 	w.init()
+}
+
+func (w *Win) Move(sp image.Point){
+	w.Sp = sp
 }
 
 func (w *Win) SetFont(ft frame.Font) {
@@ -225,7 +232,7 @@ func (w *Win) SendFirst(e interface{}) {
 	w.events.SendFirst(e)
 }
 func (w *Win) Blank() {
-	if w.b == nil{
+	if w.b == nil {
 		return
 	}
 	r := w.b.RGBA().Bounds()
@@ -244,9 +251,9 @@ func (w *Win) Dot() (q0, q1 int64) {
 }
 
 func (w *Win) FrameScroll(dl int) {
-//	defer Un(Trace(Db, fmt.Sprintf("Win.FrameScroll(%d)", dl)))	// Debug
-//	      func(){Db.Trace(whatsdot(w))}()	// Debug
-//	defer func(){Db.Trace(whatsdot(w))}()	// Debug
+	//	defer Un(Trace(Db, fmt.Sprintf("Win.FrameScroll(%d)", dl)))	// Debug
+	//	      func(){Db.Trace(whatsdot(w))}()	// Debug
+	//	defer func(){Db.Trace(whatsdot(w))}()	// Debug
 	//time.Sleep(200*time.Millisecond)
 	if dl == 0 {
 		return
@@ -284,15 +291,15 @@ func (w *Win) FrameScroll(dl int) {
 		w.Flushcache()
 		w.flush()
 	}
-	
+
 }
 func (w *Win) Select(q0, q1 int64) {
-//	defer Un(Trace(Db, "Win.Select"))	// Debug
-//	      func(){Db.Trace(whatsdot(w))}()	// Debug
-//	defer func(){Db.Trace(whatsdot(w))}()	// Debug
+	//	defer Un(Trace(Db, "Win.Select"))	// Debug
+	//	      func(){Db.Trace(whatsdot(w))}()	// Debug
+	//	defer func(){Db.Trace(whatsdot(w))}()	// Debug
 	w.Q0, w.Q1 = q0, q1
-	p0 := q0-w.Org
-	p1 := q1-w.Org
+	p0 := q0 - w.Org
+	p1 := q1 - w.Org
 	pp0, pp1 := w.Frame.Dot()
 	if p0 == pp0 && p1 == pp1 {
 		return
@@ -374,11 +381,10 @@ func (w *Win) SetOrigin(org int64, exact bool) {
 	if P0, P1 := w.Frame.Dot(); fix && P1 > P0 {
 		w.Redraw(w.PointOf(P1-1), P1-1, P1, true)
 	}
-	if w.Q0 < w.Org && w.Q1 < w.Org{
+	if w.Q0 < w.Org && w.Q1 < w.Org {
 		p0, p1 := w.Frame.Dot()
 		w.Redraw(w.PointOf(p0), p0, p1, false)
 	}
-	
 
 }
 
@@ -532,8 +538,8 @@ func (w *Win) flush() {
 	r3 := image.Rect(r.Min.X, r.Min.Y+Ny*3, r.Max.X, r.Min.Y+Ny*4)
 	var wg sync.WaitGroup
 	wg.Add(4)
-		wg.Add(1)
-		go func() { w.events.Upload(scrollsp, w.b, s0); wg.Done() }()
+	wg.Add(1)
+	go func() { w.events.Upload(scrollsp, w.b, s0); wg.Done() }()
 	go func() { w.events.Upload(sp, w.b, r0); wg.Done() }()
 	go func() { w.events.Upload(sp.Add(image.Pt(0, Ny)), w.b, r1); wg.Done() }()
 	go func() { w.events.Upload(sp.Add(image.Pt(0, Ny*2)), w.b, r2); wg.Done() }()
