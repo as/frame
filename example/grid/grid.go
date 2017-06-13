@@ -5,6 +5,7 @@ import (
 	"image"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/as/frame"
 	"github.com/as/frame/tag"
@@ -52,6 +53,51 @@ func active(e mouse.Event, act Plane, list ...Plane) (x Plane) {
 	return act
 }
 
+type Col struct {
+	sp   image.Point
+	size image.Point
+	wind screen.Window
+	List []*tag.Tag
+}
+
+var cols = frame.Acme
+
+func NewCol(src screen.Screen, wind screen.Window, ft frame.Font, sp, size image.Point, files ...string) *Col {
+	N := len(files)
+	dy := size.Y / N
+	n := 0
+	col := &Col{sp: sp, size: size, wind: wind, List: make([]*tag.Tag, len(files))}
+	for i, v := range files {
+		sp = image.Pt(sp.X, n*dy)
+		dp := image.Pt(size.X, dy)
+		n++
+		col.List[i] = tag.NewTag(src, wind, ft, sp, dp, pad, cols)
+		col.List[i].Open(v)
+	}
+	return col
+}
+
+func (co *Col) Upload() {
+	var wg sync.WaitGroup
+	wg.Add(len(co.List))
+	for _, t := range co.List {
+		go func() { t.Upload(co.wind); wg.Done() }()
+	}
+	wg.Wait()
+}
+
+func (co *Col) Resize(size image.Point) {
+	N := len(co.List)
+	dy := size.Y / N
+	sp := image.Pt(0, dy)
+	dp := image.Pt(size.X, dy)
+	for _, t := range co.List {
+		t.Move(sp)
+		t.Resize(dp)
+		sp = sp.Add(image.Pt(0, dy))
+	}
+}
+
 // Put
 func main() {
 	driver.Main(func(src screen.Screen) {
@@ -64,7 +110,6 @@ func main() {
 		if len(os.Args) > 1 {
 			filename = strings.Join(os.Args[1:], " ")
 		}
-		cols := frame.Acme
 
 		N := 2
 		dy := winSize.Y / N
@@ -105,18 +150,18 @@ func main() {
 			case string, *tag.Command, tag.ScrollEvent, key.Event:
 				actTag.Handle(act, e)
 			case size.Event:
-		winSize = image.Pt(e.WidthPx, e.HeightPx)
-		N := 2
-		dy := winSize.Y / N
-		n := 0
-		sp := image.Pt(0, n*dy)
-		dp := image.Pt(winSize.X, dy)
-		n++
-		wn.Move(sp)
-		wn.Resize(dp)
-		sp = sp.Add(image.Pt(0, dy))
-		wn2.Move(sp)
-		wn2.Resize(dp)
+				winSize = image.Pt(e.WidthPx, e.HeightPx)
+				N := 2
+				dy := winSize.Y / N
+				n := 0
+				sp := image.Pt(0, n*dy)
+				dp := image.Pt(winSize.X, dy)
+				n++
+				wn.Move(sp)
+				wn.Resize(dp)
+				sp = sp.Add(image.Pt(0, dy))
+				wn2.Move(sp)
+				wn2.Resize(dp)
 				act.SendFirst(paint.Event{})
 			case paint.Event:
 				wn.Upload(wind)

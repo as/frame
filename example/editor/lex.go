@@ -6,6 +6,7 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+	"strconv"
 )
 
 type item struct {
@@ -68,6 +69,7 @@ type lexer struct {
 	items  chan item
 	lastop item
 	first  bool
+	esc bool
 }
 
 func lex(name, input string) (*lexer, chan item) {
@@ -123,7 +125,11 @@ func (l *lexer) backup() {
 }
 
 func (l *lexer) emit(t Kind) {
-	l.items <- item{t, l.String()}
+	s, err := strconv.Unquote(`"` + l.String() + `"`)
+	if err != nil {
+			l.errorf(err.Error())
+	}
+	l.items <- item{t, s}
 	l.start = l.pos
 }
 
@@ -171,6 +177,7 @@ const (
 	Rdigit = "0123456789"
 	Rop    = "+-;,"
 	Rmod   = "#/?"
+	Rescape = `#/?+-;,\abnrtx`
 )
 
 func lexAny(l *lexer) statefn {

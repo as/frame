@@ -136,12 +136,9 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 		fsize := act.Font.Dy()
 		if e.Modifiers == key.ModControl {
 			if key.CodeHyphenMinus == e.Code {
-				fsize-=6
+				fsize--
 			} else {
-				fsize+=3
-			}
-			if fsize < 1{
-				fsize = 1
+				fsize++
 			}
 			act.SetFont(mkfont(fsize))
 			act.SendFirst(paint.Event{})
@@ -182,20 +179,40 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 	switch e.Rune {
 	case -1:
 		return
-	case '\x08', '\x17':
+
+	case '\x01', '\x05', '\x08', '\x15', '\x17':
 		if q0 == 0 && q1 == 0 {
 			return
 		}
-		if e.Rune == '\x08' {
-			if q0 == q1 && q0 != 0 {
-				q0--
+		if q0 == q1 && q0 != 0 {
+			q0--
+		}
+		switch e.Rune {
+		case '\x15', '\x01': // ^U, ^A
+			p := act.Bytes()
+			if q0 < int64(len(p))-1{
+				q0++
 			}
-		} else { // TODO
+			n0, n1 := findlinerev(act.Bytes(), q0, 0)
+			if e.Rune == '\x15'{
+				act.Delete(n0, n1)
+			}
+			act.Select(n0, n0)
+		case '\x05': // ^E
+			_, n1 := findline3(act.Bytes(), q1, 1)
+			if n1 > 0{
+				n1--
+			}
+			act.Select(n1, n1)
+		case '\x17':
 			if isany(act.Bytes()[q0], AlphaNum) {
 				q0 = findback(act.Bytes(), q0, AlphaNum)
 			}
+		case '\x08':
+			fallthrough
+		default:
+			act.Delete(q0, q1)
 		}
-		act.Delete(q0, q1)
 		act.Send(paint.Event{})
 		return
 	}

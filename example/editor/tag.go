@@ -109,7 +109,6 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 		e.Rune = '\n'
 	}
 	q0, q1 := act.Dot()
-	fmt.Println(q0, q1)
 	switch e.Code {
 	case key.CodeEqualSign, key.CodeHyphenMinus:
 		if e.Modifiers == key.ModControl {
@@ -157,20 +156,40 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 	switch e.Rune {
 	case -1:
 		return
-	case '\x08', '\x17':
+
+	case '\x01', '\x05', '\x08', '\x15', '\x17':
 		if q0 == 0 && q1 == 0 {
 			return
 		}
-		if e.Rune == '\x08' {
-			if q0 == q1 && q0 != 0 {
-				q0--
+		if q0 == q1 && q0 != 0 {
+			q0--
+		}
+		switch e.Rune {
+		case '\x15', '\x01': // ^U, ^A
+			p := act.Bytes()
+			if q0 < int64(len(p))-1{
+				q0++
 			}
-		} else { // TODO
+			n0, n1 := findlinerev(act.Bytes(), q0, 0)
+			if e.Rune == '\x15'{
+				act.Delete(n0, n1)
+			}
+			act.Select(n0, n0)
+		case '\x05': // ^E
+			_, n1 := findline3(act.Bytes(), q1, 1)
+			if n1 > 0{
+				n1--
+			}
+			act.Select(n1, n1)
+		case '\x17':
 			if isany(act.Bytes()[q0], AlphaNum) {
 				q0 = findback(act.Bytes(), q0, AlphaNum)
 			}
+		case '\x08':
+			fallthrough
+		default:
+			act.Delete(q0, q1)
 		}
-		act.Delete(q0, q1)
 		act.Send(paint.Event{})
 		return
 	}
