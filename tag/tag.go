@@ -208,6 +208,8 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 			if isany(act.Bytes()[q0], AlphaNum) {
 				q0 = findback(act.Bytes(), q0, AlphaNum)
 			}
+			act.Delete(q0, q1)
+			act.Select(q0, q0)
 		case '\x08':
 			fallthrough
 		default:
