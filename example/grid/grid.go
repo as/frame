@@ -2,10 +2,9 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"image"
 	"os"
-	"strings"
-	"sync"
 
 	"github.com/as/frame"
 	"github.com/as/frame/tag"
@@ -32,6 +31,8 @@ var (
 
 type Plane interface {
 	Loc() image.Rectangle
+	Move(image.Point)
+	Resize(image.Point)
 }
 
 // Put
@@ -57,7 +58,7 @@ type Col struct {
 	sp   image.Point
 	size image.Point
 	wind screen.Window
-	List []*tag.Tag
+	List []Plane
 }
 
 var cols = frame.Acme
@@ -66,30 +67,30 @@ func NewCol(src screen.Screen, wind screen.Window, ft frame.Font, sp, size image
 	N := len(files)
 	dy := size.Y / N
 	n := 0
-	col := &Col{sp: sp, size: size, wind: wind, List: make([]*tag.Tag, len(files))}
+	col := &Col{sp: sp, size: size, wind: wind, List: make([]Plane, len(files))}
 	for i, v := range files {
 		sp = image.Pt(sp.X, n*dy)
 		dp := image.Pt(size.X, dy)
 		n++
-		col.List[i] = tag.NewTag(src, wind, ft, sp, dp, pad, cols)
-		col.List[i].Open(v)
+		fmt.Printf("sp=%s size=%s\n", sp, dp)
+		t := tag.NewTag(src, wind, ft, sp, dp, pad, cols)
+		t.Open(v)
+		col.List[i] = t
 	}
 	return col
 }
 
-func (co *Col) Upload() {
-	var wg sync.WaitGroup
-	wg.Add(len(co.List))
+func (co *Col) Upload(wind screen.Window) {
 	for _, t := range co.List {
-		go func() { t.Upload(co.wind); wg.Done() }()
+		t.(*tag.Tag).Upload(wind)
 	}
-	wg.Wait()
 }
 
 func (co *Col) Resize(size image.Point) {
+	co.size = size
 	N := len(co.List)
 	dy := size.Y / N
-	sp := image.Pt(0, dy)
+	sp := image.Pt(co.sp.X, co.sp.Y)
 	dp := image.Pt(size.X, dy)
 	for _, t := range co.List {
 		t.Move(sp)
@@ -106,29 +107,14 @@ func main() {
 		focused := false
 		focused = focused
 		ft := mkfont(fsize)
-		filename := "/dev/stdin"
+
+		list := []string{"/dev/stdin"}
 		if len(os.Args) > 1 {
-			filename = strings.Join(os.Args[1:], " ")
+			list = os.Args[1:]
 		}
-
-		N := 2
-		dy := winSize.Y / N
-		n := 0
-
-		sp := image.Pt(0, n*dy)
-		dp := image.Pt(winSize.X, dy)
-		n++
-		wn := tag.NewTag(src, wind, ft, sp, dp, pad, cols)
-		sp = sp.Add(image.Pt(0, dy))
-
-		wn2 := tag.NewTag(src, wind, ft, sp, dp, pad, cols)
-		wn.Open(filename)
-		wn2.Open(`C:\windows\system32\drivers\etc\hosts`)
-
-		// lambda to paint only rectangles changed during a sweep of the mouse
-		// Put
-		act := wn.W
-		actTag := wn
+		co := NewCol(src, wind, ft, image.ZP, winSize, list...)
+		act := co.List[0].(*tag.Tag).W
+		actTag := co.List[0]
 
 		go func() {
 			sc := bufio.NewScanner(os.Stdin)
@@ -144,28 +130,17 @@ func main() {
 			// Put
 			switch e := act.NextEvent().(type) {
 			case mouse.Event:
-				actTag = active(e, actTag, wn, wn2).(*tag.Tag)
-				act = active(e, act, actTag.W, actTag.Wtag).(*tag.Invertable)
-				actTag.Handle(act, e)
+				actTag = active(e, actTag, co.List...).(*tag.Tag)
+				act = active(e, act, actTag.(*tag.Tag).W, actTag.(*tag.Tag).Wtag).(*tag.Invertable)
+				actTag.(*tag.Tag).Handle(act, e)
 			case string, *tag.Command, tag.ScrollEvent, key.Event:
-				actTag.Handle(act, e)
+				actTag.(*tag.Tag).Handle(act, e)
 			case size.Event:
 				winSize = image.Pt(e.WidthPx, e.HeightPx)
-				N := 2
-				dy := winSize.Y / N
-				n := 0
-				sp := image.Pt(0, n*dy)
-				dp := image.Pt(winSize.X, dy)
-				n++
-				wn.Move(sp)
-				wn.Resize(dp)
-				sp = sp.Add(image.Pt(0, dy))
-				wn2.Move(sp)
-				wn2.Resize(dp)
+				co.Resize(winSize)
 				act.SendFirst(paint.Event{})
 			case paint.Event:
-				wn.Upload(wind)
-				wn2.Upload(wind)
+				co.Upload(wind)
 				wind.Publish()
 			case lifecycle.Event:
 				if e.To == lifecycle.StageDead {
