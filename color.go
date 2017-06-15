@@ -13,7 +13,7 @@ var (
 	Cyan   = image.NewUniform(color.RGBA{234, 255, 255, 255})
 	White  = image.NewUniform(color.RGBA{255, 255, 255, 255})
 	Yellow = image.NewUniform(color.RGBA{255, 255, 224, 255})
-	Gray   = image.NewUniform(color.RGBA{66, 66, 66, 255})
+	Gray   = image.NewUniform(color.RGBA{0x55, 0x55, 0x55, 255})
 	Mauve  = image.NewUniform(color.RGBA{0x99, 0x99, 0xDD, 255})
 )
 

@@ -25,7 +25,7 @@ func mkfont(size int) frame.Font {
 // Put
 var (
 	winSize = image.Pt(1900, 1000)
-	pad     = image.Pt(25, 5)
+	pad     = image.Pt(15, 5)
 	fsize   = 11
 )
 
@@ -99,6 +99,20 @@ func (co *Col) Resize(size image.Point) {
 	}
 }
 
+func (co *Col) Loc() image.Rectangle{
+	return image.Rectangle{co.sp, co.sp.Add(co.size)}
+}
+func (co *Col) Move(sp image.Point){
+
+}
+
+func (co *Col) Handle(act *tag.Invertable, e interface{}){
+	for i := range co.List{
+		t := co.List[i].(*tag.Tag)
+		t.Handle(t.W, e)
+	}
+}
+
 // Put
 func main() {
 	driver.Main(func(src screen.Screen) {
@@ -112,9 +126,16 @@ func main() {
 		if len(os.Args) > 1 {
 			list = os.Args[1:]
 		}
-		co := NewCol(src, wind, ft, image.ZP, winSize, list...)
-		act := co.List[0].(*tag.Tag).W
-		actTag := co.List[0]
+		sp := image.ZP
+		dx := winSize.X/2
+		x := dx
+		co0 := NewCol(src, wind, ft, sp, image.Pt(sp.X+x, winSize.Y), list[len(list)/2:]...)
+		sp.X += dx
+		co1 := NewCol(src, wind, ft, sp, image.Pt(sp.X+x, winSize.Y), list[:len(list)/2]...)
+		actCol := co0
+		actTag := actCol.List[0]
+		act := actTag.(*tag.Tag).W
+		
 
 		go func() {
 			sc := bufio.NewScanner(os.Stdin)
@@ -130,17 +151,18 @@ func main() {
 			// Put
 			switch e := act.NextEvent().(type) {
 			case mouse.Event:
-				actTag = active(e, actTag, co.List...).(*tag.Tag)
+				actCol = active(e, actCol, co0, co1).(*Col)
+				actTag = active(e, actTag, actCol.List...).(*tag.Tag)
 				act = active(e, act, actTag.(*tag.Tag).W, actTag.(*tag.Tag).Wtag).(*tag.Invertable)
 				actTag.(*tag.Tag).Handle(act, e)
 			case string, *tag.Command, tag.ScrollEvent, key.Event:
 				actTag.(*tag.Tag).Handle(act, e)
 			case size.Event:
 				winSize = image.Pt(e.WidthPx, e.HeightPx)
-				co.Resize(winSize)
 				act.SendFirst(paint.Event{})
 			case paint.Event:
-				co.Upload(wind)
+				co0.Upload(wind)
+				co1.Upload(wind)
 				wind.Publish()
 			case lifecycle.Event:
 				if e.To == lifecycle.StageDead {

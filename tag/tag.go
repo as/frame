@@ -111,7 +111,7 @@ func (t *Tag) Open(filename string) {
 	w := t.W
 	wtag := t.Wtag
 
-	wtag.InsertString(filename+"\tPut Del Exit", 0)
+	wtag.InsertString(filename+"\tPut Del [Edit ,x,,c,, ]", 0)
 	wtag.Refresh()
 	if len(os.Args) > 1 {
 		s := readfile(filename)
