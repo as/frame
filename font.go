@@ -1,6 +1,8 @@
 package frame
 
 import (
+	"unicode"
+
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
@@ -39,9 +41,9 @@ func (f Font) stringwidth(p []byte) (w int) {
 	}
 	return w
 }
-func (f Font) Measure(r rune) int {
-	if r == 0 {
-		r = 1
+func (f Font) Measure(r rune) (q int) {
+	if r == 0 || !unicode.IsGraphic(r) || r > 127 {
+		return f.measureHex()
 	}
 	l, ok := f.Face.GlyphAdvance(r)
 	if !ok {
@@ -49,4 +51,8 @@ func (f Font) Measure(r rune) int {
 		l, _ = f.Face.GlyphAdvance('@')
 	}
 	return fix(l)
+}
+
+func (f Font) measureHex() int{
+	return f.Measure('_')*7/4
 }

@@ -244,9 +244,10 @@ func (f *Frame) renderHex() {
 	}
 	f.hex = make([]draw.Image, 256)
 	for i := range f.hex {
-		f.hex[i] = image.NewRGBA(image.Rect(0, 0, f.Dx("_"), f.Dy()))
+		sizer := f.Font.measureHex()
+		f.hex[i] = image.NewRGBA(image.Rect(0, 0, sizer, f.Dy()))
 		pt := image.Pt(1, f.Dy()/5)
-		s := fmt.Sprintf("%02d", i)
+		s := fmt.Sprintf("%03d", i)
 		stringnbg(f.hex[i], pt, f.Color.Text, image.ZP, *f.hexFont, []byte(s),
 			f.Color.Back, image.ZP)
 	}
@@ -258,10 +259,7 @@ func (f *Frame) stringbg(dst draw.Image, p image.Point, src image.Image,
 	h = int(float64(h) - float64(h)/float64(5))
 	for _, v := range s {
 		fp := fixed.P(p.X, p.Y)
-		dr, mask, maskp, advance, ok := font.Glyph(fp, rune(v))
-		if v == 0 {
-			dr, mask, maskp, advance, ok = font.Glyph(fp, rune(1))
-		}
+		dr, mask, maskp, _, ok := font.Glyph(fp, rune(v))
 		if !ok {
 			panic("Frame.stringbg")
 			break
@@ -270,17 +268,19 @@ func (f *Frame) stringbg(dst draw.Image, p image.Point, src image.Image,
 		dr.Max.Y += h
 		//src = image.NewUniform(Rainbow)
 		draw.Draw(dst, dr, bg, bgp, draw.Src)
-		if !unicode.IsGraphic(rune(v)) {
+		advance := f.Font.Measure(rune(v))
+		if v == 0 || !unicode.IsGraphic(rune(v)) || v > 127 {
 			if len(f.hex) == 0 {
 				f.renderHex()
 			}
+			dr := image.Rect(dr.Min.X, dr.Min.Y, dr.Min.X+advance, dr.Max.Y)
 			draw.Draw(dst, dr, f.hex[byte(v)], bgp, draw.Over)
 		} else {
 			draw.DrawMask(dst, dr, src, sp, mask, maskp, draw.Over)
 		}
 
 		//next()
-		p.X += fix(advance)
+		p.X += advance
 	}
 	return int(p.X)
 }

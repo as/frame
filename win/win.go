@@ -198,6 +198,7 @@ func (w *Win) Resize(size image.Point) {
 		panic(err)
 	}
 	w.size = size
+	w.b.Release()
 	w.b = b
 	r := image.Rectangle{w.pad, w.size}.Inset(1)
 	w.Frame = frame.New(r, w.Frame.Font, w.b.RGBA(), w.Frame.Color)

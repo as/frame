@@ -45,10 +45,14 @@ type Tag struct {
 }
 
 func (t *Tag) Loc()image.Rectangle{
+	dy := t.Wtag.Bounds().Dy()
+	if t.W != nil{
+		dy += t.W.Bounds().Dy()
+	}
 	return image.Rectangle{t.sp, t.sp.Add(
 		image.Pt(
 			t.Wtag.Bounds().Dx(), 
-			t.Wtag.Bounds().Dy()+t.W.Bounds().Dy(),
+			dy,
 		),
 	)}
 }
@@ -72,32 +76,44 @@ func NewTag(src screen.Screen, wind screen.Window, ft frame.Font,
 
 	sp = sp.Add(image.Pt(0, tagY))
 	size = size.Sub(image.Pt(0, tagY))
+	if size.Y < tagY {
+		return &Tag{sp: sp, Wtag: wtag, W: nil}
+	}
 	// Make window
 	cols.Back = Yellow
 	w := &Invertable{
 		win.New(src, ft, wind,
 			sp,
 			size,
-			pad, cols),
-		nil, nil, 0,
+			pad, cols,
+		), nil, nil, 0,
 	}
 	return &Tag{sp: sp, Wtag: wtag, W: w}
 }
 
 func (t *Tag) Move(pt image.Point){
 	t.Wtag.Move(pt)
+	if t.W == nil{
+		return
+	}
 	pt.Y += t.Wtag.Loc().Dy()
 	t.W.Move(pt)
 }
 
 func (t *Tag) Resize(pt image.Point) {
-	if pt.X < t.W.Font.Dy() || pt.Y < t.W.Font.Dy() {
+	dy := t.Wtag.Font.Dy()*2
+	if t.W != nil && dy < t.W.Font.Dy(){
+		dy = t.W.Font.Dy()*2
+	}
+	if pt.X < dy|| pt.Y < dy {
 		println("ignore daft size request:", pt.String())
 		return
 	}
 	tagY := t.Wtag.Loc().Dy()
 	t.Wtag.Resize(image.Pt(pt.X, tagY))
-	t.W.Resize(pt.Sub(image.Pt(0, tagY)))
+	if t.W != nil{
+		t.W.Resize(pt.Sub(image.Pt(0, tagY)))
+	}
 }
 
 func (t *Tag) Open(filename string) {
@@ -107,12 +123,13 @@ func (t *Tag) Open(filename string) {
 		lineexpr = filename[x+1:]
 		filename = filename[:x]
 	}
-
 	w := t.W
 	wtag := t.Wtag
-
 	wtag.InsertString(filename+"\tPut Del [Edit ,x,,c,, ]", 0)
 	wtag.Refresh()
+	if w == nil{
+		return
+	}
 	if len(os.Args) > 1 {
 		s := readfile(filename)
 		fmt.Printf("files size is %d\n", len(s))
@@ -237,7 +254,7 @@ func (t *Tag) MouseIn(act *Invertable, e mouse.Event) {
 		t.Scrolling = false
 	}
 	if pt.In(act.Scrollr.Sub(act.Sp)) || t.Scrolling {
-		fmt.Printf("mouse.Event: %s\n", e)
+		//fmt.Printf("mouse.Event: %s\n", e)
 		if e.Direction == mouse.DirRelease {
 			return
 		}
@@ -349,12 +366,10 @@ func (t *Tag) Handle(act *Invertable, e interface{}) {
 }
 
 func (t *Tag) Upload(wind screen.Window) {
-
-	w := t.W
-	wtag := t.Wtag
-	wind.Upload(w.Sp, w.Buffer(), w.Buffer().Bounds())
-	wind.Upload(wtag.Sp, wtag.Buffer(), wtag.Buffer().Bounds())
-
-	w.Flushcache()
-	wtag.Flushcache()
+	if t.W != nil{
+		wind.Upload(t.W.Sp, t.W.Buffer(), t.W.Buffer().Bounds())
+		t.W.Flushcache()
+	}
+	wind.Upload(t.Wtag.Sp, t.Wtag.Buffer(), t.Wtag.Buffer().Bounds())
+	t.Wtag.Flushcache()
 }

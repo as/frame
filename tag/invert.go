@@ -76,6 +76,9 @@ func (in *Invertable) Select(q0, q1 int64) {
 	w.Frame.Select(q0-w.Org, q1-w.Org)
 }
 func (in *Invertable) Loc() image.Rectangle {
+	if in == nil || in.Win == nil{
+		return image.ZR
+	}
 	sp, size := in.Win.Sp, in.Win.Size()
 	return image.Rectangle{sp, sp.Add(size)}
 }

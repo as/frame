@@ -80,6 +80,7 @@ func (f *Frame) Dx(s string) int {
 func (f *Frame) Dy() int {
 	return f.Font.Dy()
 }
+
 func (f *Frame) Bounds() image.Rectangle {
 	return f.r.Bounds()
 }
