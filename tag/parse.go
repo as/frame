@@ -15,9 +15,13 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/as/io/rev"
 )
@@ -226,6 +230,131 @@ func parseCmd(p *parser) (c *Command) {
 	case "k":
 	case "s":
 	case "v":
+	case "|":
+		argv := parseArg(p)
+		c.args = argv
+		c.fn = func(f File) {
+			x := strings.Fields(argv)
+			if len(x) == 0 {
+				panic("nothing on rhs")
+			}
+			n := x[0]
+			var a []string
+			if len(x) > 1 {
+				a = x[1:]
+			}
+
+			cmd := exec.Command(n, a...)
+			fd0, err := cmd.StdinPipe(); if err != nil{ panic(err) }
+			fd1, err := cmd.StdoutPipe(); if err != nil{ panic(err) }
+			fd2, err := cmd.StderrPipe(); if err != nil{ panic(err) }
+			q0, q1 := f.Dot()
+				_, err = io.Copy(fd0, bytes.NewReader(append([]byte{}, f.Bytes()[q0:q1]...)))
+				if err != nil {
+					panic(err)
+				}
+			f.Delete(q0, q1)
+			q1 = q0
+			println("xxx")
+			fd0.Close()
+			var wg sync.WaitGroup
+			donec := make(chan bool)
+			outc := make(chan []byte)
+			errc := make(chan []byte)
+			wg.Add(2)
+			go func() {
+				defer wg.Done()
+				b := make([]byte, 65536)
+				for {
+					select {
+					case <-donec:
+						return
+					default:
+						n, err := fd1.Read(b)
+						if err != nil {
+							if err == io.EOF {
+								break
+							}
+							//panic(err)
+						}
+						outc <- b[:n]
+					}
+				}
+			}()
+
+			go func() {
+				defer wg.Done()
+				b := make([]byte, 65536)
+				for {
+					select {
+					case <-donec:
+						return
+					default:
+						n, err := fd2.Read(b)
+						if err != nil {
+							if err == io.EOF {
+								break
+							}
+							//panic(err)
+						}
+						errc <- b[:n]
+					}
+				}
+			}()
+			go func() {
+				cmd.Start()
+				cmd.Wait()
+				close(donec)
+			}()
+			for {
+				select {
+				case p := <-outc:
+					f.Insert(p, q1)
+					q1 += int64(len(p))
+					f.Select(q0, q1)
+				case p := <-errc:
+					f.Insert(p, q1)
+					q1 += int64(len(p))
+					f.Select(q0, q1)
+				case <-donec:
+					return
+				}
+			}
+		}
+		return
+	case ">":
+		argv := parseArg(p)
+		c.args = argv
+		c.fn = func(f File) {
+			fd, err := os.Create(argv)
+			if err != nil {
+				panic(err)
+			}
+			defer fd.Close()
+			q0, q1 := f.Dot()
+			_, err = io.Copy(fd, bytes.NewReader(f.Bytes()[q0:q1]))
+			if err != nil {
+				panic(err)
+			}
+		}
+		return
+	case "<":
+		argv := parseArg(p)
+		c.args = argv
+		c.fn = func(f File) {
+			data, err := ioutil.ReadFile(argv)
+			if err != nil {
+				panic(err)
+			}
+			q0, q1 := f.Dot()
+			if q0 != q1 {
+				f.Delete(q0, q1)
+				q1 = q0
+			}
+			f.Insert(data, q0)
+			f.Select(q0, q0+int64(len(data)))
+		}
+		return
 	case "x":
 		argv := parseArg(p)
 		c.args = argv
@@ -381,24 +510,24 @@ func (r *Line) Set(f File) {
 	}
 }
 
-func findlinerev(p []byte, org, N int64) (q0, q1 int64){
+func findlinerev(p []byte, org, N int64) (q0, q1 int64) {
 	N = -N + 1
 	p0 := p
 	p = p[:org]
 	q0, q1 = findline2(N, rev.NewReader(p)) // 0 = len(p)-1
-	l := q1-q0
-	q0 = org-q1
-	q1 = q0+l
-	q0 = q1-l
+	l := q1 - q0
+	q0 = org - q1
+	q1 = q0 + l
+	q0 = q1 - l
 	if q0 >= 0 && q0 < int64(len(p0)) && p0[q0] == '\n' {
 		q0++
 	}
 	return
 }
-func findline3(p []byte, org, N int64) (q0, q1 int64){
+func findline3(p []byte, org, N int64) (q0, q1 int64) {
 	p = p[org:]
 	q0, q1 = findline2(N, bytes.NewReader(p))
-	return q0+org, q1+org
+	return q0 + org, q1 + org
 }
 
 // Put	Edit 354

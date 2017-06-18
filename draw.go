@@ -260,6 +260,9 @@ func (f *Frame) stringbg(dst draw.Image, p image.Point, src image.Image,
 	for _, v := range s {
 		fp := fixed.P(p.X, p.Y)
 		dr, mask, maskp, _, ok := font.Glyph(fp, rune(v))
+		if v == 0{
+			dr, mask, maskp, _, ok = font.Glyph(fp, 1)
+		}
 		if !ok {
 			panic("Frame.stringbg")
 			break

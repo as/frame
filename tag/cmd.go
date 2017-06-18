@@ -117,25 +117,27 @@ func release(w, wtag *win.Win, e mouse.Event) {
 	if e.Direction != mouse.DirRelease || e.Button == 1 || down(1) {
 		return
 	}
-
-	whatsdown()
-
 	w.Selectq = w.Org + w.IndexOf(Pt(e))
 	if region(w.Q0, w.Q1, w.Selectq) != 0 {
 		Expand(w, w.Selectq)
 	}
+	P := strings.HasPrefix
 	switch e.Button {
 	case 1:
 		return
 	case 2:
 		x := strings.TrimSpace(string(w.Rdsel()))
 		switch {
-		case strings.HasPrefix(x, "Edit"):
+		case P(x, "Edit"):
 			if x == "Edit" {
 				log.Printf("Edit: empty command\n")
 				break
 			}
 			w.SendFirst(cmdparse(x[4:]))
+		case P(x, "|"), P(x, "<"), P(x, ">"):
+			w.SendFirst(cmdparse(x))
+		case P(x, ":"):
+			w.SendFirst(cmdparse(x[1:]))
 		default:
 			w.SendFirst(x)
 		}

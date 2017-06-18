@@ -120,6 +120,18 @@ func (l *lexer) acceptUntil(delim string) {
 	l.backup()
 }
 
+func (l *lexer) acceptEOF(){
+	lim := 8192
+	i := 0
+	for l.next() != eof {
+		i++
+		if i > lim {
+			l.emit(kindEof)
+			return
+		}
+	}
+}
+
 func (l *lexer) backup() {
 	l.pos -= l.width
 }
@@ -174,6 +186,7 @@ func ignoreSpaces(l *lexer) {
 
 const (
 	Ralpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	Rcmd = Ralpha+"<>|"
 	Rdigit = "0123456789"
 	Rop    = "+-;,"
 	Rmod   = "#/?"
@@ -244,6 +257,10 @@ func lexCmd(l *lexer) statefn {
 		return nil
 	}
 	if !l.accept(Ralpha) {
+		if l.accept("|<>"){
+			l.emit(kindCmd)
+			return lexArg2
+		}
 		return l.errorf("bad command")
 	}
 	l.emit(kindCmd)
@@ -291,6 +308,12 @@ func lexArg(l *lexer) statefn {
 		return l.errorf("bad delimiter")
 	}
 	l.ignore()
+	return lexCmd
+}
+
+func lexArg2(l *lexer) statefn {
+	l.acceptEOF()
+	l.emit(kindArg)
 	return lexCmd
 }
 
