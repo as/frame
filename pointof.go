@@ -45,7 +45,9 @@ func (f *Frame) ptOfCharNBox(p int64, nb int) (pt image.Point) {
 
 func (f *Frame) PointOf(p int64) image.Point {
 	return f.ptOfCharPtBox(p, f.r.Min, 0)
-
+}
+func (f *Frame) Grid(pt image.Point)image.Point{
+	return f.grid(pt)
 }
 func (f *Frame) grid(pt image.Point) image.Point {
 	pt.Y -= f.r.Min.Y

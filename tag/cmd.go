@@ -106,8 +106,6 @@ func press(w, wtag *win.Win, e mouse.Event) {
 }
 
 func release(w, wtag *win.Win, e mouse.Event) {
-	func() { fmt.Printf("release (enter) %d %08x\n", e.Button, Buttonsdown) }()
-	defer func() { fmt.Printf("release (leave) %d %08x\n", e.Button, Buttonsdown) }()
 	defer func() {
 		Buttonsdown &^= 1 << uint(e.Button)
 		if Buttonsdown == 0 {

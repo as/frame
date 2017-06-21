@@ -32,6 +32,9 @@ func (f Font) Dx(s string) int {
 func (f Font) Dy() int {
 	return f.height
 }
+func (f Font) Size() int{
+	return 5*f.Dy()/6
+}
 func fix(i fixed.Int26_6) int {
 	return i.Round()
 }

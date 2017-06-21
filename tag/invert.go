@@ -65,7 +65,6 @@ func (in *Invertable) Redo() {
 	in.do[in.p-1]()
 }
 func (in *Invertable) Select(q0, q1 int64) {
-	fmt.Printf("inverable: SetSelect: %s\n", q0, q1)
 	w := in.Win
 	w.Select(q0, q1)
 	if Visible(w, q0, q1) {

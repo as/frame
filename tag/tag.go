@@ -44,17 +44,12 @@ type Tag struct {
 	scrolldy  int
 }
 
-func (t *Tag) Loc()image.Rectangle{
-	dy := t.Wtag.Bounds().Dy()
+func (t *Tag) Loc() image.Rectangle{
+	r := t.Wtag.Loc()
 	if t.W != nil{
-		dy += t.W.Bounds().Dy()
+		r.Max.Y += t.W.Loc().Dy()
 	}
-	return image.Rectangle{t.sp, t.sp.Add(
-		image.Pt(
-			t.Wtag.Bounds().Dx(), 
-			dy,
-		),
-	)}
+	return r
 }
 
 // Put
@@ -67,7 +62,7 @@ func NewTag(src screen.Screen, wind screen.Window, ft frame.Font,
 
 	// Make tag
 	wtag := &Invertable{
-		win.New(src, ft, wind,
+		win.New(src, ft, wind,  
 			sp,
 			image.Pt(size.X, tagY),
 			pad, cols,
@@ -109,10 +104,10 @@ func (t *Tag) Resize(pt image.Point) {
 		println("ignore daft size request:", pt.String())
 		return
 	}
-	tagY := t.Wtag.Loc().Dy()
-	t.Wtag.Resize(image.Pt(pt.X, tagY))
+	t.Wtag.Resize(image.Pt(pt.X, dy))
+	pt.Y -= dy
 	if t.W != nil{
-		t.W.Resize(pt.Sub(image.Pt(0, tagY)))
+		t.W.Resize(pt)
 	}
 }
 
@@ -150,12 +145,15 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 	q0, q1 := act.Dot()
 	switch e.Code {
 	case key.CodeEqualSign, key.CodeHyphenMinus:
-		fsize := act.Font.Dy()
-		if e.Modifiers == key.ModControl {
+		if e.Direction == key.DirRelease{
+			return
+		}
+		fsize := act.Font.Size()
+		if e.Modifiers == key.ModControl  {
 			if key.CodeHyphenMinus == e.Code {
-				fsize--
+				fsize -= 2
 			} else {
-				fsize++
+				fsize += 2
 			}
 			act.SetFont(mkfont(fsize))
 			act.SendFirst(paint.Event{})

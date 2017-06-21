@@ -192,9 +192,14 @@ func (w *Win) init() {
 	w.Mark()
 }
 
+func (w *Win) Loc() image.Rectangle{
+	return image.Rectangle{w.Sp, w.Sp.Add(w.size)}
+}
+
 func (w *Win) Resize(size image.Point) {
 	b, err := w.scr.NewBuffer(size)
 	if err != nil {
+		println(err)
 		panic(err)
 	}
 	w.size = size
@@ -210,6 +215,9 @@ func (w *Win) Move(sp image.Point){
 }
 
 func (w *Win) SetFont(ft frame.Font) {
+	if ft.Size() < 4{
+		return
+	}
 	r := image.Rectangle{w.pad, w.size}.Inset(1)
 	w.Frame = frame.New(r, ft, w.b.RGBA(), w.Frame.Color)
 	w.init()
@@ -241,8 +249,7 @@ func (w *Win) Blank() {
 	if w.Sp.Y > 0 {
 		r.Min.Y--
 	}
-	drawBorder(w.b.RGBA(), r, w.Color.Hi.Back, image.ZP, 1)
-	w.upload()
+	//w.upload()
 }
 
 func (w *Win) Dot() (q0, q1 int64) {
@@ -562,7 +569,7 @@ func (w *Win) Upload() {
 		}(r)
 	}
 	wg.Add(1)
-	scrollsp := image.Pt(0, w.Sp.Y)
+	scrollsp := w.Sp
 	go func() { w.events.Upload(scrollsp, w.b, w.Scrollr.Sub(w.Sp)); wg.Done() }()
 	wg.Wait()
 	w.Flushcache()
