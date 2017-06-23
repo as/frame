@@ -158,7 +158,7 @@ func New(scr screen.Screen, ft frame.Font, events screen.Window,
 	sp, size, pad image.Point, cols frame.Color) *Win {
 	b, err := scr.NewBuffer(size)
 	if err != nil {
-		panic(err)
+		panic(size)
 	}
 	r := image.Rectangle{pad, size}.Inset(1)
 	w := &Win{
