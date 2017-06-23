@@ -496,7 +496,6 @@ func (w *Win) Insert(s []byte, q0 int64) int64 {
 		q0 -= m
 	}
 	if w.Nr+n > w.Maxr {
-		println("insert if D")
 		m := max(min(2*(w.Nr+n), HiWater), w.Nr+n) + MinWater
 		if m > HiWater {
 			m = max(HiWater+MinWater, w.Nr+n)

@@ -7,6 +7,9 @@ import (
 	"os"
 	"sync"
 
+	window "github.com/as/ms/win"
+	"github.com/as/cursor"
+
 	"github.com/as/frame"
 	"github.com/as/frame/tag"
 	"golang.org/x/exp/shiny/driver"
@@ -18,6 +21,10 @@ import (
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
 )
+
+func moveMouse(pt image.Point) {
+	cursor.MoveTo(window.ClientAbs().Min.Add(pt))
+}
 
 func mkfont(size int) frame.Font {
 	return frame.NewTTF(gomono.TTF, size)
@@ -69,7 +76,8 @@ func sizeof(r image.Rectangle) image.Point{
 	return r.Max.Sub(r.Min)
 }
 
-func New(co *Col, filename string) {
+
+func New(co *Col, filename string) (w Plane){
 	last := co.List[len(co.List)-1]
 	last.Loc()
 	tw := co.Tag.Wtag
@@ -79,6 +87,18 @@ func New(co *Col, filename string) {
 	lsize.Y -= lsize.Y/3
 	last.Resize(lsize)
 	co.attach(t, len(co.List))
+	co.fill()
+	return t
+}
+
+func Del(co *Col, id int){
+	type Releaser interface{
+		Release()
+	}
+	w := co.detach(id)
+	if t, ok := w.(Releaser); ok{
+		t.Release()
+	}
 	co.fill()
 }
 
@@ -94,7 +114,6 @@ func NewCol(src screen.Screen, wind screen.Window, ft frame.Font, sp, size image
 	dy := image.Pt(size.X, size.Y/N)
 	col := &Col{sp: sp, src: src, size: size, wind: wind, Tag: T, tdy: tdy, List: make([]Plane, len(files))}
 	for i, v := range files {
-		fmt.Printf("tag %d sp=%s size=%s\n", i, sp, dy)
 		t := tag.NewTag(src, wind, ft, sp, dy, pad, cols)
 		t.Open(v)
 		col.List[i] = t
@@ -144,34 +163,46 @@ func (co *Col) detach(id int) Plane {
 		return nil
 	}
 	w := co.List[id]
-	if id+1 < len(co.List) {
-		copy(co.List[id:], co.List[id+1:])
-	}
+	copy(co.List[id:], co.List[id+1:])
 	co.List = co.List[:len(co.List)-1]
 	return w
 }
-
+// attach inserts w in position id, shifting the original forwards
 func (co *Col) attach(w Plane, id int) {
 	if id < 1 {
 		return
 	}
+	// 0 1 2
+	// a b c
+	// a w b c
 	co.List=append(co.List[:id], append([]Plane{w}, co.List[id:]...)...)
 	r := co.List[id-1].Loc()
 	w.Move(image.Pt(r.Min.X, r.Max.Y))
 }
-
 func (co *Col) fill() {
 	x := co.size.X
 	y1 := co.Loc().Max.Y
 	for n := len(co.List) - 1; n > 0; n-- {
-		y0 := co.List[n-1].Loc().Max.Y
+		y0 := co.List[n].Loc().Min.Y
 		co.List[n].Resize(image.Pt(x, y1-y0))
 		y1 = y0
+		if false{
+		t := co.List[n].(*tag.Tag).Wtag
+		q0, q1 := t.Dot()
+		t.Delete(q0, q1)
+		q1 = q0
+		s := fmt.Sprintf("id=%d r=%s", n, co.List[n].Loc())
+		t.InsertString(s, q1)
+		t.Select(q1,q1+int64(len(s)))
+		}
 	}
 }
 
+
 func eq(a, b Plane) bool{
-	fmt.Printf("a=%s\nb=%s\n\n", a.Loc(), b.Loc())
+	if a == nil || b == nil{
+		return false
+	}
 	return a.Loc() == b.Loc()
 }
 
@@ -197,23 +228,20 @@ func (co *Col) MoveWin(id int, y int) {
 	if id == 0 || id >= len(co.List) {
 		return
 	}
-	fmt.Printf("movewin: y=%d\n", y)
-	fmt.Printf("movewin: detach %s\n", id)
 	s := co.detach(id)
-	fmt.Printf("movewin: fill \n")
 	co.fill()
+	co.Attach(s, y)
+}
+
+func (co *Col) Attach(src Plane, y int){
 	did := co.IDPoint(image.Pt(co.sp.X, y))
-	fmt.Printf("movewin: find dstid -> did @ %s \n", did, image.Pt(co.sp.X, y))
 	if did != 0 && did < len(co.List){
-		fmt.Printf("movewin: adjust did\n")
 		d := co.List[did]
 		y := y-d.Loc().Min.Y
 		x := sizeof(d.Loc()).X
-		fmt.Printf("movewin: resize did(%d) to %s\n", did, image.Pt(x, y))
 		d.Resize(image.Pt(x, y))
 	}
-	fmt.Printf("movewin: reattach id(%d)\n", id)
-	co.attach(s, id)
+	co.attach(src, did+1)
 	co.fill()
 }
 
@@ -261,44 +289,67 @@ func main() {
 			}
 		}()
 
-		type moveEvent struct{
-			col *Col
-			n int
-			y int
+		var xx struct{
+			sweep bool
+			sweepCol bool
+			sr image.Rectangle
+			srcCol *Col
+			src Plane
+			dst Plane
+			detach func()
 		}
 		for {
 			// Put
 			switch e := act.NextEvent().(type) {
-			case moveEvent:
-				e.col.MoveWin(e.n, e.y)
-				act.SendFirst(paint.Event{})
 			case mouse.Event:
-				/*
-					pt := image.Pt(int(e.X), int(e.Y))
-					if pt.In(act.Loc()) {
-						actTag.(*tag.Tag).Handle(act, e)
-						break
-					}
-				*/
 				rpt := image.Pt(int(e.X), int(e.Y))
 				pt := rpt.Add(act.Loc().Min)
 				actCol = active(pt, actCol, co0, co1).(*Col)
 				actTag = active(pt, actTag, actCol.List...).(*tag.Tag)
 				act = active(pt, act, actTag.(*tag.Tag).W, actTag.(*tag.Tag).Wtag).(*tag.Invertable)	// Put
-				if (e.Button == 1 || e.Button == 3) && e.Direction == 1{
-					fmt.Println(e.Button)
-					//pt := pt.Add(actTag.Loc().Min)
+
+				if  (e.Button == 2 && e.Direction == 2 && (xx.sweep || xx.sweepCol)){
+					if xx.sweepCol {
+						xx.sweepCol = false
+					}
+					xx.sweep = false
+					xx.srcCol.fill()
+					actCol.Attach(xx.src, pt.Y)
+					moveMouse(xx.src.Loc().Min)
+					act.SendFirst(paint.Event{})
+					continue
+				}
+				if xx.sweep && e.Button == 0{
+				}
+
+				{
 					r := actTag.Loc()
 					dy := r.Min.Y
 					r.Max = r.Min.Add(image.Pt(20, 20))
-					if pt.In(r){
-						if e.Button == 3{
-							dy -= fsize*2
+					if e.Direction == 1 && pt.In(r){
+						if e.Button == 2 {
+							xx.sweep = true
+							xx.srcCol = actCol
+							if xx.srcCol.ID(xx.src) == 0{
+								xx.sweepCol = true
+							} else {
+								xx.src = actTag
+								xx.srcCol.detach(xx.srcCol.ID(xx.src))
+							}
 						} else {
-							dy += fsize*2
+							id := actCol.ID(actTag)
+							if e.Button == 3 && id > 1{
+								a := actCol.List[id-1].Loc()
+								by := actCol.List[id].Loc().Min.Y
+								dy = by-(a.Max.Y-a.Min.Y)+fsize*2
+								dy += fsize*2
+							} else {
+								dy -= fsize*2
+							}
+							actCol.MoveWin(id, dy)
+							moveMouse(actTag.Loc().Min)
+							act.SendFirst(paint.Event{})
 						}
-						actCol.MoveWin(actCol.ID(actTag), dy)
-						act.SendFirst(paint.Event{})
 						continue
 					}
 				}
@@ -306,7 +357,11 @@ func main() {
 			case string, *tag.Command, tag.ScrollEvent, key.Event:
 				if s, ok := e.(string); ok {
 					if s == "New"{
-						New(actCol, "mink")
+						moveMouse(New(actCol, "mink").Loc().Min)
+						act.SendFirst(paint.Event{})
+						continue
+					} else if s == "Del"{
+						Del(actCol, actCol.ID(actTag))
 						act.SendFirst(paint.Event{})
 						continue
 					}

@@ -1,7 +1,6 @@
 package tag
 
 import (
-	"fmt"
 	"image"
 
 	"github.com/as/frame/win"
@@ -23,7 +22,6 @@ func (in *Invertable) Reset() {
 
 func (in *Invertable) Insert(p []byte, at int64) int64 {
 	d0, d1 := at, at+int64(len(p))
-	fmt.Printf("Delete(%d, %d)\n", d0, d1)
 	in.do = in.do[:in.p]
 	in.undo = in.undo[:in.p]
 	in.do = append(in.do, func() { in.Win.Insert(p, at) })
@@ -33,7 +31,6 @@ func (in *Invertable) Insert(p []byte, at int64) int64 {
 	return 1
 }
 func (in *Invertable) Delete(q0, q1 int64) {
-	fmt.Printf("Delete %d:%d len=%d\n", q0, q1, len(in.Bytes()))
 	data := append([]byte{}, in.Win.Bytes()[q0:q1]...)
 
 	in.do = in.do[:in.p]
@@ -41,7 +38,6 @@ func (in *Invertable) Delete(q0, q1 int64) {
 	in.do = append(in.do, func() { in.Win.Delete(q0, q1) })
 	in.undo = append(in.undo, func() { in.Win.Insert(data, q0) })
 	in.p++
-	fmt.Printf("Insert(%q, %d)\n", data, q0)
 	in.do[in.p-1]()
 	//in.Win.Delete(q0, q1)
 }
@@ -75,7 +71,7 @@ func (in *Invertable) Select(q0, q1 int64) {
 	w.Frame.Select(q0-w.Org, q1-w.Org)
 }
 func (in *Invertable) Loc() image.Rectangle {
-	if in == nil || in.Win == nil{
+	if in == nil || in.Win == nil {
 		return image.ZR
 	}
 	sp, size := in.Win.Sp, in.Win.Size()
