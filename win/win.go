@@ -92,7 +92,6 @@ func (w *Win) Clicksb(pt image.Point, dir int) {
 		rat := float64(w.bar().Max.Y) / float64(pt.Y)
 		delta := int64(float64(w.Nchars) * rat)
 		n -= delta
-
 	case 0:
 		dy := float64(pt.Y - w.bar().Min.Y)
 		rat := float64(dy) / float64(w.bar().Dy())
@@ -103,7 +102,7 @@ func (w *Win) Clicksb(pt image.Point, dir int) {
 		delta := int64(float64(w.Nchars) * rat)
 		n += delta
 	}
-	w.SetOrigin(n, true)
+	w.SetOrigin(n, false)
 	w.drawsb()
 }
 
@@ -114,6 +113,9 @@ func (w *Win) bar() image.Rectangle {
 	rat1 := float64(w.Org+w.Nchars) / float64(w.Nr) // % covered by screen
 	r.Min.Y = int(dy * rat0)
 	r.Max.Y = int(dy * rat1)
+	if r.Max.Y-r.Min.Y < 1{
+		r.Max.Y = r.Min.Y+1
+	}
 	return r
 }
 
@@ -124,11 +126,12 @@ func (w *Win) drawsb() {
 	draw.Draw(w.b.RGBA(), r, X, image.ZP, draw.Src)
 	rat0 := float64(w.Org) / float64(w.Nr)          // % scrolled
 	rat1 := float64(w.Org+w.Nchars) / float64(w.Nr) // % covered by screen
-	drawBorder(w.b.RGBA(), r, LtGray, image.ZP, 1)
 	r.Min.Y = int(dy * rat0)
 	r.Max.Y = int(dy * rat1)
+	if r.Max.Y-r.Min.Y < 5{
+		r.Max.Y = r.Min.Y+5
+	}
 	draw.Draw(w.b.RGBA(), r, LtGray, image.ZP, draw.Src)
-	drawBorder(w.b.RGBA(), r, LtGray, image.ZP, 1)
 }
 
 var (
@@ -318,6 +321,7 @@ func (w *Win) Select(q0, q1 int64) {
 		w.Redraw(w.PointOf(pp0), pp0, pp1, false)
 		w.Redraw(w.PointOf(p0), p0, p1, true)
 	} else {
+		/*
 		step := func(i, j int64) {
 			if i < j {
 				w.Redraw(w.PointOf(i), i, j, true)
@@ -327,6 +331,17 @@ func (w *Win) Select(q0, q1 int64) {
 		}
 		step(p0, pp0) // trim or extend origin
 		step(pp1, p1) // trim or extend insertion
+		*/
+		if p0 < pp0 {
+			w.Redraw(w.PointOf(p0), p0, pp0, true)
+		} else if p0 > pp0 {
+			w.Redraw(w.PointOf(pp0), pp0, p0, false)
+		}
+		if pp1 < p1 {
+			w.Redraw(w.PointOf(pp1), pp1, p1, true)
+		} else if pp1 > p1 {
+			w.Redraw(w.PointOf(p1), p1, pp1, false)
+		}
 	}
 	w.Frame.Select(p0, p1)
 }

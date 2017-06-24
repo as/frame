@@ -74,9 +74,13 @@ func (p *parser) mustatoi(s string) int64 {
 	}
 	return int64(i)
 }
-func (p *parser) fatal(err error) {
-	panic(err)
+func (p *parser) fatal(why interface{}) {
+	switch why := why.(type){
+	default:
+		fmt.Println(why)
+	}
 }
+
 
 func parseAddr(p *parser) (a Address) {
 	a0 := parseSimpleAddr(p)
@@ -98,11 +102,11 @@ func parseOp(p *parser) (op byte, a Address) {
 	}
 	v := p.tok.value
 	if v == "" {
-		panic("no value" + v)
+		eprint("no value" + v)
 		return
 	}
 	if strings.IndexAny(v, "+-;,") == -1 {
-		p.fatal(fmt.Errorf("bad op: %q", v))
+		eprint(fmt.Sprintf("bad op: %q", v))
 	}
 	p.Next()
 	return v[0], parseSimpleAddr(p)
@@ -188,6 +192,8 @@ func parseArg(p *parser) (arg string) {
 	return p.tok.value
 }
 
+var eprint = fmt.Println
+
 // Put
 func parseCmd(p *parser) (c *Command) {
 	c = new(Command)
@@ -236,7 +242,7 @@ func parseCmd(p *parser) (c *Command) {
 		c.fn = func(f File) {
 			x := strings.Fields(argv)
 			if len(x) == 0 {
-				panic("nothing on rhs")
+				eprint("|: nothing on rhs")
 			}
 			n := x[0]
 			var a []string
@@ -251,11 +257,11 @@ func parseCmd(p *parser) (c *Command) {
 			q0, q1 := f.Dot()
 				_, err = io.Copy(fd0, bytes.NewReader(append([]byte{}, f.Bytes()[q0:q1]...)))
 				if err != nil {
-					panic(err)
+					eprint(err)
+					return
 				}
 			f.Delete(q0, q1)
 			q1 = q0
-			println("xxx")
 			fd0.Close()
 			var wg sync.WaitGroup
 			donec := make(chan bool)
@@ -275,7 +281,7 @@ func parseCmd(p *parser) (c *Command) {
 							if err == io.EOF {
 								break
 							}
-							//panic(err)
+							eprint(err)
 						}
 						outc <- b[:n]
 					}
@@ -295,7 +301,6 @@ func parseCmd(p *parser) (c *Command) {
 							if err == io.EOF {
 								break
 							}
-							//panic(err)
 						}
 						errc <- b[:n]
 					}
@@ -310,10 +315,12 @@ func parseCmd(p *parser) (c *Command) {
 				select {
 				case p := <-outc:
 					f.Insert(p, q1)
+					q0 += int64(len(p))
 					q1 += int64(len(p))
 					f.Select(q0, q1)
 				case p := <-errc:
 					f.Insert(p, q1)
+					q0 += int64(len(p))
 					q1 += int64(len(p))
 					f.Select(q0, q1)
 				case <-donec:
@@ -328,13 +335,14 @@ func parseCmd(p *parser) (c *Command) {
 		c.fn = func(f File) {
 			fd, err := os.Create(argv)
 			if err != nil {
-				panic(err)
+				eprint(err)
+				return
 			}
 			defer fd.Close()
 			q0, q1 := f.Dot()
 			_, err = io.Copy(fd, bytes.NewReader(f.Bytes()[q0:q1]))
 			if err != nil {
-				panic(err)
+				eprint(err)
 			}
 		}
 		return
@@ -344,7 +352,8 @@ func parseCmd(p *parser) (c *Command) {
 		c.fn = func(f File) {
 			data, err := ioutil.ReadFile(argv)
 			if err != nil {
-				panic(err)
+				eprint(err)
+				return
 			}
 			q0, q1 := f.Dot()
 			if q0 != q1 {
@@ -373,7 +382,7 @@ func parseCmd(p *parser) (c *Command) {
 				buf := bytes.NewReader(f.Bytes()[x1:q1])
 				loc := re.FindReaderIndex(buf)
 				if loc == nil {
-					println("not found")
+					eprint("not found")
 					break
 				}
 				x0, x1 = int64(loc[0])+x1, int64(loc[1])+x1
@@ -427,7 +436,7 @@ func (p *parser) run() {
 			break
 		}
 		p.cmd = append(p.cmd, c)
-		fmt.Printf("(%s) %#v and cmd is %#v\n", tok, p.addr, c)
+		eprint(fmt.Sprintf("(%s) %#v and cmd is %#v\n", tok, p.addr, c))
 		p.Next()
 	}
 	p.stop <- p.err
@@ -607,7 +616,8 @@ func cmdparse(s string) (cmd *Command) {
 	p := parse(itemc)
 	err := <-p.stop
 	if err != nil {
-		panic(err)
+		eprint(err)
+		return nil
 	}
 	return compile(p)
 }

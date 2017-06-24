@@ -6,6 +6,7 @@ import (
 	"image"
 	"io"
 	"io/ioutil"
+	"fmt"
 	"log"
 	"os"
 
@@ -15,8 +16,21 @@ import (
 	"golang.org/x/image/font/gofont/gomono"
 )
 
-func readfile(s string) []byte {
-	p, err := ioutil.ReadFile(s)
+func readfile(s string) (p []byte) {
+	var err error
+	if isdir(s){
+		fi, err := ioutil.ReadDir(s)
+		if err != nil{
+			log.Println(err)
+			return nil
+		}
+		b := new(bytes.Buffer)
+		for _, v := range fi{
+			fmt.Fprintf(b, "%s\t", v.Name())
+		}
+		return b.Bytes()
+	}
+	p, err = ioutil.ReadFile(s)
 	if err != nil {
 		log.Println(err)
 	}

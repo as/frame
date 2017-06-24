@@ -53,7 +53,8 @@ func Visible(w *win.Win, q0, q1 int64) bool {
 // 	frame.Sweep |
 // w.FrameScroll <--
 //    \--> w.Select
-func press(w, wtag *win.Win, e mouse.Event) {
+func (t *Tag) press(w *Invertable, e mouse.Event) {
+	wtag := t.Wtag
 	//	defer un(trace(db, "press(Tag)"))	// Debug
 	//	      func(){db.Trace(whatsdot(w))}()	// Debug
 	//	defer func(){db.Trace(whatsdot(w))}()	// Debug
@@ -74,7 +75,7 @@ func press(w, wtag *win.Win, e mouse.Event) {
 		w.Selectq = w.Org + w.IndexOf(Pt(e))
 		w.Lastclick = t
 		if dt < 250*time.Millisecond && w.Q0 == w.Q1 && w.Q0 == w.Selectq {
-			Expand(w, w.Selectq)
+			Expand(w.Win, w.Selectq)
 			P0, P1 := w.Frame.Dot()
 			w.Select(w.Org+P0, w.Org+P1)
 		} else {
@@ -105,7 +106,7 @@ func press(w, wtag *win.Win, e mouse.Event) {
 	}
 }
 
-func release(w, wtag *win.Win, e mouse.Event) {
+func (t *Tag) release(w *Invertable, e mouse.Event) {
 	defer func() {
 		Buttonsdown &^= 1 << uint(e.Button)
 		if Buttonsdown == 0 {
@@ -117,7 +118,7 @@ func release(w, wtag *win.Win, e mouse.Event) {
 	}
 	w.Selectq = w.Org + w.IndexOf(Pt(e))
 	if region(w.Q0, w.Q1, w.Selectq) != 0 {
-		Expand(w, w.Selectq)
+		Expand(w.Win, w.Selectq)
 	}
 	P := strings.HasPrefix
 	switch e.Button {
@@ -140,15 +141,18 @@ func release(w, wtag *win.Win, e mouse.Event) {
 			w.SendFirst(x)
 		}
 	case 3:
-		//w.SendFirst(cmdparse(fmt.Sprintf("/%s/", w.Rdsel())))
-		//break
-		q0, q1 := Next(w.Bytes(), w.Q0, w.Q1)
-		Sweep(w, q0, q1)
-		P0, _ := w.Frame.Dot()
-		moveMouse(w.PointOf(P0).Add(w.Sp))
+		if !t.Look(w.Win, w.Q0, w.Q1){
+			q0, q1 := FindNext(t.W, w.Rdsel())
+			t.W.Select(q0, q1)
+			if t.W == w{
+				P0, _ := t.W.Frame.Dot()
+				moveMouse(t.W.PointOf(P0).Add(t.W.Sp))
+			}
+		}
 	}
 	w.Refresh()
 }
+
 
 // Put
 func ones(n int) (c int) {
@@ -163,7 +167,7 @@ func down(but uint) bool {
 	return Buttonsdown&(1<<but) != 0
 }
 
-func paste(w, wtag *win.Win, e mouse.Event) {
+func paste(w, wtag *Invertable, e mouse.Event) {
 	n, _ := Clip.Read(ClipBuf)
 	s := fromUTF16(ClipBuf[:n])
 	q0, q1 := w.Dot()
@@ -172,12 +176,12 @@ func paste(w, wtag *win.Win, e mouse.Event) {
 		q1 = q0
 	}
 	w.Insert(s, q0)
-	Sweep(w, q0, q0+int64(len(s)))
+	Sweep(w.Win, q0, q0+int64(len(s)))
 	w.Refresh()
 	w.Send(paint.Event{})
 }
 
-func snarf(w, wtag *win.Win, e mouse.Event) {
+func snarf(w, wtag *Invertable, e mouse.Event) {
 	fmt.Println("snarf")
 	n := copy(ClipBuf, toUTF16([]byte(w.Rdsel())))
 	io.Copy(Clip, bytes.NewReader(ClipBuf[:n]))

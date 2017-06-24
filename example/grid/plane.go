@@ -88,7 +88,5 @@ func activate(pt image.Point, w Plane) {
 		activate(pt, active2(pt, w.W, w.Wtag))
 	case *tag.Invertable:
 		act = w
-	case interface{}:
-		panic(fmt.Sprintf("activate: unknown plane: %#v"))
 	}
 }

@@ -62,10 +62,12 @@ func main() {
 		focused := false
 		focused = focused
 		ft := mkfont(fsize)
-
-		list := []string{"/dev/stdin"}
+		var list = []string{}
 		if len(os.Args) > 1 {
+			list = append(list, os.Args[1:]...)
+		} else {
 			list = append(list, "guide")
+			list = append(list, ".")
 		}
 		g := NewGrid(src, wind, ft, image.ZP, image.Pt(winSize.X, winSize.Y), list...)
 		actCol = g.List[1].(*Col)
@@ -95,6 +97,17 @@ func main() {
 		for {
 			// Put
 			switch e := act.NextEvent().(type) {
+			case tag.GetEvent:
+				t := New(actCol, e.Path)
+				if e.Addr != ""{
+					actTag = t.(*tag.Tag)
+					act = actTag.W
+					actTag.Handle(actTag.W, tag.Cmdparse(e.Addr))
+					p0, _ := act.Frame.Dot()
+					moveMouse(act.Loc().Min.Add(act.PointOf(p0)))
+				} else {
+					moveMouse(t.Loc().Min)
+				}
 			case mouse.Event:
 				rpt := image.Pt(int(e.X), int(e.Y))
 				pt := rpt.Add(act.Loc().Min)

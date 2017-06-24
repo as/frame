@@ -38,6 +38,27 @@ func FindAlpha(p []byte, i int64) (int64, int64) {
 	return i, j
 }
 
+func FindNext(f File, text []byte) (q0, q1 int64){
+	i, j := f.Dot()
+	p := f.Bytes()
+	x := text
+	q0 = int64(bytes.Index(p[j:], x))
+	if q0 == -1 {
+		println("a")
+		q0 = int64(bytes.Index(p[:i], x))
+		if q0 < 0 {
+			println("b")
+			return i, j
+		}
+	} else {
+		println("c")
+		q0 += j
+	}
+	q1 = q0 + int64(len(x))
+	println("d")
+	return q0, q1
+}
+
 func Next(p []byte, i, j int64) (q0 int64, q1 int64) {
 	defer func(r0, r1 int64) {
 		fmt.Printf("Next: [%d:%d]->[%d:%d]\n", r0, r1, q0, q1)

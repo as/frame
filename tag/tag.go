@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"image"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/as/frame"
@@ -44,9 +45,9 @@ type Tag struct {
 	scrolldy  int
 }
 
-func (t *Tag) Loc() image.Rectangle{
+func (t *Tag) Loc() image.Rectangle {
 	r := t.Wtag.Loc()
-	if t.W != nil{
+	if t.W != nil {
 		r.Max.Y += t.W.Loc().Dy()
 	}
 	return r
@@ -62,7 +63,7 @@ func NewTag(src screen.Screen, wind screen.Window, ft frame.Font,
 
 	// Make tag
 	wtag := &Invertable{
-		win.New(src, ft, wind,  
+		win.New(src, ft, wind,
 			sp,
 			image.Pt(size.X, tagY),
 			pad, cols,
@@ -86,9 +87,9 @@ func NewTag(src screen.Screen, wind screen.Window, ft frame.Font,
 	return &Tag{sp: sp, Wtag: wtag, W: w}
 }
 
-func (t *Tag) Move(pt image.Point){
+func (t *Tag) Move(pt image.Point) {
 	t.Wtag.Move(pt)
-	if t.W == nil{
+	if t.W == nil {
 		return
 	}
 	pt.Y += t.Wtag.Loc().Dy()
@@ -96,43 +97,57 @@ func (t *Tag) Move(pt image.Point){
 }
 
 func (t *Tag) Resize(pt image.Point) {
-	dy := t.Wtag.Font.Dy()*2
-	if t.W != nil && dy < t.W.Font.Dy(){
-		dy = t.W.Font.Dy()*2
+	dy := t.Wtag.Font.Dy() * 2
+	if t.W != nil && dy < t.W.Font.Dy() {
+		dy = t.W.Font.Dy() * 2
 	}
-	if pt.X < dy|| pt.Y < dy {
+	if pt.X < dy || pt.Y < dy {
 		println("ignore daft size request:", pt.String())
 		return
 	}
 	t.Wtag.Resize(image.Pt(pt.X, dy))
 	pt.Y -= dy
-	if t.W != nil{
+	if t.W != nil {
 		t.W.Resize(pt)
 	}
 }
 
-func (t *Tag) Open(filename string) {
-	x := strings.Index(filename, ":")
-	lineexpr := ""
-	if x > 1 {
-		lineexpr = filename[x+1:]
-		filename = filename[:x]
+func (t *Tag) split(path string) (name string, addr string) {
+	name = path
+	x := strings.Index(name, ":")
+	if x == -1{
+		return name, ""
 	}
+	if x == 0{
+		if len(name) == 1{
+			return ":", "" // This is invalid 
+		}
+		return "", name[1:]
+	}
+	if x == 1 && strings.IndexAny(name, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") == 0{
+		if isdir(name[:2]) {
+			n, a := t.split(name[2:])
+			return name[:2]+n, a
+		}
+	}
+	return name[:x], name[x+1:] 
+}
+
+func (t *Tag) Open(name string) {
+	name, addr := t.split(name)
 	w := t.W
 	wtag := t.Wtag
-	wtag.InsertString(filename+"\tPut Del [Edit ,x,,c,, ]", 0)
+	wtag.InsertString(name+"\tPut Del [Edit , ]", 0)
 	wtag.Refresh()
-	if w == nil{
+	if w == nil {
 		return
 	}
-	if len(os.Args) > 1 {
-		s := readfile(filename)
-		fmt.Printf("files size is %d\n", len(s))
-		w.Insert(s, w.Q1)
-		if lineexpr != "" {
-			w.Send(cmdparse("#0"))
-			w.Send(cmdparse(lineexpr))
-		}
+	s := readfile(name)
+	fmt.Printf("files size is %d\n", len(s))
+	w.Insert(s, w.Q1)
+	if addr != "" {
+		w.Send(cmdparse("#0"))
+		w.Send(cmdparse(addr))
 	}
 }
 func (t *Tag) Kbdin(act *Invertable, e key.Event) {
@@ -145,11 +160,11 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 	q0, q1 := act.Dot()
 	switch e.Code {
 	case key.CodeEqualSign, key.CodeHyphenMinus:
-		if e.Direction == key.DirRelease{
+		if e.Direction == key.DirRelease {
 			return
 		}
 		fsize := act.Font.Size()
-		if e.Modifiers == key.ModControl  {
+		if e.Modifiers == key.ModControl {
 			if key.CodeHyphenMinus == e.Code {
 				fsize -= 2
 			} else {
@@ -205,17 +220,17 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 		switch e.Rune {
 		case '\x15', '\x01': // ^U, ^A
 			p := act.Bytes()
-			if q0 < int64(len(p))-1{
+			if q0 < int64(len(p))-1 {
 				q0++
 			}
 			n0, n1 := findlinerev(act.Bytes(), q0, 0)
-			if e.Rune == '\x15'{
+			if e.Rune == '\x15' {
 				act.Delete(n0, n1)
 			}
 			act.Select(n0, n0)
 		case '\x05': // ^E
 			_, n1 := findline3(act.Bytes(), q1, 1)
-			if n1 > 0{
+			if n1 > 0 {
 				n1--
 			}
 			act.Select(n1, n1)
@@ -251,7 +266,8 @@ func (t *Tag) MouseIn(act *Invertable, e mouse.Event) {
 	if e.Direction == mouse.DirRelease {
 		t.Scrolling = false
 	}
-	if pt.In(act.Scrollr.Sub(act.Sp)) || t.Scrolling {
+	
+	if (e.Button != 0 && pt.In(act.Scrollr.Sub(act.Sp))) || t.Scrolling {
 		//fmt.Printf("mouse.Event: %s\n", e)
 		if e.Direction == mouse.DirRelease {
 			return
@@ -270,11 +286,11 @@ func (t *Tag) MouseIn(act *Invertable, e mouse.Event) {
 	switch e.Direction {
 	case mouse.DirPress:
 		lastclickpt = Pt(e)
-		press(act.Win, t.Wtag.Win, e)
+		t.press(act, e)
 		act.Send(paint.Event{})
 	case mouse.DirRelease:
 		lastclickpt = image.Pt(-5, -5)
-		release(act.Win, t.Wtag.Win, e)
+		t.release(act, e)
 		act.Send(paint.Event{})
 	case mouse.DirNone:
 		if !noselect && down(1) && ones(Buttonsdown) == 1 {
@@ -294,6 +310,60 @@ func (t *Tag) MouseIn(act *Invertable, e mouse.Event) {
 			act.Refresh()
 		}
 	}
+}
+
+type GetEvent struct {
+	Path  string
+	Addr  string
+	IsDir bool
+}
+
+func isdir(path string) bool{
+	fi, err := os.Stat(path)
+	if err != nil {
+		if err == os.ErrNotExist{
+			return false
+		}
+		fmt.Println(err)
+		return false
+	}
+	return fi.IsDir()
+}
+func isfile(path string) bool{
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+func (t *Tag) Look(w *win.Win, q0, q1 int64) bool {
+	if q0 == q1 {
+		q0, q1 = FindAlpha(w.Bytes(), q0)
+	}
+	name, addr := t.split(string(w.Bytes()[q0:q1]))
+	fmt.Printf("name=%s addr=%s\n",name,addr)
+	if name == "" && addr != "" {
+		w.SendFirst(cmdparse(addr))
+		return true
+	}
+	path := t.FileName()
+	if !isdir(path){
+		path = filepath.Dir(path)
+	}
+	path = filepath.Join(path, name)
+	if isdir(path) {
+		if addr != "" {
+			// A directory with an address doesn't make sense
+			// user probably refers to a file on another system
+			// with the same name as the dir, so look should fail
+			return false
+		}
+		w.SendFirst(GetEvent{Path: path, IsDir: true})
+		return true
+	} else if isfile(path){
+		w.SendFirst(GetEvent{Path: path, Addr: addr})
+		return true
+	}
+	fmt.Printf("look returns false")
+	return false
 }
 
 func (t *Tag) FileName() string {
@@ -330,9 +400,9 @@ func (t *Tag) Put() (err error) {
 func (t *Tag) Handle(act *Invertable, e interface{}) {
 	switch e := e.(type) {
 	case string:
-		if e == "r" {
+		if e == "Redo" {
 			act.Redo()
-		} else if e == "u" {
+		} else if e == "Undo" {
 			act.Undo()
 		} else if e == "Put" {
 			t.Put()
@@ -343,7 +413,7 @@ func (t *Tag) Handle(act *Invertable, e interface{}) {
 	case *Command:
 		fmt.Printf("command %#v\n", e)
 		if e == nil {
-			panic("command is nil")
+			break
 		}
 		if e.fn != nil {
 			e.fn(t.W) // Always execute on body for now
@@ -364,7 +434,7 @@ func (t *Tag) Handle(act *Invertable, e interface{}) {
 }
 
 func (t *Tag) Upload(wind screen.Window) {
-	if t.W != nil{
+	if t.W != nil {
 		wind.Upload(t.W.Sp, t.W.Buffer(), t.W.Buffer().Bounds())
 		t.W.Flushcache()
 	}
