@@ -21,10 +21,37 @@ func Pt(e mouse.Event) image.Point {
 	return image.Pt(int(e.X), int(e.Y))
 }
 
-func Expand(w *win.Win, i int64) {
+func Expand(w *win.Win, q0 int64) {
 	p := w.Bytes()
-	q0, q1 := FindAlpha(p, i)
-	Sweep(w, q0, q1)
+	lp := int64(len(p))
+	if lp == 0 {
+		return
+	}
+	if q0 == 0 {
+		w.Select(q0, find(p, q0, []byte{'\n'}))
+		return
+	}
+	if q0 == lp-1 || q0 == lp{
+		w.Select(findback(p, q0, []byte{'\n'}), q0)
+		return
+	}
+	if isany(p[q0-1], Lefts[:]){
+		if q0, q1, ok := FindParity(w); ok{
+			w.Select(q0, q1)
+			return
+		}
+	}
+	if isany(p[q0+1], Rights[:]){
+	}
+	if c := any(p[q0-1], Free[:]); c != -1{
+		w.Select(q0, find(p, q0, []byte{Free[c]}))
+		return
+	}
+	if c := any(p[q0], Free[:]); c != -1{
+		w.Select(findback(p, q0, []byte{Free[c]}), q0)
+		return
+	}
+	w.Select(FindAlpha(p, q0))
 }
 
 // Sweep selects q0:q1 and moves the origin into view
@@ -47,12 +74,6 @@ func Visible(w *win.Win, q0, q1 int64) bool {
 	return true
 }
 
-//
-// press
-// set selectq
-// 	frame.Sweep |
-// w.FrameScroll <--
-//    \--> w.Select
 func (t *Tag) press(w *Invertable, e mouse.Event) {
 	wtag := t.Wtag
 	//	defer un(trace(db, "press(Tag)"))	// Debug
@@ -118,14 +139,20 @@ func (t *Tag) release(w *Invertable, e mouse.Event) {
 	}
 	w.Selectq = w.Org + w.IndexOf(Pt(e))
 	if region(w.Q0, w.Q1, w.Selectq) != 0 {
-		Expand(w.Win, w.Selectq)
+		w.Select(w.Selectq, w.Selectq)
+		//Expand(w.Win, w.Selectq)
 	}
 	P := strings.HasPrefix
 	switch e.Button {
 	case 1:
 		return
 	case 2:
-		x := strings.TrimSpace(string(w.Rdsel()))
+		q0, q1 := w.Dot()
+		if q0 == q1 {
+			q1 = accept(w.Bytes(), q1, []byte(string(AlphaNum)))
+			q0 = acceptback(w.Bytes(), q0, []byte(string(AlphaNum)))
+		}
+		x := strings.TrimSpace(string(w.Bytes()[q0:q1]))
 		switch {
 		case P(x, "Edit"):
 			if x == "Edit" {
@@ -142,9 +169,12 @@ func (t *Tag) release(w *Invertable, e mouse.Event) {
 		}
 	case 3:
 		if !t.Look(w.Win, w.Q0, w.Q1){
+			if t.W == nil{
+				break
+			}
 			q0, q1 := FindNext(t.W, w.Rdsel())
-			t.W.Select(q0, q1)
 			if t.W == w{
+				t.W.Select(q0, q1)
 				P0, _ := t.W.Frame.Dot()
 				moveMouse(t.W.PointOf(P0).Add(t.W.Sp))
 			}

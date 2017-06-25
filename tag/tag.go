@@ -236,7 +236,7 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 			act.Select(n1, n1)
 		case '\x17':
 			if isany(act.Bytes()[q0], AlphaNum) {
-				q0 = findback(act.Bytes(), q0, AlphaNum)
+				q0 = acceptback(act.Bytes(), q0, AlphaNum)
 			}
 			act.Delete(q0, q1)
 			act.Select(q0, q0)
@@ -336,7 +336,8 @@ func isfile(path string) bool{
 
 func (t *Tag) Look(w *win.Win, q0, q1 int64) bool {
 	if q0 == q1 {
-		q0, q1 = FindAlpha(w.Bytes(), q0)
+		q1 = accept(w.Bytes(), q1, []byte(string(AlphaNum)+`\/.:`))
+		q0 = acceptback(w.Bytes(), q0, []byte(string(AlphaNum)+`\/.:`))
 	}
 	name, addr := t.split(string(w.Bytes()[q0:q1]))
 	fmt.Printf("name=%s addr=%s\n",name,addr)

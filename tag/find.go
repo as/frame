@@ -6,11 +6,20 @@ import (
 )
 
 var (
-	Lefts    = [...]byte{'(', '{', '[', '<', '"', '\'', '`'}
-	Rights   = [...]byte{')', '}', ']', '>', '"', '\'', '`'}
-	Free     = [...]byte{'"', '\'', '`'}
+	Lefts    = [...]byte{'(', '{', '[', '<', '\''}
+	Rights   = [...]byte{')', '}', ']', '>', '\''}
+	Free     = [...]byte{'"', '\'', '`', '\n'}
 	AlphaNum = []byte("*&!%-_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 )
+
+func any(b byte, s []byte) int64{
+	for i, v := range s {
+		if b == v {
+			return int64(i)
+		}
+	}
+	return -1	
+}
 
 func isany(b byte, s []byte) bool {
 	for _, v := range s {
@@ -21,23 +30,81 @@ func isany(b byte, s []byte) bool {
 	return false
 }
 
-func findback(p []byte, i int64, sep []byte) int64 {
-	for ; i-1 >= 0 && isany(p[i-1], sep); i-- {
+func acceptback(p []byte, i int64, sep []byte) int64 {
+	q0 := i
+	for ; q0-1 >= 0 && isany(p[q0-1], sep); q0-- {
 	}
-	return i
+	return q0
+}
+func accept(p []byte, j int64, sep []byte) int64 {
+	q1 := j
+	for ; q1 != int64(len(p)) && isany(p[q1], sep); q1++ {
+	}
+	return q1
+}
+
+func findback(p []byte, i int64, sep []byte) int64 {
+	q0 := i
+	for ; q0-1 >= 0 && !isany(p[q0-1], sep); q0-- {
+	}
+	if q0 < 0{
+		return i
+	}
+	return q0
 }
 func find(p []byte, j int64, sep []byte) int64 {
-	for ; j != int64(len(p)) && isany(p[j], sep); j++ {
+	q1 := j
+	for ; q1 != int64(len(p)) && !isany(p[q1], sep); q1++ {
 	}
-	return j
+	if q1 == int64(len(p)){
+		return j
+	}
+	return q1
 }
 
 func FindAlpha(p []byte, i int64) (int64, int64) {
-	j := find(p, i, AlphaNum)
-	i = findback(p, i, AlphaNum)
+	j := accept(p, i, AlphaNum)
+	i = acceptback(p, i, AlphaNum)
 	return i, j
 }
 
+func FindParity(f File) (q0, q1 int64, ok bool) {
+	q0, q1 = f.Dot()
+	for i := range Lefts {
+		q0, q1 = findParity(f, Lefts[i], Rights[i], false)
+		if q0 != -1 {
+			return q0, q1, true
+		}
+	}
+	return -1, -1, false
+}
+
+func findParity(f File, l byte, r byte, back bool) (int64, int64) {
+	if back {
+		panic("unimplemented")
+	}
+	/*
+	b := t.ReadByte()
+	if b != l {
+		return -1, -1
+	}
+	*/
+	push := 1
+	//j := -1
+	q0, _ := f.Dot()
+	for i, v := range f.Bytes()[q0:] {
+		if v == l {
+			push++
+		}
+		if v == r {
+			push--
+			if push == 0 {
+				return q0, q0+int64(i)
+			}
+		}
+	}
+	return -1, -1
+}
 func FindNext(f File, text []byte) (q0, q1 int64){
 	i, j := f.Dot()
 	p := f.Bytes()
@@ -83,14 +150,14 @@ func Next(p []byte, i, j int64) (q0 int64, q1 int64) {
 
 /*
 func (t *Tick) Find(p []byte, back bool) int {
-	return t.find(p, t.P1, len(t.Fr.s), back)
+	return t.accept(p, t.P1, len(t.Fr.s), back)
 }
 
-func (t *Tick) find(p []byte, i, j int, back bool) int {
+func (t *Tick) accept(p []byte, i, j int, back bool) int {
 	if back {
 		panic("unimplemented")
 	}
-	//fmt.Printf("debug: find: %q check frame[%d:]\n", p, t.P1)
+	//fmt.Printf("debug: accept: %q check frame[%d:]\n", p, t.P1)
 	x := bytes.Index(t.Fr.s[i:j], p)
 	if x == -1 {
 		return -1
@@ -142,39 +209,4 @@ func (t *Tick) FindQuote() int {
 	return -1
 }
 
-func (t *Tick) FindParity() int {
-	for i := range Lefts {
-		j := t.findParity(Lefts[i], Rights[i], false)
-		if j != -1 {
-			return j
-		}
-	}
-	return -1
-}
-
-func (t *Tick) findParity(l byte, r byte, back bool) int {
-	if back {
-		panic("unimplemented")
-	}
-	b := t.ReadByte()
-	if b != l {
-		return -1
-	}
-	push := 1
-	//j := -1
-	for i, v := range t.Fr.s[t.P1:] {
-		if v == l {
-			println("\n\n++\n\n")
-			push++
-		}
-		if v == r {
-			println("\n\n--\n\n")
-			push--
-			if push == 0 {
-				return i + t.P1
-			}
-		}
-	}
-	return -1
-}
 */

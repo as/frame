@@ -15,7 +15,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"regexp"
@@ -75,12 +74,11 @@ func (p *parser) mustatoi(s string) int64 {
 	return int64(i)
 }
 func (p *parser) fatal(why interface{}) {
-	switch why := why.(type){
+	switch why := why.(type) {
 	default:
 		fmt.Println(why)
 	}
 }
-
 
 func parseAddr(p *parser) (a Address) {
 	a0 := parseSimpleAddr(p)
@@ -236,7 +234,7 @@ func parseCmd(p *parser) (c *Command) {
 	case "k":
 	case "s":
 	case "v":
-	case "|":
+	case "<", "|":
 		argv := parseArg(p)
 		c.args = argv
 		c.fn = func(f File) {
@@ -251,18 +249,32 @@ func parseCmd(p *parser) (c *Command) {
 			}
 
 			cmd := exec.Command(n, a...)
-			fd0, err := cmd.StdinPipe(); if err != nil{ panic(err) }
-			fd1, err := cmd.StdoutPipe(); if err != nil{ panic(err) }
-			fd2, err := cmd.StderrPipe(); if err != nil{ panic(err) }
 			q0, q1 := f.Dot()
+			f.Delete(q0, q1)
+			q1 = q0
+			var fd0 io.WriteCloser
+			fd1, err := cmd.StdoutPipe()
+			if err != nil {
+				panic(err)
+			}
+			fd2, err := cmd.StderrPipe()
+			if err != nil {
+				panic(err)
+			}
+			if v == "|" {
+				fd0, err = cmd.StdinPipe()
+				if err != nil {
+					panic(err)
+				}
 				_, err = io.Copy(fd0, bytes.NewReader(append([]byte{}, f.Bytes()[q0:q1]...)))
 				if err != nil {
 					eprint(err)
 					return
 				}
-			f.Delete(q0, q1)
-			q1 = q0
-			fd0.Close()
+				fd0.Close()
+			} else {
+				cmd.Stdin = nil
+			}
 			var wg sync.WaitGroup
 			donec := make(chan bool)
 			outc := make(chan []byte)
@@ -311,22 +323,20 @@ func parseCmd(p *parser) (c *Command) {
 				cmd.Wait()
 				close(donec)
 			}()
-			for {
-				select {
-				case p := <-outc:
-					f.Insert(p, q1)
-					q0 += int64(len(p))
-					q1 += int64(len(p))
-					f.Select(q0, q1)
-				case p := <-errc:
-					f.Insert(p, q1)
-					q0 += int64(len(p))
-					q1 += int64(len(p))
-					f.Select(q0, q1)
-				case <-donec:
-					return
+			go func(){
+				for {
+					select {
+					case p := <-outc:
+						_, q1 := f.Dot()
+						f.Insert(p, q1)
+					case p := <-errc:
+						_, q1 := f.Dot()
+						f.Insert(p, q1)
+					case <-donec:
+						return
+					}
 				}
-			}
+			}()
 		}
 		return
 	case ">":
@@ -344,24 +354,6 @@ func parseCmd(p *parser) (c *Command) {
 			if err != nil {
 				eprint(err)
 			}
-		}
-		return
-	case "<":
-		argv := parseArg(p)
-		c.args = argv
-		c.fn = func(f File) {
-			data, err := ioutil.ReadFile(argv)
-			if err != nil {
-				eprint(err)
-				return
-			}
-			q0, q1 := f.Dot()
-			if q0 != q1 {
-				f.Delete(q0, q1)
-				q1 = q0
-			}
-			f.Insert(data, q0)
-			f.Select(q0, q0+int64(len(data)))
 		}
 		return
 	case "x":
