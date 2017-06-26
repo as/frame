@@ -63,6 +63,16 @@ const (
 	MsgSize  = 64 * 1024
 )
 
+func (w *Win) Dirty() bool{
+	return w.dirty || w.Frame.Dirty()
+}
+func (w *Win) SetDirty(dirty bool){
+	w.dirty = dirty
+	if !dirty {
+		w.Frame.SetDirty(false)
+	}
+}
+
 type Win struct {
 	*frame.Frame
 	Sp        image.Point // window offset
@@ -82,6 +92,7 @@ type Win struct {
 	Scrollr   image.Rectangle
 	Sweeping  bool
 	dirtysb   bool
+	dirty     bool
 	sb        screen.Buffer
 }
 
@@ -252,6 +263,7 @@ func (w *Win) Blank() {
 	if w.Sp.Y > 0 {
 		r.Min.Y--
 	}
+	w.Mark()
 	//w.upload()
 }
 
@@ -317,21 +329,11 @@ func (w *Win) Select(q0, q1 int64) {
 	}
 	p0 = clamp(p0, 0, w.Nchars)
 	p1 = clamp(p1, 0, w.Nchars)
+	w.Mark()
 	if pp1 <= p0 || p1 <= pp0 || p0 == p1 || pp1 == pp0 {
 		w.Redraw(w.PointOf(pp0), pp0, pp1, false)
 		w.Redraw(w.PointOf(p0), p0, p1, true)
 	} else {
-		/*
-		step := func(i, j int64) {
-			if i < j {
-				w.Redraw(w.PointOf(i), i, j, true)
-			} else if i > j {
-				w.Redraw(w.PointOf(j), j, i, false)
-			}
-		}
-		step(p0, pp0) // trim or extend origin
-		step(pp1, p1) // trim or extend insertion
-		*/
 		if p0 < pp0 {
 			w.Redraw(w.PointOf(p0), p0, pp0, true)
 		} else if p0 > pp0 {
@@ -369,6 +371,10 @@ func (w *Win) BackNL(p int64, n int) int64 {
 func (w *Win) SetOrigin(org int64, exact bool) {
 	//fmt.Printf("SetOrigin: %d %v\n", org, exact)
 	org = clamp(org, 0, w.Nr)
+	if org == w.Org{
+		return
+	}
+	w.Mark()
 	if org > 0 && !exact {
 		for i := 0; i < 256 && org < w.Nr; i++ {
 			if w.R[org] == '\n' {
@@ -443,6 +449,7 @@ func (w *Win) Fill() {
 			i++
 		}
 		w.Frame.Insert(rp[:i], w.Nchars)
+		w.Mark()
 	}
 }
 
@@ -451,6 +458,7 @@ func (w *Win) Delete(q0, q1 int64) {
 	if n == 0 {
 		return
 	}
+	w.Mark()
 	copy(w.R[q0:], w.R[q1:][:w.Nr-q1])
 	w.Nr -= n
 	if q0 < w.Q0 {
@@ -479,7 +487,7 @@ func (w *Win) Delete(q0, q1 int64) {
 			p0 = q0 - w.Org
 		}
 		w.Frame.Delete(p0, p1)
-		w.Fill()
+		w.Mark()
 	}
 }
 
@@ -488,9 +496,13 @@ func (w *Win) InsertString(s string, q0 int64) int64 {
 }
 
 func (w *Win) Insert(s []byte, q0 int64) int64 {
+//	fmt.Printf("Insert: %q @ q=%d len(s)=%s len(w)=%d\n", s, q0, len(s), len(w.Bytes()))	
 	n := int64(len(s))
 	if n == 0 {
-		return q0
+		return 0
+	}
+	if q0 > w.Nr{
+		q0 = w.Nr
 	}
 	if w.Nr+n > HiWater && q0 >= w.Org && q0 >= w.Qh {
 		m := min(HiWater-LoWater, min(w.Org, w.Qh))
@@ -541,7 +553,9 @@ func (w *Win) Insert(s []byte, q0 int64) int64 {
 			n++
 		}
 		w.Frame.Insert(s, q0-w.Org)
+		w.Mark()
 	}
+	
 	return q0
 }
 
@@ -569,6 +583,7 @@ func (w *Win) flush() {
 	w.Flushcache()
 	wg.Wait()
 	//w.events.Publish()
+	w.dirty = false
 }
 
 // Put
@@ -587,6 +602,7 @@ func (w *Win) Upload() {
 	go func() { w.events.Upload(scrollsp, w.b, w.Scrollr.Sub(w.Sp)); wg.Done() }()
 	wg.Wait()
 	w.Flushcache()
+	w.dirty = false
 }
 
 func (w *Win) ReadAt(off int64, p []byte) (n int, err error) {

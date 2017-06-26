@@ -12,7 +12,6 @@ import (
 
 	"github.com/as/frame/win"
 	"golang.org/x/mobile/event/mouse"
-	"golang.org/x/mobile/event/paint"
 )
 
 var chorded = false
@@ -208,7 +207,6 @@ func paste(w, wtag *Invertable, e mouse.Event) {
 	w.Insert(s, q0)
 	Sweep(w.Win, q0, q0+int64(len(s)))
 	w.Refresh()
-	w.Send(paint.Event{})
 }
 
 func snarf(w, wtag *Invertable, e mouse.Event) {
@@ -217,7 +215,6 @@ func snarf(w, wtag *Invertable, e mouse.Event) {
 	io.Copy(Clip, bytes.NewReader(ClipBuf[:n]))
 	w.Delete(w.Q0, w.Q1)
 	w.Refresh()
-	w.Send(paint.Event{})
 }
 
 func region(q0, q1, x int64) int {

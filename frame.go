@@ -50,6 +50,14 @@ type Frame struct {
 	hex     []draw.Image
 }
 
+func (f *Frame) Dirty() bool{
+	return f.modified
+}
+
+func (f *Frame) SetDirty(dirty bool) {
+	f.modified = dirty
+}
+
 func New(r image.Rectangle, ft Font, b draw.Image, cols Color) *Frame {
 	f := &Frame{
 		Font:   ft,
@@ -150,6 +158,7 @@ func (f *Frame) Dot() (p0, p1 int64) {
 
 // Select sets the range of the selected text
 func (f *Frame) Select(p0, p1 int64) {
+	f.modified = true
 	f.p0, f.p1 = p0, p1
 }
 

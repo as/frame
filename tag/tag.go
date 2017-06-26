@@ -43,6 +43,15 @@ type Tag struct {
 	W         *Invertable
 	Scrolling bool
 	scrolldy  int
+	dirty bool
+}
+
+func (t *Tag) Dirty() bool{
+	return t.dirty || t.Wtag.Dirty() || (t.W != nil && t.W.Dirty())
+}
+
+func (t *Tag) Mark() {
+	t.dirty = true
 }
 
 func (t *Tag) Loc() image.Rectangle {
@@ -171,7 +180,8 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 				fsize += 2
 			}
 			act.SetFont(mkfont(fsize))
-			act.SendFirst(paint.Event{})
+			t.Mark()
+			// act.SendFirst(paint.Event{})
 			return
 		}
 	case key.CodeUpArrow, key.CodePageUp, key.CodeDownArrow, key.CodePageDown:
@@ -188,7 +198,7 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 			org += act.IndexOf(image.Pt(r.Min.X, r.Min.Y+n*act.Frame.Dy()))
 		}
 		act.SetOrigin(org, true)
-		act.Send(paint.Event{})
+		t.Mark()
 		return
 	case key.CodeLeftArrow, key.CodeRightArrow:
 		if e.Code == key.CodeLeftArrow {
@@ -203,13 +213,12 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 			q1++
 		}
 		act.Select(q0, q1)
-		act.Send(paint.Event{})
+		t.Mark()
 		return
 	}
 	switch e.Rune {
 	case -1:
 		return
-
 	case '\x01', '\x05', '\x08', '\x15', '\x17':
 		if q0 == 0 && q1 == 0 {
 			return
@@ -245,17 +254,31 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 		default:
 			act.Delete(q0, q1)
 		}
-		act.Send(paint.Event{})
+		t.Mark()
 		return
 	}
-	if q0 != q1 {
+
+	ch := []byte(string(e.Rune))
+	if q1 != q0 {
 		act.Delete(q0, q1)
+		if region(act.Org, act.Org+act.Nchars, q0) == 0 || region(act.Org, act.Org+act.Nchars, q1) == 0{
+			t.Mark()
+		}
+		q1 = q0
 	}
-	q0 += act.Insert([]byte(string(e.Rune)), q0)
-	q1 = q0
+	q1 += act.Insert(ch, q0)
+
+	if region(act.Org, act.Org+act.Nchars, q0) == 0 || region(act.Org, act.Org+act.Nchars, q1) == 0{
+		t.Mark()
+	}
+	q0 = q1
 	act.Select(q0, q1)
-	act.Send(paint.Event{})
+	if region(act.Org, act.Org+act.Nchars, q0) == 0 || region(act.Org, act.Org+act.Nchars, q1) == 0{
+		t.Mark()
+	}
 }
+
+
 
 func (t *Tag) MouseIn(act *Invertable, e mouse.Event) {
 	//	defer un(trace(db, "Tag.Mousein"))
@@ -274,24 +297,26 @@ func (t *Tag) MouseIn(act *Invertable, e mouse.Event) {
 		}
 		if t.Scrolling {
 			act.Clicksb(pt, 0)
+			t.Mark()
 		} else {
 			if e.Button == 2 {
 				t.Scrolling = true
 			}
 			act.Clicksb(pt, int(e.Button)-2)
+			t.Mark()
 		}
-		act.Send(paint.Event{})
+		
 		return
 	}
 	switch e.Direction {
 	case mouse.DirPress:
 		lastclickpt = Pt(e)
 		t.press(act, e)
-		act.Send(paint.Event{})
+		t.Mark()
 	case mouse.DirRelease:
 		lastclickpt = image.Pt(-5, -5)
 		t.release(act, e)
-		act.Send(paint.Event{})
+		t.Mark()
 	case mouse.DirNone:
 		if !noselect && down(1) && ones(Buttonsdown) == 1 {
 			r := image.Rect(0, 0, 5, 5).Add(lastclickpt)
@@ -410,7 +435,7 @@ func (t *Tag) Handle(act *Invertable, e interface{}) {
 		} else if e == "Get" {
 			t.Get()
 		}
-		act.Send(paint.Event{})
+		t.Mark()
 	case *Command:
 		fmt.Printf("command %#v\n", e)
 		if e == nil {
@@ -419,7 +444,7 @@ func (t *Tag) Handle(act *Invertable, e interface{}) {
 		if e.fn != nil {
 			e.fn(t.W) // Always execute on body for now
 		}
-		act.Send(paint.Event{})
+		t.Mark()
 	case ScrollEvent:
 		e.wind.FrameScroll(e.dy)
 		e.flushwith(paint.Event{})
@@ -432,13 +457,18 @@ func (t *Tag) Handle(act *Invertable, e interface{}) {
 	case key.Event:
 		t.Kbdin(act, e)
 	}
+	if t.Dirty(){
+		act.Send(paint.Event{})
+	}
 }
 
 func (t *Tag) Upload(wind screen.Window) {
 	if t.W != nil {
 		wind.Upload(t.W.Sp, t.W.Buffer(), t.W.Buffer().Bounds())
 		t.W.Flushcache()
+		t.W.SetDirty(false)
 	}
 	wind.Upload(t.Wtag.Sp, t.Wtag.Buffer(), t.Wtag.Buffer().Bounds())
-	t.Wtag.Flushcache()
+	t.Wtag.SetDirty(false)
+	t.dirty = false
 }

@@ -163,6 +163,7 @@ type File interface {
 	Delete(q0, q1 int64)
 	Select(q0, q1 int64)
 	Dot() (q0, q1 int64)
+	Dirty() bool
 	Bytes() []byte
 }
 
