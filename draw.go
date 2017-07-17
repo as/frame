@@ -12,49 +12,7 @@ import (
 	"unicode"
 )
 
-// Put
-func (f *Frame) draw(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point) {
-	draw.Draw(dst, r, src, sp, draw.Src)
-	if len(f.Cache) == 0 {
-		f.Cache = append(f.Cache, r)
-		return
-	}
-	c := f.Cache[len(f.Cache)-1]
-	if r.Min.X == c.Max.X || r.Max.X == c.Min.X || r.Max.Y == c.Min.Y || r.Min.Y == c.Max.Y {
-		f.Cache[0] = f.Cache[0].Union(r)
-	} else {
-		c := f.Cache[0]
-		if c.Dx()*c.Dy() < r.Dx()*r.Dy() {
-			f.Cache = append([]image.Rectangle{r}, f.Cache...)
-		} else {
-			f.Cache = append(f.Cache, r)
-		}
-	}
-	//f.Cache = append(f.Cache, r)
-}
-func (f *Frame) drawover(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point) {
-	f.Cache = append(f.Cache, r)
-	draw.Draw(dst, r, src, sp, draw.Over)
-}
-func (f *Frame) tickat(pt image.Point, ticked bool) {
-	if f.Ticked == ticked || f.tick == nil || !pt.In(f.r) {
-		return
-	}
-	pt.X--
-	r := f.tick.Bounds().Add(pt)
-	if r.Max.X > f.r.Max.X {
-		r.Max.X = f.r.Max.X
-	} //
-	adj := image.Pt(0, -(f.Font.height / 6))
-	if ticked {
-		f.drawover(f.tickback, f.tickback.Bounds(), f.b, pt.Add(adj))
-		f.drawover(f.b, r.Add(adj), f.tick, image.ZP)
-	} else {
-		f.drawover(f.b, r.Add(adj), f.tickback, image.ZP)
-	}
-	f.Ticked = ticked
-}
-
+// Refresh renders the entire frame.
 func (f *Frame) Refresh() {
 	cols := f.Color
 	if f.p0 == f.p1 {
@@ -72,6 +30,63 @@ func (f *Frame) Refresh() {
 	pt = f.drawsel(pt, 0, f.p0, cols.Back, cols.Text)
 	pt = f.drawsel(pt, f.p0, f.p1, cols.Hi.Back, cols.Hi.Text)
 	pt = f.drawsel(pt, f.p1, f.Nchars, cols.Back, cols.Text)
+}
+
+// Redraw0 renders the frame's bitmap at pt.
+func (f *Frame) Redraw0(pt image.Point, text, back image.Image) {
+	nb := 0
+	for ; nb < f.Nbox; nb++ {
+		b := &f.Box[nb]
+		pt = f.lineWrap(pt, b)
+		//if !f.noredraw && b.nrune >= 0 {
+		if b.Nrune >= 0 {
+			f.stringbg(f.b, pt, text, image.ZP, f.Font, b.Ptr, back, image.ZP)
+		}
+		pt.X += b.Width
+	}
+}
+
+// Redraw draws the range [p0:p1] at the given pt.
+func (f *Frame) Redraw(pt image.Point, p0, p1 int64, issel bool) {
+	if f.Ticked {
+		f.tickat(f.PointOf(f.p0), false)
+	}
+
+	if p0 == p1 {
+		f.tickat(pt, issel)
+		return
+	}
+
+	pal := f.Color.Pallete
+	if issel {
+		pal = f.Color.Hi
+	}
+	f.drawsel(pt, p0, p1, pal.Back, pal.Text)
+}
+
+// Recolor redraws the range p0:p1 with the given palette
+func (f *Frame) Recolor(pt image.Point, p0, p1 int64, cols Pallete) {
+	f.drawsel(pt, p0, p1, cols.Back, cols.Text)
+}
+
+// Put
+func (f *Frame) tickat(pt image.Point, ticked bool) {
+	if f.Ticked == ticked || f.tick == nil || !pt.In(f.r) {
+		return
+	}
+	pt.X--
+	r := f.tick.Bounds().Add(pt)
+	if r.Max.X > f.r.Max.X {
+		r.Max.X = f.r.Max.X
+	} //
+	adj := image.Pt(0, -(f.Font.height / 6))
+	if ticked {
+		f.Draw(f.tickback, f.tickback.Bounds(), f.b, pt.Add(adj), draw.Over, "tickat: ticked: 1/2")
+		f.Draw(f.b, r.Add(adj), f.tick, image.ZP, draw.Over, "tickat: ticked: 2/2")
+	} else {
+		f.Draw(f.b, r.Add(adj), f.tickback, image.ZP, draw.Over, "tickat: unticked")
+	}
+	f.Ticked = ticked
 }
 
 func (f *Frame) drawAt(pt image.Point) image.Point {
@@ -107,36 +122,6 @@ func (f *Frame) drawAt(pt image.Point) image.Point {
 	return pt
 }
 
-func (f *Frame) Redraw0(pt image.Point, text, back image.Image) {
-	nb := 0
-	for ; nb < f.Nbox; nb++ {
-		b := &f.Box[nb]
-		pt = f.lineWrap(pt, b)
-		//if !f.noredraw && b.nrune >= 0 {
-		if b.Nrune >= 0 {
-			f.stringbg(f.b, pt, text, image.ZP, f.Font, b.Ptr, back, image.ZP)
-		}
-		pt.X += b.Width
-	}
-}
-
-func (f *Frame) Redraw(pt image.Point, p0, p1 int64, issel bool) {
-	if f.Ticked {
-		f.tickat(f.PointOf(f.p0), false)
-	}
-
-	if p0 == p1 {
-		f.tickat(pt, issel)
-		return
-	}
-
-	pal := f.Color.Pallete
-	if issel {
-		pal = f.Color.Hi
-	}
-	f.drawsel(pt, p0, p1, pal.Back, pal.Text)
-}
-
 func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) image.Point {
 	p := int64(0)
 	nr := p
@@ -161,8 +146,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			pt = f.lineWrap(pt, b)
 			// fill in the end of a wrapped line
 			if pt.Y > qt.Y {
-				//	cache = append(cache, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y))
-				f.draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt)
+				f.Draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt, f.op, "drawsel: fill in end of wrapped line")
 			}
 		}
 		ptr = b.Ptr
@@ -188,13 +172,16 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 		if x > f.r.Max.X {
 			x = f.r.Max.X
 		}
-		f.draw(f.b, image.Rect(pt.X, pt.Y, x, pt.Y+f.Font.height), back, pt)
+		f.Draw(f.b, image.Rect(pt.X, pt.Y, x, pt.Y+f.Font.height), back, pt, f.op, "drawsel")
 		if b.Nrune >= 0 {
 			//TODO: must be stringnbg....
 			f.stringbg(f.b, pt, text, image.ZP, f.Font, ptr[:nr], back, image.ZP)
 		}
 		pt.X += w
 	Continue:
+		if nb+1 >= f.Nbox {
+			break
+		}
 		b = &f.Box[nb+1]
 		p += nr
 	}
@@ -203,8 +190,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 		qt = pt
 		pt = f.lineWrap(pt, b)
 		if pt.Y > qt.Y {
-			//cache =append(cache, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y))
-			f.draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt)
+			f.Draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt, f.op, "drawsel: last")
 		}
 	}
 	return pt
@@ -246,7 +232,7 @@ func (f *Frame) renderHex() {
 	for i := range f.hex {
 		sizer := f.Font.measureHex()
 		f.hex[i] = image.NewRGBA(image.Rect(0, 0, sizer, f.Dy()))
-		pt := image.Pt(1, f.Dy()/5)
+		pt := image.Pt(3, f.Dy()/5)
 		s := fmt.Sprintf("%03d", i)
 		stringnbg(f.hex[i], pt, f.Color.Text, image.ZP, *f.hexFont, []byte(s),
 			f.Color.Back, image.ZP)
@@ -260,7 +246,7 @@ func (f *Frame) stringbg(dst draw.Image, p image.Point, src image.Image,
 	for _, v := range s {
 		fp := fixed.P(p.X, p.Y)
 		dr, mask, maskp, _, ok := font.Glyph(fp, rune(v))
-		if v == 0{
+		if v == 0 {
 			dr, mask, maskp, _, ok = font.Glyph(fp, 1)
 		}
 		if !ok {

@@ -370,25 +370,27 @@ func (t *Tag) Look(w *win.Win, q0, q1 int64) bool {
 		w.SendFirst(cmdparse(addr))
 		return true
 	}
-	path := t.FileName()
-	if !isdir(path){
-		path = filepath.Dir(path)
+	name = filepath.Clean(name)
+	if !filepath.IsAbs(name){
+		pref := filepath.Clean(t.FileName())
+		if !isdir(pref){
+			pref = filepath.Dir(pref)
+		}
+		name = filepath.Clean(filepath.Join(pref, name))
 	}
-	path = filepath.Join(path, name)
-	if isdir(path) {
+	if isdir(name) {
 		if addr != "" {
 			// A directory with an address doesn't make sense
 			// user probably refers to a file on another system
 			// with the same name as the dir, so look should fail
 			return false
 		}
-		w.SendFirst(GetEvent{Path: path, IsDir: true})
+		w.SendFirst(GetEvent{Path: name, IsDir: true})
 		return true
-	} else if isfile(path){
-		w.SendFirst(GetEvent{Path: path, Addr: addr})
+	} else if isfile(name){
+		w.SendFirst(GetEvent{Path: name, Addr: addr})
 		return true
 	}
-	fmt.Printf("look returns false")
 	return false
 }
 
@@ -465,7 +467,7 @@ func (t *Tag) Handle(act *Invertable, e interface{}) {
 func (t *Tag) Upload(wind screen.Window) {
 	if t.W != nil {
 		wind.Upload(t.W.Sp, t.W.Buffer(), t.W.Buffer().Bounds())
-		t.W.Flushcache()
+		t.W.Flush()
 		t.W.SetDirty(false)
 	}
 	wind.Upload(t.Wtag.Sp, t.Wtag.Buffer(), t.Wtag.Buffer().Bounds())

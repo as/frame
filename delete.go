@@ -2,7 +2,6 @@ package frame
 
 import (
 	"fmt"
-	"github.com/as/frame/box"
 	"image"
 )
 
@@ -10,7 +9,6 @@ import (
 
 func (f *Frame) Delete(p0, p1 int64) int {
 	var (
-		b              *box.Box
 		pt0, pt1, ppt0 image.Point
 		n0, n1, n      int
 		cn1            int64
@@ -53,10 +51,11 @@ func (f *Frame) Delete(p0, p1 int64) int {
 		panic("DeleteBytes: Split bug: nul terminators removed")
 	}
 
-	b = &f.Box[n1]
+//	b = &f.Box[n1]
 	cn1 = int64(p1)
 
 	for pt1.X != pt0.X && n1 < f.Nbox {
+		b := &f.Box[n1]
 		pt0 = f.lineWrap0(pt0, b)
 		pt1 = f.lineWrap(pt1, b)
 		r.Min = pt0
@@ -73,7 +72,7 @@ func (f *Frame) Delete(p0, p1 int64) int {
 				b = &f.Box[n1]
 			}
 			r.Max.X += b.Width
-			f.draw(f.b, r, f.b, pt1)
+			f.Draw(f.b, r, f.b, pt1, f.op, "delete: b.Nrune > 0")
 			//drawBorder(f.b, r.Add(pt1).Inset(-4), Red, image.ZP, 8)
 			//drawBorder(f.b, r.Inset(-4), Green, image.ZP, 8)
 			cn1 += int64(b.Nrune)
@@ -86,15 +85,23 @@ func (f *Frame) Delete(p0, p1 int64) int {
 			if f.p0 <= cn1 && cn1 < f.p1 {
 				col = f.Color.Hi.Back
 			}
-			f.draw(f.b, r, col, pt0)
+			f.Draw(f.b, r, col, pt0, f.op, "delete: b.Nrune <= 0")
 			cn1++
 		}
 		pt1 = f.advance(pt1, b)
 		pt0.X += f.newWid(pt0, b)
-		f.Box[n0] = f.Box[n1]
+		func() {
+			defer func() {
+				err := recover()
+				if err != nil {
+					fmt.Printf("debug info: Delete(%d, %d) -> f.Box[%d] = f.Box[%d], f.Nbox = %d, len(f.Run) = %d, pt0=%s, pt1=%s, ppt0=%s\n", p0, p1, n0, n1, f.Nbox, len(f.Run.Box), pt0, pt1, ppt0)
+				}
+			}()
+			f.Box[n0] = f.Box[n1]
+		}()
 		n0++
 		n1++
-		b = &f.Box[n1]
+//		b = &f.Box[n1]
 	}
 
 	if n1 == f.Nbox && pt0.X != pt1.X {
@@ -114,8 +121,9 @@ func (f *Frame) Delete(p0, p1 int64) int {
 			if q2 > f.r.Max.Y {
 				q2 = f.r.Max.Y
 			}
-			f.draw(f.b, image.Rect(pt0.X, pt0.Y, pt0.X+(f.r.Max.X-pt1.X), q0), f.b, pt1)
-			f.draw(f.b, image.Rect(f.r.Min.X, q0, f.r.Max.X, q0+(q2-q1)), f.b, image.Pt(f.r.Min.X, q1))
+
+			f.Draw(f.b, image.Rect(pt0.X, pt0.Y, pt0.X+(f.r.Max.X-pt1.X), q0), f.b, pt1, f.op, "delete: pt1.Y != pt0.Y 1/2")
+			f.Draw(f.b, image.Rect(f.r.Min.X, q0, f.r.Max.X, q0+(q2-q1)), f.b, image.Pt(f.r.Min.X, q1), f.op, "delete: pt1.Y != pt0.Y 2/2")
 			f.Paint(image.Pt(pt2.X, pt2.Y-(pt1.Y-pt0.Y)), pt2, f.Color.Back)
 		} else {
 			f.Paint(pt0, pt2, f.Color.Back)

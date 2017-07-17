@@ -17,6 +17,7 @@ func (f *Frame) bxscan(s []byte, ppt image.Point) (image.Point, image.Point) {
 		nl, rw int
 		b   *box.Box
 		tmp [TMPSIZE + 3]byte
+		
 	)
 	//	log.Printf("bxscan: s=%s ppt=%s\n", s, ppt)
 	fr := f.fr
@@ -25,7 +26,7 @@ func (f *Frame) bxscan(s []byte, ppt image.Point) (image.Point, image.Point) {
 	fr.Color = f.Color
 	delta = DELTA
 	nl = 0
-
+	min := fr.Font.Measure(' ')
 	for nb = 0; len(s) > 0 && nl <= f.maxlines; nb, fr.Nbox = nb+1, fr.Nbox+1 {
 		if nb == fr.Nalloc {
 			fr.Grow(delta)
@@ -44,7 +45,7 @@ func (f *Frame) bxscan(s []byte, ppt image.Point) (image.Point, image.Point) {
 				b.Minwidth = 0
 				nl++
 			} else {
-				b.Minwidth = fr.Font.Measure(' ')
+				b.Minwidth = min
 			}
 			fr.Nchars++
 			s = s[1:]
@@ -78,9 +79,6 @@ func (f *Frame) bxscan(s []byte, ppt image.Point) (image.Point, image.Point) {
 			fr.Nchars += int64(nr)
 		}
 	}
-
-	//	log.Printf("bxscan: ppt=%s\n",  ppt)
 	ppt = f.lineWrap0(ppt, &fr.Box[0])
-	//	log.Printf("bxscan: ppt (wrap)=%s\n",  ppt)
 	return ppt, fr.drawAt(ppt)
 }

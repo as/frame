@@ -1,11 +1,11 @@
 package frame
 
 import (
-	"unicode"
-
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
+	"golang.org/x/image/font/gofont/gomono"
 	"golang.org/x/image/math/fixed"
+	"unicode"
 )
 
 type Font struct {
@@ -32,8 +32,8 @@ func (f Font) Dx(s string) int {
 func (f Font) Dy() int {
 	return f.height
 }
-func (f Font) Size() int{
-	return 5*f.Dy()/6
+func (f Font) Size() int {
+	return 5 * f.Dy() / 6
 }
 func fix(i fixed.Int26_6) int {
 	return i.Round()
@@ -56,6 +56,10 @@ func (f Font) Measure(r rune) (q int) {
 	return fix(l)
 }
 
-func (f Font) measureHex() int{
-	return f.Measure('_')*7/4
+func (f Font) measureHex() int {
+	return f.Measure('_')*2
+}
+
+func NewGoMono(size int) Font {
+	return NewTTF(gomono.TTF, size)
 }

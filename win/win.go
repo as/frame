@@ -311,7 +311,7 @@ func (w *Win) FrameScroll(dl int) {
 	}
 	//w.SetOrigin(org, true)
 	if w.Sweeping {
-		w.Flushcache()
+		w.Flush()
 		w.flush()
 	}
 
@@ -346,6 +346,8 @@ func (w *Win) Select(q0, q1 int64) {
 		}
 	}
 	w.Frame.Select(p0, p1)
+
+	w.Refresh()
 }
 
 func (w *Win) BackNL(p int64, n int) int64 {
@@ -376,7 +378,7 @@ func (w *Win) SetOrigin(org int64, exact bool) {
 	}
 	w.Mark()
 	if org > 0 && !exact {
-		for i := 0; i < 256 && org < w.Nr; i++ {
+		for i := 0; i < 128 && org < w.Nr; i++ {
 			if w.R[org] == '\n' {
 				org++
 				break
@@ -580,7 +582,7 @@ func (w *Win) flush() {
 	go func() { w.events.Upload(sp.Add(image.Pt(0, Ny)), w.b, r1); wg.Done() }()
 	go func() { w.events.Upload(sp.Add(image.Pt(0, Ny*2)), w.b, r2); wg.Done() }()
 	go func() { w.events.Upload(sp.Add(image.Pt(0, Ny*3)), w.b, r3); wg.Done() }()
-	w.Flushcache()
+	w.Flush()
 	wg.Wait()
 	//w.events.Publish()
 	w.dirty = false
@@ -589,9 +591,9 @@ func (w *Win) flush() {
 // Put
 func (w *Win) Upload() {
 	var wg sync.WaitGroup
-	wg.Add(len(w.Cache))
+	wg.Add(len(w.Cache()))
 	sp := w.Sp
-	for _, r := range w.Frame.Cache {
+	for _, r := range w.Cache() {
 		go func(r image.Rectangle) {
 			w.events.Upload(sp.Add(r.Min), w.b, r)
 			wg.Done()
@@ -601,7 +603,7 @@ func (w *Win) Upload() {
 	scrollsp := w.Sp
 	go func() { w.events.Upload(scrollsp, w.b, w.Scrollr.Sub(w.Sp)); wg.Done() }()
 	wg.Wait()
-	w.Flushcache()
+	w.Flush()
 	w.dirty = false
 }
 

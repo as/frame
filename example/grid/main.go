@@ -2,8 +2,17 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"flag"
+	"fmt"
 	"image"
+	"io"
+	"log"
 	"os"
+	"os/exec"
+	"runtime/pprof"
+	"strings"
+	"sync"
 
 	"github.com/as/cursor"
 	window "github.com/as/ms/win"
@@ -19,6 +28,8 @@ import (
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
 )
+
+var eprint = fmt.Println
 
 func moveMouse(pt image.Point) {
 	cursor.MoveTo(window.ClientAbs().Min.Add(pt))
@@ -54,8 +65,26 @@ func Tagtext(s string, w Plane) {
 	}
 }
 
+type CmdEvent struct {
+	grid *Grid
+	col  *Col
+	tag  *tag.Tag
+	act  Plane
+}
+
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+
 // Put
 func main() {
+	flag.Parse()
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 	driver.Main(func(src screen.Screen) {
 		wind, _ := src.NewWindow(&screen.NewWindowOptions{winSize.X, winSize.Y, "A"})
 		wind.Send(paint.Event{})
@@ -99,7 +128,7 @@ func main() {
 			switch e := act.NextEvent().(type) {
 			case tag.GetEvent:
 				t := New(actCol, e.Path)
-				if e.Addr != ""{
+				if e.Addr != "" {
 					actTag = t.(*tag.Tag)
 					act = actTag.W
 					actTag.Handle(actTag.W, tag.Cmdparse(e.Addr))
@@ -137,7 +166,7 @@ func main() {
 				{
 					r := actTag.Loc()
 					dy := r.Min.Y
-					r.Max = r.Min.Add(image.Pt(20, 20))
+					r.Max = r.Min.Add(image.Pt(11, 11))
 					if e.Direction == 1 && pt.In(r) {
 						if e.Button == 2 {
 							xx.srcCol = actCol
@@ -172,17 +201,21 @@ func main() {
 			case string, *tag.Command, tag.ScrollEvent, key.Event:
 				if s, ok := e.(string); ok {
 					if s == "New" {
-						moveMouse(New(actCol, "mink").Loc().Min)
+						moveMouse(New(actCol, "").Loc().Min)
 						act.SendFirst(paint.Event{})
 						continue
-					} else if s == "Newcol"{
-						moveMouse(NewCol2(g, "mink").Loc().Min)
+					} else if s == "Newcol" {
+						moveMouse(NewCol2(g, "").Loc().Min)
 						act.SendFirst(paint.Event{})
 					} else if s == "Del" {
 						Del(actCol, actCol.ID(actTag))
 						act.SendFirst(paint.Event{})
 						continue
+					} else if s == "Edit" {
+						actTag.Handle(act, e)
+						continue
 					}
+					cmd(act, s)
 				}
 				actTag.Handle(act, e)
 			case size.Event:
@@ -205,5 +238,112 @@ func main() {
 			}
 		}
 	})
+
+}
+
+type Window interface {
+	Bytes() []byte
+	Select(q0, q1 int64)
+	Dot() (q0, q1 int64)
+	Insert(p []byte, at int64) int64
+	Delete(q0, q1 int64)
+}
+
+func cmd(f Window, argv string) {
+	x := strings.Fields(argv)
+	if len(x) == 0 {
+		eprint("|: nothing on rhs")
+		return
+	}
+	n := x[0]
+	var a []string
+	if len(x) > 1 {
+		a = x[1:]
+	}
+
+	cmd := exec.Command(n, a...)
+	q0, q1 := f.Dot()
+	f.Delete(q0, q1)
+	q1 = q0
+	var fd0 io.WriteCloser
+	fd1, err := cmd.StdoutPipe()
+	if err != nil {
+		panic(err)
+	}
+	fd2, err := cmd.StderrPipe()
+	if err != nil {
+		panic(err)
+	}
+	fd0, err = cmd.StdinPipe()
+	if err != nil {
+		panic(err)
+	}
+	_, err = io.Copy(fd0, bytes.NewReader(append([]byte{}, f.Bytes()[q0:q1]...)))
+	if err != nil {
+		eprint(err)
+		return
+	}
+	fd0.Close()
+	var wg sync.WaitGroup
+	donec := make(chan bool)
+	outc := make(chan []byte)
+	errc := make(chan []byte)
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		b := make([]byte, 65536)
+		for {
+			select {
+			case <-donec:
+				return
+			default:
+				n, err := fd1.Read(b)
+				if err != nil {
+					if err == io.EOF {
+						break
+					}
+					eprint(err)
+				}
+				outc <- append([]byte{}, b[:n]...)
+			}
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		b := make([]byte, 65536)
+		for {
+			select {
+			case <-donec:
+				return
+			default:
+				n, err := fd2.Read(b)
+				if err != nil {
+					if err == io.EOF {
+						break
+					}
+				}
+				errc <- append([]byte{}, b[:n]...)
+			}
+		}
+	}()
+	go func() {
+		cmd.Start()
+		cmd.Wait()
+		close(donec)
+	}()
+Loop:
+	for {
+		select {
+		case p := <-outc:
+			f.Insert(p, q1)
+			q1 += int64(len(p))
+		case p := <-errc:
+			f.Insert(p, q1)
+			q1 += int64(len(p))
+		case <-donec:
+			break Loop
+		}
+	}
 
 }
