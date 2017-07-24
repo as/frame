@@ -14,19 +14,19 @@ const (
 )
 
 
-func (f *Frame) Bitmap() draw.Image{
+func (f *Frame) RGBA() *image.RGBA {
 	return f.b
 }
-// RGBA is deprecated. Use frame.Bitmap
-func (f *Frame) RGBA() draw.Image {
-	return f.b
+func (f *Frame) Size() image.Point{
+	r := f.RGBA().Bounds()
+	return image.Pt(r.Dx(), r.Dy())
 }
 
 type Frame struct {
 	box.Run
 	Color
 	Font         Font
-	b            draw.Image
+	b            *image.RGBA
 	r, entire    image.Rectangle
 	maxtab       int
 	lastlinefull int
@@ -58,7 +58,7 @@ type Frame struct {
 
 // New creates a new frame on b with bounds r. The image b is used
 // as the frame's internal bitmap cache.
-func New(r image.Rectangle, ft Font, b draw.Image, cols Color) *Frame {
+func New(r image.Rectangle, ft Font, b *image.RGBA, cols Color) *Frame {
 	f := &Frame{
 		Font:   ft,
 		maxtab: 4 * ft.Measure(' '),
@@ -85,7 +85,7 @@ func (f *Frame) SetDirty(dirty bool) {
 }
 
 // Reset resets the frame to display on image b with bounds r and font ft.
-func (f *Frame) Reset(r image.Rectangle, b draw.Image, ft Font) {
+func (f *Frame) Reset(r image.Rectangle, b *image.RGBA, ft Font) {
 	f.r = r
 	f.b = b
 	f.Font = ft
@@ -151,7 +151,7 @@ func (f *Frame) inittick() {
 	drawtick(0, h-h/5, TickWidth, h)
 }
 
-func (f *Frame) setrects(r image.Rectangle, b draw.Image) {
+func (f *Frame) setrects(r image.Rectangle, b *image.RGBA) {
 	f.b = b
 	f.entire = r
 	f.r = r

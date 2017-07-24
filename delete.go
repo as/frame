@@ -109,7 +109,7 @@ func (f *Frame) Delete(p0, p1 int64) int {
 	}
 
 	if pt1.Y != pt0.Y {
-		pt2 := f.ptOfCharPtBox(32767, pt1, n1)
+		pt2 := f.ptOfCharPtBox(32768, pt1, n1)
 		if pt2.Y > f.r.Max.Y {
 			panic(fmt.Sprintf("delete: PtOfCharPtBox %s > %s", pt2, f.r.Max))
 		}
@@ -124,7 +124,8 @@ func (f *Frame) Delete(p0, p1 int64) int {
 
 			f.Draw(f.b, image.Rect(pt0.X, pt0.Y, pt0.X+(f.r.Max.X-pt1.X), q0), f.b, pt1, f.op, "delete: pt1.Y != pt0.Y 1/2")
 			f.Draw(f.b, image.Rect(f.r.Min.X, q0, f.r.Max.X, q0+(q2-q1)), f.b, image.Pt(f.r.Min.X, q1), f.op, "delete: pt1.Y != pt0.Y 2/2")
-			f.Paint(image.Pt(pt2.X, pt2.Y-(pt1.Y-pt0.Y)), pt2, f.Color.Back)
+//x := image.NewUniform(color.RGBA{123,52,44,255})
+//			f.Paint(image.Pt(pt2.X, pt2.Y-(pt1.Y-pt0.Y)), pt2, f.Color.Back)
 		} else {
 			f.Paint(pt0, pt2, f.Color.Back)
 		}

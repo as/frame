@@ -3,10 +3,12 @@ package frame
 import (
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
-	"golang.org/x/image/font/gofont/gomono"
+	"golang.org/x/image/font/gofont/goregular"
+//	"golang.org/x/image/font/gofont/gomono"
 	"golang.org/x/image/math/fixed"
 	"unicode"
 )
+
 
 type Font struct {
 	font.Face
@@ -51,7 +53,7 @@ func (f Font) Measure(r rune) (q int) {
 	l, ok := f.Face.GlyphAdvance(r)
 	if !ok {
 		println("warn: glyph missing")
-		l, _ = f.Face.GlyphAdvance('@')
+		l, _ = f.Face.GlyphAdvance('_')
 	}
 	return fix(l)
 }
@@ -61,5 +63,5 @@ func (f Font) measureHex() int {
 }
 
 func NewGoMono(size int) Font {
-	return NewTTF(gomono.TTF, size)
+	return NewTTF(goregular.TTF, size)
 }

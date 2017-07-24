@@ -74,7 +74,7 @@ func (f *Frame) tickat(pt image.Point, ticked bool) {
 	if f.Ticked == ticked || f.tick == nil || !pt.In(f.r) {
 		return
 	}
-	pt.X--
+	//pt.X--
 	r := f.tick.Bounds().Add(pt)
 	if r.Max.X > f.r.Max.X {
 		r.Max.X = f.r.Max.X
@@ -145,6 +145,15 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			qt = pt
 			pt = f.lineWrap(pt, b)
 			// fill in the end of a wrapped line
+				//print("before wrap ")
+				//println(qt.String())
+				//print("after wrap ")
+				//println(pt.String())
+			if qt.X > f.r.Max.X{
+				//println(f.r.Max.String())
+				qt.X-=5000
+				//f.DumpBoxes()
+			}
 			if pt.Y > qt.Y {
 				f.Draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt, f.op, "drawsel: fill in end of wrapped line")
 			}
@@ -173,7 +182,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			x = f.r.Max.X
 		}
 		f.Draw(f.b, image.Rect(pt.X, pt.Y, x, pt.Y+f.Font.height), back, pt, f.op, "drawsel")
-		if b.Nrune >= 0 {
+		if b.Nrune > 0 {
 			//TODO: must be stringnbg....
 			f.stringbg(f.b, pt, text, image.ZP, f.Font, ptr[:nr], back, image.ZP)
 		}
@@ -189,6 +198,11 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 	if p1 > p0 && nb != 0 && nb != f.Nbox && (&f.Box[nb-1]).Nrune > 0 && !trim {
 		qt = pt
 		pt = f.lineWrap(pt, b)
+			if qt.X > f.r.Max.X{
+				//println(f.r.Max.String())
+				//qt.X-=5000
+				//f.DumpBoxes()
+			}
 		if pt.Y > qt.Y {
 			f.Draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt, f.op, "drawsel: last")
 		}
@@ -232,10 +246,10 @@ func (f *Frame) renderHex() {
 	for i := range f.hex {
 		sizer := f.Font.measureHex()
 		f.hex[i] = image.NewRGBA(image.Rect(0, 0, sizer, f.Dy()))
-		pt := image.Pt(3, f.Dy()/5)
 		s := fmt.Sprintf("%03d", i)
+		pt := image.Pt(sizer-((stringwidth(*f.hexFont, s)+sizer)/2), 0)
 		stringnbg(f.hex[i], pt, f.Color.Text, image.ZP, *f.hexFont, []byte(s),
-			f.Color.Back, image.ZP)
+			image.NewUniform(color.RGBA{0,0,0,255}), image.ZP)
 	}
 }
 
@@ -246,9 +260,9 @@ func (f *Frame) stringbg(dst draw.Image, p image.Point, src image.Image,
 	for _, v := range s {
 		fp := fixed.P(p.X, p.Y)
 		dr, mask, maskp, _, ok := font.Glyph(fp, rune(v))
-		if v == 0 {
-			dr, mask, maskp, _, ok = font.Glyph(fp, 1)
-		}
+//		if v == 0 {
+//			dr, mask, maskp, _, ok = font.Glyph(fp, 1)
+//		}
 		if !ok {
 			panic("Frame.stringbg")
 			break
@@ -256,22 +270,43 @@ func (f *Frame) stringbg(dst draw.Image, p image.Point, src image.Image,
 		dr.Min.Y += h
 		dr.Max.Y += h
 		//src = image.NewUniform(Rainbow)
-		draw.Draw(dst, dr, bg, bgp, draw.Src)
+		
 		advance := f.Font.Measure(rune(v))
 		if v == 0 || !unicode.IsGraphic(rune(v)) || v > 127 {
 			if len(f.hex) == 0 {
 				f.renderHex()
 			}
-			dr := image.Rect(dr.Min.X, dr.Min.Y, dr.Min.X+advance, dr.Max.Y)
+			dr, _, _, _, _ := font.Glyph(fp, rune('@'))
+			dr.Max.X = dr.Min.X+advance
+			dr.Min.Y += font.height-5
+			dr.Max.Y += font.height-5
+			//draw.Draw(dst, dr, bg, bgp, draw.Src)
 			draw.Draw(dst, dr, f.hex[byte(v)], bgp, draw.Over)
 		} else {
-			draw.DrawMask(dst, dr, src, sp, mask, maskp, draw.Over)
-		}
-
+			//draw.Draw(dst, dr, bg, bgp, draw.Src)
+//next()
+//
+			draw.DrawMask(dst, dr, src,sp, mask, maskp, draw.Over)
+		} 
 		//next()
 		p.X += advance
 	}
 	return int(p.X)
+}
+
+func stringwidth(f Font, p string) (w int) {
+	for i := range p {
+		w += measure(f, rune(byte(p[i])))
+	}
+	return w
+}
+func measure(f Font, r rune) int{
+	l, ok := f.Face.GlyphAdvance(r)
+	if !ok {
+		println("warn: glyph missing")
+		l, _ = f.Face.GlyphAdvance('@')
+	}
+	return fix(l)
 }
 
 func stringbg(dst draw.Image, p image.Point, src image.Image,
@@ -280,7 +315,7 @@ func stringbg(dst draw.Image, p image.Point, src image.Image,
 	h = int(float64(h) - float64(h)/float64(5))
 	for _, v := range s {
 		fp := fixed.P(p.X, p.Y)
-		dr, mask, maskp, advance, ok := font.Glyph(fp, rune(v))
+		dr, mask, maskp, _, ok := font.Glyph(fp, rune(v))
 		if !ok {
 			panic("stringbg")
 			break
@@ -291,7 +326,7 @@ func stringbg(dst draw.Image, p image.Point, src image.Image,
 		draw.Draw(dst, dr, bg, bgp, draw.Src)
 		draw.DrawMask(dst, dr, src, sp, mask, maskp, draw.Over)
 		//next()
-		p.X += fix(advance)
+		p.X += measure(font, rune(v))//fix(advance)
 	}
 	return int(p.X)
 }

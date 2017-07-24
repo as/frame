@@ -144,7 +144,7 @@ func (f *Frame) Paint(p0, p1 image.Point, col image.Image) {
 		f.Draw(f.b, image.Rectangle{p0, q1}, col, image.ZP, draw.Over, "Paint: one line")
 	} else {
 		if p0.X >= f.r.Max.X {
-			p0.X = f.r.Max.X - 1
+			p0.X = f.r.Max.X// - 1
 		}
 		f.Draw(f.b, image.Rect(p0.X, p0.Y, f.r.Max.X, q0.Y), col, image.ZP, draw.Over, "Paint: 1/3")
 		if n > 1 {
