@@ -237,7 +237,7 @@ func nextcolor(c color.RGBA) color.RGBA {
 	return c
 }
 
-func (f *Frame) renderHex() {
+func (f *Frame) renderDec() {
 	if f.hexFont == nil {
 		x := NewTTF(gomono.TTF, f.Dy()/4+3)
 		f.hexFont = &x
@@ -247,6 +247,22 @@ func (f *Frame) renderHex() {
 		sizer := f.Font.measureHex()
 		f.hex[i] = image.NewRGBA(image.Rect(0, 0, sizer, f.Dy()))
 		s := fmt.Sprintf("%03d", i)
+		pt := image.Pt(sizer-((stringwidth(*f.hexFont, s)+sizer)/2), 0)
+		stringnbg(f.hex[i], pt, f.Color.Text, image.ZP, *f.hexFont, []byte(s),
+			image.NewUniform(color.RGBA{0,0,0,255}), image.ZP)
+	}
+}
+
+func (f *Frame) renderHex() {
+	if f.hexFont == nil {
+		x := NewTTF(gomono.TTF, f.Dy()/2+3)
+		f.hexFont = &x
+	}
+	f.hex = make([]draw.Image, 256)
+	for i := range f.hex {
+		sizer := f.Font.measureHex()
+		f.hex[i] = image.NewRGBA(image.Rect(0, 0, sizer, f.Dy()))
+		s := fmt.Sprintf("%02x", i)
 		pt := image.Pt(sizer-((stringwidth(*f.hexFont, s)+sizer)/2), 0)
 		stringnbg(f.hex[i], pt, f.Color.Text, image.ZP, *f.hexFont, []byte(s),
 			image.NewUniform(color.RGBA{0,0,0,255}), image.ZP)

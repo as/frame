@@ -71,7 +71,7 @@ func moveMouse(pt image.Point) {
 }
 func main() {
 	driver.Main(func(src screen.Screen) {
-		wind, _ := src.NewWindow(&screen.NewWindowOptions{winSize.X, winSize.Y})
+		wind, _ := src.NewWindow(&screen.NewWindowOptions{winSize.X, winSize.Y, "basic"})
 		wind.Send(paint.Event{})
 		focused := false
 		focused = focused
@@ -96,12 +96,13 @@ func main() {
 		cols.Back = Yellow
 		w := win.New(src, ft, wind, image.Pt(0, tagY*2), winSize.Sub(image.Pt(0, tagY*2)), pad, cols)
 
-		wmain.Insert(filename+"\tPut Del Exit", 0)
+		wmain.Insert([]byte(filename+"\tPut Del Exit"), 0)
 		wmain.Refresh()
 
 		if len(os.Args) > 1 {
-			s := string(readfile(filename))
-			w.Insert(s, w.P0)
+			s := readfile(filename)
+			p0, _ := w.Dot()
+			w.Insert(s, p0)
 		}
 
 		// lambda to paint only rectangles changed during a sweep of the mouse
@@ -148,7 +149,8 @@ func main() {
 						}
 						ClipBuf = ClipBuf[:n]
 						io.Copy(Clip, bytes.NewReader(toUTF16(ClipBuf)))
-						act.Erase(act.P0, act.P1)
+						p0, p1 := act.Dot()
+						act.Delete(p0, p1)
 						act.Send(paint.Event{})
 						fmt.Println("snarf")
 					}

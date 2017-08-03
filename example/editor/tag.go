@@ -331,7 +331,4 @@ func (t *Tag) Upload(wind screen.Window) {
 	wtag := t.wtag
 	wind.Upload(w.Sp, w.Buffer(), w.Buffer().Bounds())
 	wind.Upload(wtag.Sp, wtag.Buffer(), wtag.Buffer().Bounds())
-
-	w.Flushcache()
-	wtag.Flushcache()
 }

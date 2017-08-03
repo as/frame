@@ -269,7 +269,7 @@ func scroll(act *Invertable, e mouse.Event) {
 // Put
 func main() {
 	driver.Main(func(src screen.Screen) {
-		wind, _ := src.NewWindow(&screen.NewWindowOptions{winSize.X, winSize.Y})
+		wind, _ := src.NewWindow(&screen.NewWindowOptions{winSize.X, winSize.Y, "edit"})
 		wind.Send(paint.Event{})
 		focused := false
 		focused = focused

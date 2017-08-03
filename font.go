@@ -4,7 +4,7 @@ import (
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/goregular"
-//	"golang.org/x/image/font/gofont/gomono"
+	"golang.org/x/image/font/gofont/gomono"
 	"golang.org/x/image/math/fixed"
 	"unicode"
 )
@@ -62,6 +62,10 @@ func (f Font) measureHex() int {
 	return f.Measure('_')*2
 }
 
-func NewGoMono(size int) Font {
+func NewGoRegular(size int) Font {
 	return NewTTF(goregular.TTF, size)
+}
+
+func NewGoMono(size int) Font {
+	return NewTTF(gomono.TTF, size)
 }
