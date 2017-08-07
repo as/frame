@@ -92,8 +92,12 @@ func (f *Frame) SetDirty(dirty bool) {
 func (f *Frame) Reset(r image.Rectangle, b *image.RGBA, ft Font) {
 	f.r = r
 	f.b = b
+}
+
+func (f *Frame) SetFont(ft Font){
 	f.Font = ft
 	f.Run.Reset(f.Font.MeasureBytes)
+	f.Refresh()
 }
 
 // Dx returns the width of s in pixels
