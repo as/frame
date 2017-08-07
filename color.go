@@ -18,15 +18,15 @@ var (
 )
 
 type Color struct {
-	Pallete
-	Hi Pallete
+	Palette
+	Hi Palette
 }
 
 var Acme = Color{
-	Pallete: Pallete{Text: Gray, Back: Yellow},
-	Hi:      Pallete{Text: White, Back: Mauve},
+	Palette: Palette{Text: Gray, Back: Yellow},
+	Hi:      Palette{Text: White, Back: Mauve},
 }
 
-type Pallete struct {
+type Palette struct {
 	Text, Back image.Image
 }

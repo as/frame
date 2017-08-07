@@ -95,7 +95,7 @@ func (f *Frame) Reset(r image.Rectangle, b *image.RGBA, ft Font) {
 	f.SetFont(ft)
 }
 
-func (f *Frame) SetFont(ft Font){
+func (f *Frame) SetFont(ft Font) {
 	f.Font = ft
 	f.Run.Reset(f.Font.MeasureBytes)
 	f.Refresh()

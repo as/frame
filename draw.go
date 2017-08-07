@@ -57,7 +57,7 @@ func (f *Frame) Redraw(pt image.Point, p0, p1 int64, issel bool) {
 		return
 	}
 
-	pal := f.Color.Pallete
+	pal := f.Color.Palette
 	if issel {
 		pal = f.Color.Hi
 	}
@@ -65,7 +65,7 @@ func (f *Frame) Redraw(pt image.Point, p0, p1 int64, issel bool) {
 }
 
 // Recolor redraws the range p0:p1 with the given palette
-func (f *Frame) Recolor(pt image.Point, p0, p1 int64, cols Pallete) {
+func (f *Frame) Recolor(pt image.Point, p0, p1 int64, cols Palette) {
 	f.drawsel(pt, p0, p1, cols.Back, cols.Text)
 }
 
