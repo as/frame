@@ -12,6 +12,7 @@ import (
 type Font struct {
 	font.Face
 	height int
+	data []byte
 }
 
 func NewGoRegular(size int) Font {
@@ -35,6 +36,7 @@ func NewTTF(data []byte, size int) Font {
 				SubPixelsX: 1,
 		}),
 		height: size + size/5,
+		data: data,
 	}
 }
 
@@ -70,4 +72,8 @@ func (f Font) Measure(r rune) (q int) {
 
 func (f Font) measureHex() int {
 	return f.Measure('_') * 2
+}
+
+func (f Font) TTF() []byte{
+	return f.data
 }

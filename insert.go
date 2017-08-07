@@ -11,7 +11,7 @@ func (f *Frame) Mark() {
 	f.modified = true
 }
 
-func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
+func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	type Pts [2]image.Point
 	var (
 		pt0, pt1, ppt0, ppt1, opt0 image.Point
@@ -178,7 +178,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int64) {
 		n0++
 	}
 	f.clean(ppt0, nn0, n0)
-	wrote = fr.Nchars
+	wrote = int(fr.Nchars)
 	f.Nchars += fr.Nchars
 	if f.p0 >= p0 {
 		f.p0 += fr.Nchars
