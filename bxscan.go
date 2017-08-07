@@ -6,25 +6,21 @@ import (
 	//	"log"
 )
 
-const (
-	DELTA   = 25
-	TMPSIZE = 256
-)
-
 func (f *Frame) bxscan(s []byte, ppt image.Point) (image.Point, image.Point) {
+
+	const Delta = 25
 	var (
 		w, nb, delta,
 		nl, rw int
 		b   *box.Box
-		tmp [TMPSIZE + 3]byte
-		
+		tmp [256 + 3]byte
 	)
 	//	log.Printf("bxscan: s=%s ppt=%s\n", s, ppt)
 	fr := f.fr
 	fr.Reset(f.r, f.b, f.Font)
 	fr.maxtab = 4 * f.Dx(" ")
 	fr.Color = f.Color
-	delta = DELTA
+	delta = Delta
 	nl = 0
 	min := fr.Font.Measure(' ')
 	for nb = 0; len(s) > 0 && nl <= f.maxlines; nb, fr.Nbox = nb+1, fr.Nbox+1 {

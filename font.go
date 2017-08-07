@@ -3,12 +3,11 @@ package frame
 import (
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
-	"golang.org/x/image/font/gofont/goregular"
 	"golang.org/x/image/font/gofont/gomono"
+	"golang.org/x/image/font/gofont/goregular"
 	"golang.org/x/image/math/fixed"
 	"unicode"
 )
-
 
 type Font struct {
 	font.Face
@@ -59,7 +58,7 @@ func (f Font) Measure(r rune) (q int) {
 }
 
 func (f Font) measureHex() int {
-	return f.Measure('_')*2
+	return f.Measure('_') * 2
 }
 
 func NewGoRegular(size int) Font {

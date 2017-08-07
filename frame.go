@@ -1,3 +1,8 @@
+// Package frame provides plan9-like editable text images on a raster display. This implementation
+// preserves NUL bytes, and uses a set of replacement characters for undenderable text glyphs generated
+// with a smaller sized font (hexidecimal or ascii representation).
+//
+// A frame's text is not addressable
 package frame
 
 import (
@@ -9,15 +14,14 @@ import (
 
 const (
 	TickWidth = 3
-	TickOff   = 0
-	TickOn    = 1
+	tickOff   = 0
+	tickOn    = 1
 )
-
 
 func (f *Frame) RGBA() *image.RGBA {
 	return f.b
 }
-func (f *Frame) Size() image.Point{
+func (f *Frame) Size() image.Point {
 	r := f.RGBA().Bounds()
 	return image.Pt(r.Dx(), r.Dy())
 }
@@ -46,8 +50,8 @@ type Frame struct {
 
 	text.Drawer
 
-//	npts int
-	pts  []Pts
+	//	npts int
+	pts [][2]image.Point
 
 	Scroll func(int)
 	fr     *Frame
@@ -108,7 +112,7 @@ func (f *Frame) Bounds() image.Rectangle {
 }
 
 func (f *Frame) SetTick(style int) {
-	f.tickoff = style == TickOff
+	f.tickoff = style == tickOff
 }
 
 // Full returns true if the last line in the frame is full

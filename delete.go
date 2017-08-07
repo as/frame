@@ -51,7 +51,7 @@ func (f *Frame) Delete(p0, p1 int64) int {
 		panic("DeleteBytes: Split bug: nul terminators removed")
 	}
 
-//	b = &f.Box[n1]
+	//	b = &f.Box[n1]
 	cn1 = int64(p1)
 
 	for pt1.X != pt0.X && n1 < f.Nbox {
@@ -101,7 +101,7 @@ func (f *Frame) Delete(p0, p1 int64) int {
 		}()
 		n0++
 		n1++
-//		b = &f.Box[n1]
+		//		b = &f.Box[n1]
 	}
 
 	if n1 == f.Nbox && pt0.X != pt1.X {
@@ -124,8 +124,8 @@ func (f *Frame) Delete(p0, p1 int64) int {
 
 			f.Draw(f.b, image.Rect(pt0.X, pt0.Y, pt0.X+(f.r.Max.X-pt1.X), q0), f.b, pt1, f.op, "delete: pt1.Y != pt0.Y 1/2")
 			f.Draw(f.b, image.Rect(f.r.Min.X, q0, f.r.Max.X, q0+(q2-q1)), f.b, image.Pt(f.r.Min.X, q1), f.op, "delete: pt1.Y != pt0.Y 2/2")
-//x := image.NewUniform(color.RGBA{123,52,44,255})
-//			f.Paint(image.Pt(pt2.X, pt2.Y-(pt1.Y-pt0.Y)), pt2, f.Color.Back)
+			//x := image.NewUniform(color.RGBA{123,52,44,255})
+			//			f.Paint(image.Pt(pt2.X, pt2.Y-(pt1.Y-pt0.Y)), pt2, f.Color.Back)
 		} else {
 			f.Paint(pt0, pt2, f.Color.Back)
 		}

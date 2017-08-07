@@ -145,13 +145,13 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			qt = pt
 			pt = f.lineWrap(pt, b)
 			// fill in the end of a wrapped line
-				//print("before wrap ")
-				//println(qt.String())
-				//print("after wrap ")
-				//println(pt.String())
-			if qt.X > f.r.Max.X{
+			//print("before wrap ")
+			//println(qt.String())
+			//print("after wrap ")
+			//println(pt.String())
+			if qt.X > f.r.Max.X {
 				//println(f.r.Max.String())
-				qt.X-=5000
+				qt.X -= 5000
 				//f.DumpBoxes()
 			}
 			if pt.Y > qt.Y {
@@ -198,43 +198,16 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 	if p1 > p0 && nb != 0 && nb != f.Nbox && (&f.Box[nb-1]).Nrune > 0 && !trim {
 		qt = pt
 		pt = f.lineWrap(pt, b)
-			if qt.X > f.r.Max.X{
-				//println(f.r.Max.String())
-				//qt.X-=5000
-				//f.DumpBoxes()
-			}
+		if qt.X > f.r.Max.X {
+			//println(f.r.Max.String())
+			//qt.X-=5000
+			//f.DumpBoxes()
+		}
 		if pt.Y > qt.Y {
 			f.Draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt, f.op, "drawsel: last")
 		}
 	}
 	return pt
-}
-
-var Rainbow = color.RGBA{255, 0, 0, 255}
-
-func next() {
-	Rainbow = nextcolor(Rainbow)
-}
-
-// nextcolor steps through a gradient
-func nextcolor(c color.RGBA) color.RGBA {
-	switch {
-	case c.R == 255 && c.G == 0 && c.B == 0:
-		c.G += 25
-	case c.R == 255 && c.G != 255 && c.B == 0:
-		c.G += 25
-	case c.G == 255 && c.R != 0:
-		c.R -= 25
-	case c.R == 0 && c.B != 255:
-		c.B += 25
-	case c.B == 255 && c.G != 0:
-		c.G -= 25
-	case c.G == 0 && c.R != 255:
-		c.R += 25
-	default:
-		c.B -= 25
-	}
-	return c
 }
 
 func (f *Frame) renderDec() {
@@ -249,7 +222,7 @@ func (f *Frame) renderDec() {
 		s := fmt.Sprintf("%03d", i)
 		pt := image.Pt(sizer-((stringwidth(*f.hexFont, s)+sizer)/2), 0)
 		stringnbg(f.hex[i], pt, f.Color.Text, image.ZP, *f.hexFont, []byte(s),
-			image.NewUniform(color.RGBA{0,0,0,255}), image.ZP)
+			image.NewUniform(color.RGBA{0, 0, 0, 255}), image.ZP)
 	}
 }
 
@@ -265,7 +238,7 @@ func (f *Frame) renderHex() {
 		s := fmt.Sprintf("%02x", i)
 		pt := image.Pt(sizer-((stringwidth(*f.hexFont, s)+sizer)/2), 0)
 		stringnbg(f.hex[i], pt, f.Color.Text, image.ZP, *f.hexFont, []byte(s),
-			image.NewUniform(color.RGBA{0,0,0,255}), image.ZP)
+			image.NewUniform(color.RGBA{0, 0, 0, 255}), image.ZP)
 	}
 }
 
@@ -276,9 +249,9 @@ func (f *Frame) stringbg(dst draw.Image, p image.Point, src image.Image,
 	for _, v := range s {
 		fp := fixed.P(p.X, p.Y)
 		dr, mask, maskp, _, ok := font.Glyph(fp, rune(v))
-//		if v == 0 {
-//			dr, mask, maskp, _, ok = font.Glyph(fp, 1)
-//		}
+		//		if v == 0 {
+		//			dr, mask, maskp, _, ok = font.Glyph(fp, 1)
+		//		}
 		if !ok {
 			panic("Frame.stringbg")
 			break
@@ -286,24 +259,24 @@ func (f *Frame) stringbg(dst draw.Image, p image.Point, src image.Image,
 		dr.Min.Y += h
 		dr.Max.Y += h
 		//src = image.NewUniform(Rainbow)
-		
+
 		advance := f.Font.Measure(rune(v))
 		if v == 0 || !unicode.IsGraphic(rune(v)) || v > 127 {
 			if len(f.hex) == 0 {
 				f.renderHex()
 			}
 			dr, _, _, _, _ := font.Glyph(fp, rune('@'))
-			dr.Max.X = dr.Min.X+advance
-			dr.Min.Y += font.height-5
-			dr.Max.Y += font.height-5
+			dr.Max.X = dr.Min.X + advance
+			dr.Min.Y += font.height - 5
+			dr.Max.Y += font.height - 5
 			//draw.Draw(dst, dr, bg, bgp, draw.Src)
 			draw.Draw(dst, dr, f.hex[byte(v)], bgp, draw.Over)
 		} else {
 			//draw.Draw(dst, dr, bg, bgp, draw.Src)
-//next()
-//
-			draw.DrawMask(dst, dr, src,sp, mask, maskp, draw.Over)
-		} 
+			//next()
+			//
+			draw.DrawMask(dst, dr, src, sp, mask, maskp, draw.Over)
+		}
 		//next()
 		p.X += advance
 	}
@@ -316,7 +289,7 @@ func stringwidth(f Font, p string) (w int) {
 	}
 	return w
 }
-func measure(f Font, r rune) int{
+func measure(f Font, r rune) int {
 	l, ok := f.Face.GlyphAdvance(r)
 	if !ok {
 		println("warn: glyph missing")
@@ -342,7 +315,7 @@ func stringbg(dst draw.Image, p image.Point, src image.Image,
 		draw.Draw(dst, dr, bg, bgp, draw.Src)
 		draw.DrawMask(dst, dr, src, sp, mask, maskp, draw.Over)
 		//next()
-		p.X += measure(font, rune(v))//fix(advance)
+		p.X += measure(font, rune(v)) //fix(advance)
 	}
 	return int(p.X)
 }

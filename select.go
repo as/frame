@@ -9,16 +9,6 @@ import (
 	//		"golang.org/x/mobile/event/paint"
 )
 
-func Region(a, b int64) int64 {
-	if a < b {
-		return -1
-	}
-	if a == b {
-		return 0
-	}
-	return 1
-}
-
 func (f *Frame) Sweep(mp image.Point, ed screen.EventDeque, paintfn func()) {
 	f.modified = false
 	f.Redraw(f.PointOf(f.p0), f.p0, f.p1, false)
@@ -27,6 +17,16 @@ func (f *Frame) Sweep(mp image.Point, ed screen.EventDeque, paintfn func()) {
 	pt0 := f.PointOf(p0)
 	pt1 := f.PointOf(p1)
 	f.Redraw(pt0, p0, p1, true)
+
+	Region := func(a, b int64) int64 {
+		if a < b {
+			return -1
+		}
+		if a == b {
+			return 0
+		}
+		return 1
+	}
 
 	clock60hz := time.NewTicker(time.Second / 60).C
 	paintfn()
@@ -144,7 +144,7 @@ func (f *Frame) Paint(p0, p1 image.Point, col image.Image) {
 		f.Draw(f.b, image.Rectangle{p0, q1}, col, image.ZP, draw.Over, "Paint: one line")
 	} else {
 		if p0.X >= f.r.Max.X {
-			p0.X = f.r.Max.X// - 1
+			p0.X = f.r.Max.X // - 1
 		}
 		f.Draw(f.b, image.Rect(p0.X, p0.Y, f.r.Max.X, q0.Y), col, image.ZP, draw.Over, "Paint: 1/3")
 		if n > 1 {
