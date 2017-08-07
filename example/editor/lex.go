@@ -3,10 +3,10 @@ package main
 // Put
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
-	"strconv"
 )
 
 type item struct {
@@ -69,7 +69,7 @@ type lexer struct {
 	items  chan item
 	lastop item
 	first  bool
-	esc bool
+	esc    bool
 }
 
 func lex(name, input string) (*lexer, chan item) {
@@ -127,7 +127,7 @@ func (l *lexer) backup() {
 func (l *lexer) emit(t Kind) {
 	s, err := strconv.Unquote(`"` + l.String() + `"`)
 	if err != nil {
-			l.errorf(err.Error())
+		l.errorf(err.Error())
 	}
 	l.items <- item{t, s}
 	l.start = l.pos
@@ -173,10 +173,10 @@ func ignoreSpaces(l *lexer) {
 }
 
 const (
-	Ralpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	Rdigit = "0123456789"
-	Rop    = "+-;,"
-	Rmod   = "#/?"
+	Ralpha  = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	Rdigit  = "0123456789"
+	Rop     = "+-;,"
+	Rmod    = "#/?"
 	Rescape = `#/?+-;,\abnrtx`
 )
 

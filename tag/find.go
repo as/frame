@@ -12,13 +12,13 @@ var (
 	AlphaNum = []byte("*&!%-_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 )
 
-func any(b byte, s []byte) int64{
+func any(b byte, s []byte) int64 {
 	for i, v := range s {
 		if b == v {
 			return int64(i)
 		}
 	}
-	return -1	
+	return -1
 }
 
 func isany(b byte, s []byte) bool {
@@ -47,7 +47,7 @@ func findback(p []byte, i int64, sep []byte) int64 {
 	q0 := i
 	for ; q0-1 >= 0 && !isany(p[q0-1], sep); q0-- {
 	}
-	if q0 < 0{
+	if q0 < 0 {
 		return i
 	}
 	return q0
@@ -56,7 +56,7 @@ func find(p []byte, j int64, sep []byte) int64 {
 	q1 := j
 	for ; q1 != int64(len(p)) && !isany(p[q1], sep); q1++ {
 	}
-	if q1 == int64(len(p)){
+	if q1 == int64(len(p)) {
 		return j
 	}
 	return q1
@@ -84,10 +84,10 @@ func findParity(f File, l byte, r byte, back bool) (int64, int64) {
 		panic("unimplemented")
 	}
 	/*
-	b := t.ReadByte()
-	if b != l {
-		return -1, -1
-	}
+		b := t.ReadByte()
+		if b != l {
+			return -1, -1
+		}
 	*/
 	push := 1
 	//j := -1
@@ -99,13 +99,13 @@ func findParity(f File, l byte, r byte, back bool) (int64, int64) {
 		if v == r {
 			push--
 			if push == 0 {
-				return q0, q0+int64(i)
+				return q0, q0 + int64(i)
 			}
 		}
 	}
 	return -1, -1
 }
-func FindNext(f File, text []byte) (q0, q1 int64){
+func FindNext(f File, text []byte) (q0, q1 int64) {
 	i, j := f.Dot()
 	p := f.Bytes()
 	x := text

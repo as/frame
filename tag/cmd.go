@@ -30,23 +30,23 @@ func Expand(w *win.Win, q0 int64) {
 		w.Select(q0, find(p, q0, []byte{'\n'}))
 		return
 	}
-	if q0 == lp-1 || q0 == lp{
+	if q0 == lp-1 || q0 == lp {
 		w.Select(findback(p, q0, []byte{'\n'}), q0)
 		return
 	}
-	if isany(p[q0-1], Lefts[:]){
-		if q0, q1, ok := FindParity(w); ok{
+	if isany(p[q0-1], Lefts[:]) {
+		if q0, q1, ok := FindParity(w); ok {
 			w.Select(q0, q1)
 			return
 		}
 	}
-	if isany(p[q0+1], Rights[:]){
+	if isany(p[q0+1], Rights[:]) {
 	}
-	if c := any(p[q0-1], Free[:]); c != -1{
+	if c := any(p[q0-1], Free[:]); c != -1 {
 		w.Select(q0, find(p, q0, []byte{Free[c]}))
 		return
 	}
-	if c := any(p[q0], Free[:]); c != -1{
+	if c := any(p[q0], Free[:]); c != -1 {
 		w.Select(findback(p, q0, []byte{Free[c]}), q0)
 		return
 	}
@@ -167,12 +167,12 @@ func (t *Tag) release(w *Invertable, e mouse.Event) {
 			w.SendFirst(x)
 		}
 	case 3:
-		if !t.Look(w.Win, w.Q0, w.Q1){
-			if t.W == nil{
+		if !t.Look(w.Win, w.Q0, w.Q1) {
+			if t.W == nil {
 				break
 			}
 			q0, q1 := FindNext(t.W, w.Rdsel())
-			if t.W == w{
+			if t.W == w {
 				t.W.Select(q0, q1)
 				P0, _ := t.W.Frame.Dot()
 				moveMouse(t.W.PointOf(P0).Add(t.W.Sp))
@@ -181,7 +181,6 @@ func (t *Tag) release(w *Invertable, e mouse.Event) {
 	}
 	w.Refresh()
 }
-
 
 // Put
 func ones(n int) (c int) {

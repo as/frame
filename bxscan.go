@@ -61,7 +61,7 @@ func (f *Frame) bxscan(s []byte, ppt image.Point) (image.Point, image.Point) {
 				if tp+rw >= len(tmp) {
 					break
 				}
-				w += f.Font.stringwidth([]byte(s[:1]))
+				w += f.Font.MeasureBytes([]byte(s[:1]))
 				s = s[1:]
 				tp += rw
 				nr++

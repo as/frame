@@ -63,10 +63,10 @@ const (
 	MsgSize  = 64 * 1024
 )
 
-func (w *Win) Dirty() bool{
+func (w *Win) Dirty() bool {
 	return w.dirty || w.Frame.Dirty()
 }
-func (w *Win) SetDirty(dirty bool){
+func (w *Win) SetDirty(dirty bool) {
 	w.dirty = dirty
 	if !dirty {
 		w.Frame.SetDirty(false)
@@ -124,8 +124,8 @@ func (w *Win) bar() image.Rectangle {
 	rat1 := float64(w.Org+w.Nchars) / float64(w.Nr) // % covered by screen
 	r.Min.Y = int(dy * rat0)
 	r.Max.Y = int(dy * rat1)
-	if r.Max.Y-r.Min.Y < 1{
-		r.Max.Y = r.Min.Y+1
+	if r.Max.Y-r.Min.Y < 1 {
+		r.Max.Y = r.Min.Y + 1
 	}
 	return r
 }
@@ -139,8 +139,8 @@ func (w *Win) drawsb() {
 	rat1 := float64(w.Org+w.Nchars) / float64(w.Nr) // % covered by screen
 	r.Min.Y = int(dy * rat0)
 	r.Max.Y = int(dy * rat1)
-	if r.Max.Y-r.Min.Y < 5{
-		r.Max.Y = r.Min.Y+5
+	if r.Max.Y-r.Min.Y < 5 {
+		r.Max.Y = r.Min.Y + 5
 	}
 	draw.Draw(w.b.RGBA(), r, LtGray, image.ZP, draw.Src)
 }
@@ -154,7 +154,7 @@ var (
 	Yellow = image.NewUniform(color.RGBA{255, 255, 224, 255})
 	X      = image.NewUniform(color.RGBA{255 - 32, 255 - 32, 224 - 32, 255})
 
-	LtGray = image.NewUniform(color.RGBA{66 * 2+25, 66 * 2+25, 66*2 + 35, 255})
+	LtGray = image.NewUniform(color.RGBA{66*2 + 25, 66*2 + 25, 66*2 + 35, 255})
 	Gray   = image.NewUniform(color.RGBA{66, 66, 66, 255})
 	Mauve  = image.NewUniform(color.RGBA{0x99, 0x99, 0xDD, 255})
 )
@@ -206,7 +206,7 @@ func (w *Win) init() {
 	w.Mark()
 }
 
-func (w *Win) Loc() image.Rectangle{
+func (w *Win) Loc() image.Rectangle {
 	return image.Rectangle{w.Sp, w.Sp.Add(w.size)}
 }
 
@@ -224,12 +224,12 @@ func (w *Win) Resize(size image.Point) {
 	w.init()
 }
 
-func (w *Win) Move(sp image.Point){
+func (w *Win) Move(sp image.Point) {
 	w.Sp = sp
 }
 
 func (w *Win) SetFont(ft frame.Font) {
-	if ft.Size() < 4{
+	if ft.Size() < 4 {
 		return
 	}
 	r := image.Rectangle{w.pad, w.size}.Inset(1)
@@ -373,7 +373,7 @@ func (w *Win) BackNL(p int64, n int) int64 {
 func (w *Win) SetOrigin(org int64, exact bool) {
 	//fmt.Printf("SetOrigin: %d %v\n", org, exact)
 	org = clamp(org, 0, w.Nr)
-	if org == w.Org{
+	if org == w.Org {
 		return
 	}
 	w.Mark()
@@ -498,12 +498,12 @@ func (w *Win) InsertString(s string, q0 int64) int64 {
 }
 
 func (w *Win) Insert(s []byte, q0 int64) int64 {
-//	fmt.Printf("Insert: %q @ q=%d len(s)=%s len(w)=%d\n", s, q0, len(s), len(w.Bytes()))	
+	//	fmt.Printf("Insert: %q @ q=%d len(s)=%s len(w)=%d\n", s, q0, len(s), len(w.Bytes()))
 	n := int64(len(s))
 	if n == 0 {
 		return 0
 	}
-	if q0 > w.Nr{
+	if q0 > w.Nr {
 		q0 = w.Nr
 	}
 	if w.Nr+n > HiWater && q0 >= w.Org && q0 >= w.Qh {
@@ -557,7 +557,7 @@ func (w *Win) Insert(s []byte, q0 int64) int64 {
 		w.Frame.Insert(s, q0-w.Org)
 		w.Mark()
 	}
-	
+
 	return q0
 }
 

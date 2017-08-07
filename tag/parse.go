@@ -324,7 +324,7 @@ func parseCmd(p *parser) (c *Command) {
 				cmd.Wait()
 				close(donec)
 			}()
-			go func(){
+			go func() {
 				for {
 					select {
 					case p := <-outc:

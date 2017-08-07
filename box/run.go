@@ -90,7 +90,7 @@ func (f *Run) Chop(b *Box, n int) {
 	copy(b.Ptr, b.Ptr[n:])
 	b.Nrune -= n
 	b.Ptr = b.Ptr[:b.Nrune]
-	b.Width = f.stringwidth(b.Ptr)
+	b.Width = f.MeasureBytes(b.Ptr)
 }
 
 func (f *Run) Truncate(b *Box, n int) {
@@ -99,7 +99,7 @@ func (f *Run) Truncate(b *Box, n int) {
 	}
 	b.Nrune -= n
 	b.Ptr = b.Ptr[:b.Nrune]
-	b.Width = f.stringwidth(b.Ptr)
+	b.Width = f.MeasureBytes(b.Ptr)
 }
 
 // Add adds n boxes after box bn, the rest are shifted up
@@ -116,7 +116,7 @@ func (f *Run) Add(bn, n int) {
 	f.Nbox += n
 }
 
-func (b *Run) stringwidth(s []byte) int {
+func (b *Run) MeasureBytes(s []byte) int {
 	if b.Measure == nil {
 		panic("boxes: measure() is nil")
 	}

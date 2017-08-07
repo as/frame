@@ -43,10 +43,10 @@ type Tag struct {
 	W         *Invertable
 	Scrolling bool
 	scrolldy  int
-	dirty bool
+	dirty     bool
 }
 
-func (t *Tag) Dirty() bool{
+func (t *Tag) Dirty() bool {
 	return t.dirty || t.Wtag.Dirty() || (t.W != nil && t.W.Dirty())
 }
 
@@ -124,22 +124,22 @@ func (t *Tag) Resize(pt image.Point) {
 func (t *Tag) split(path string) (name string, addr string) {
 	name = path
 	x := strings.Index(name, ":")
-	if x == -1{
+	if x == -1 {
 		return name, ""
 	}
-	if x == 0{
-		if len(name) == 1{
-			return ":", "" // This is invalid 
+	if x == 0 {
+		if len(name) == 1 {
+			return ":", "" // This is invalid
 		}
 		return "", name[1:]
 	}
-	if x == 1 && strings.IndexAny(name, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") == 0{
+	if x == 1 && strings.IndexAny(name, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") == 0 {
 		if isdir(name[:2]) {
 			n, a := t.split(name[2:])
-			return name[:2]+n, a
+			return name[:2] + n, a
 		}
 	}
-	return name[:x], name[x+1:] 
+	return name[:x], name[x+1:]
 }
 
 func (t *Tag) Open(name string) {
@@ -261,24 +261,22 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 	ch := []byte(string(e.Rune))
 	if q1 != q0 {
 		act.Delete(q0, q1)
-		if region(act.Org, act.Org+act.Nchars, q0) == 0 || region(act.Org, act.Org+act.Nchars, q1) == 0{
+		if region(act.Org, act.Org+act.Nchars, q0) == 0 || region(act.Org, act.Org+act.Nchars, q1) == 0 {
 			t.Mark()
 		}
 		q1 = q0
 	}
 	q1 += act.Insert(ch, q0)
 
-	if region(act.Org, act.Org+act.Nchars, q0) == 0 || region(act.Org, act.Org+act.Nchars, q1) == 0{
+	if region(act.Org, act.Org+act.Nchars, q0) == 0 || region(act.Org, act.Org+act.Nchars, q1) == 0 {
 		t.Mark()
 	}
 	q0 = q1
 	act.Select(q0, q1)
-	if region(act.Org, act.Org+act.Nchars, q0) == 0 || region(act.Org, act.Org+act.Nchars, q1) == 0{
+	if region(act.Org, act.Org+act.Nchars, q0) == 0 || region(act.Org, act.Org+act.Nchars, q1) == 0 {
 		t.Mark()
 	}
 }
-
-
 
 func (t *Tag) MouseIn(act *Invertable, e mouse.Event) {
 	//	defer un(trace(db, "Tag.Mousein"))
@@ -289,7 +287,7 @@ func (t *Tag) MouseIn(act *Invertable, e mouse.Event) {
 	if e.Direction == mouse.DirRelease {
 		t.Scrolling = false
 	}
-	
+
 	if (e.Button != 0 && pt.In(act.Scrollr.Sub(act.Sp))) || t.Scrolling {
 		//fmt.Printf("mouse.Event: %s\n", e)
 		if e.Direction == mouse.DirRelease {
@@ -305,7 +303,7 @@ func (t *Tag) MouseIn(act *Invertable, e mouse.Event) {
 			act.Clicksb(pt, int(e.Button)-2)
 			t.Mark()
 		}
-		
+
 		return
 	}
 	switch e.Direction {
@@ -343,10 +341,10 @@ type GetEvent struct {
 	IsDir bool
 }
 
-func isdir(path string) bool{
+func isdir(path string) bool {
 	fi, err := os.Stat(path)
 	if err != nil {
-		if err == os.ErrNotExist{
+		if err == os.ErrNotExist {
 			return false
 		}
 		fmt.Println(err)
@@ -354,7 +352,7 @@ func isdir(path string) bool{
 	}
 	return fi.IsDir()
 }
-func isfile(path string) bool{
+func isfile(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
 }
@@ -365,15 +363,15 @@ func (t *Tag) Look(w *win.Win, q0, q1 int64) bool {
 		q0 = acceptback(w.Bytes(), q0, []byte(string(AlphaNum)+`\/.:`))
 	}
 	name, addr := t.split(string(w.Bytes()[q0:q1]))
-	fmt.Printf("name=%s addr=%s\n",name,addr)
+	fmt.Printf("name=%s addr=%s\n", name, addr)
 	if name == "" && addr != "" {
 		w.SendFirst(cmdparse(addr))
 		return true
 	}
 	name = filepath.Clean(name)
-	if !filepath.IsAbs(name){
+	if !filepath.IsAbs(name) {
 		pref := filepath.Clean(t.FileName())
-		if !isdir(pref){
+		if !isdir(pref) {
 			pref = filepath.Dir(pref)
 		}
 		name = filepath.Clean(filepath.Join(pref, name))
@@ -387,7 +385,7 @@ func (t *Tag) Look(w *win.Win, q0, q1 int64) bool {
 		}
 		w.SendFirst(GetEvent{Path: name, IsDir: true})
 		return true
-	} else if isfile(name){
+	} else if isfile(name) {
 		w.SendFirst(GetEvent{Path: name, Addr: addr})
 		return true
 	}
@@ -459,7 +457,7 @@ func (t *Tag) Handle(act *Invertable, e interface{}) {
 	case key.Event:
 		t.Kbdin(act, e)
 	}
-	if t.Dirty(){
+	if t.Dirty() {
 		act.Send(paint.Event{})
 	}
 }

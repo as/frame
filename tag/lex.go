@@ -3,10 +3,10 @@ package tag
 // Put
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
-	"strconv"
 )
 
 type item struct {
@@ -69,7 +69,7 @@ type lexer struct {
 	items  chan item
 	lastop item
 	first  bool
-	esc bool
+	esc    bool
 }
 
 func lex(name, input string) (*lexer, chan item) {
@@ -120,7 +120,7 @@ func (l *lexer) acceptUntil(delim string) {
 	l.backup()
 }
 
-func (l *lexer) acceptEOF(){
+func (l *lexer) acceptEOF() {
 	lim := 8192
 	i := 0
 	for l.next() != eof {
@@ -139,7 +139,7 @@ func (l *lexer) backup() {
 func (l *lexer) emit(t Kind) {
 	s, err := strconv.Unquote(`"` + l.String() + `"`)
 	if err != nil {
-			l.errorf(err.Error())
+		l.errorf(err.Error())
 	}
 	l.items <- item{t, s}
 	l.start = l.pos
@@ -185,11 +185,11 @@ func ignoreSpaces(l *lexer) {
 }
 
 const (
-	Ralpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	Rcmd = Ralpha+"<>|"
-	Rdigit = "0123456789"
-	Rop    = "+-;,"
-	Rmod   = "#/?"
+	Ralpha  = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	Rcmd    = Ralpha + "<>|"
+	Rdigit  = "0123456789"
+	Rop     = "+-;,"
+	Rmod    = "#/?"
 	Rescape = `#/?+-;,\abnrtx`
 )
 
@@ -257,7 +257,7 @@ func lexCmd(l *lexer) statefn {
 		return nil
 	}
 	if !l.accept(Ralpha) {
-		if l.accept("|<>"){
+		if l.accept("|<>") {
 			l.emit(kindCmd)
 			return lexArg2
 		}
@@ -343,4 +343,3 @@ func (l *lexer) errorf(format string, args ...interface{}) statefn {
 	}
 	return nil
 }
-

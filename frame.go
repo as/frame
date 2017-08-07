@@ -67,7 +67,7 @@ func New(r image.Rectangle, ft Font, b *image.RGBA, cols Color) *Frame {
 		Font:   ft,
 		maxtab: 4 * ft.Measure(' '),
 		Color:  cols,
-		Run:    box.Run{Measure: ft.stringwidth},
+		Run:    box.Run{Measure: ft.MeasureBytes},
 		op:     draw.Src,
 	}
 	f.setrects(r, b)
@@ -93,7 +93,7 @@ func (f *Frame) Reset(r image.Rectangle, b *image.RGBA, ft Font) {
 	f.r = r
 	f.b = b
 	f.Font = ft
-	f.Run.Reset(f.Font.stringwidth)
+	f.Run.Reset(f.Font.MeasureBytes)
 }
 
 // Dx returns the width of s in pixels

@@ -167,17 +167,17 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 		switch e.Rune {
 		case '\x15', '\x01': // ^U, ^A
 			p := act.Bytes()
-			if q0 < int64(len(p))-1{
+			if q0 < int64(len(p))-1 {
 				q0++
 			}
 			n0, n1 := findlinerev(act.Bytes(), q0, 0)
-			if e.Rune == '\x15'{
+			if e.Rune == '\x15' {
 				act.Delete(n0, n1)
 			}
 			act.Select(n0, n0)
 		case '\x05': // ^E
 			_, n1 := findline3(act.Bytes(), q1, 1)
-			if n1 > 0{
+			if n1 > 0 {
 				n1--
 			}
 			act.Select(n1, n1)

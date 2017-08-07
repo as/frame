@@ -382,24 +382,24 @@ func (r *Line) Set(f File) {
 	}
 }
 
-func findlinerev(p []byte, org, N int64) (q0, q1 int64){
+func findlinerev(p []byte, org, N int64) (q0, q1 int64) {
 	N = -N + 1
 	p0 := p
 	p = p[:org]
 	q0, q1 = findline2(N, rev.NewReader(p)) // 0 = len(p)-1
-	l := q1-q0
-	q0 = org-q1
-	q1 = q0+l
-	q0 = q1-l
+	l := q1 - q0
+	q0 = org - q1
+	q1 = q0 + l
+	q0 = q1 - l
 	if q0 >= 0 && q0 < int64(len(p0)) && p0[q0] == '\n' {
 		q0++
 	}
 	return
 }
-func findline3(p []byte, org, N int64) (q0, q1 int64){
+func findline3(p []byte, org, N int64) (q0, q1 int64) {
 	p = p[org:]
 	q0, q1 = findline2(N, bytes.NewReader(p))
-	return q0+org, q1+org
+	return q0 + org, q1 + org
 }
 
 // Put	Edit 354

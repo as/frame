@@ -1,6 +1,6 @@
-
 package scroll
 
+/*
 type Frame interface{
 	Dot() (int64, int64)
 	SetDot(int64, int64)
@@ -29,5 +29,6 @@ type Window interface{
 
 type Scroll struct{
 	Window
-	
+
 }
+*/

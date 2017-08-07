@@ -2,11 +2,11 @@ package tag
 
 import (
 	"bytes"
+	"fmt"
 	window "github.com/as/ms/win"
 	"image"
 	"io"
 	"io/ioutil"
-	"fmt"
 	"log"
 	"os"
 
@@ -18,14 +18,14 @@ import (
 
 func readfile(s string) (p []byte) {
 	var err error
-	if isdir(s){
+	if isdir(s) {
 		fi, err := ioutil.ReadDir(s)
-		if err != nil{
+		if err != nil {
 			log.Println(err)
 			return nil
 		}
 		b := new(bytes.Buffer)
-		for _, v := range fi{
+		for _, v := range fi {
 			fmt.Fprintf(b, "%s\t", v.Name())
 		}
 		return b.Bytes()

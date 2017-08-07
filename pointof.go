@@ -22,7 +22,7 @@ func (f *Frame) ptOfCharPtBox(p int64, pt image.Point, bn int) (x image.Point) {
 				for s := b.Ptr; p > 0; p, s = p-1, s[w:] {
 					// TODO: runes
 					w = 1
-					pt.X += f.Font.stringwidth(s[:1])
+					pt.X += f.Font.MeasureBytes(s[:1])
 					if pt.X > f.r.Max.X {
 						panic("PtOfCharPtBox")
 					}
@@ -94,7 +94,7 @@ func (f *Frame) IndexOf(pt image.Point) int64 {
 					if r == 0 {
 						//println("calm panic: nul in string")
 					}
-					qt.X += f.Font.stringwidth(s[:1])
+					qt.X += f.Font.MeasureBytes(s[:1])
 					s = s[w:]
 					if qt.X > pt.X {
 						break

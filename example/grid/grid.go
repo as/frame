@@ -49,7 +49,7 @@ func (g *Grid) attach(w Plane, id int) {
 	}
 	g.List = append(g.List[:id], append([]Plane{w}, g.List[id:]...)...)
 	r := g.List[id-1].Loc()
-	if id-1 == 0{
+	if id-1 == 0 {
 		r = image.Rect(g.sp.X, g.sp.Y+g.tdy, g.sp.X, g.sp.Y+g.size.Y)
 	}
 	w.Move(image.Pt(r.Max.X, g.sp.Y+g.tdy))

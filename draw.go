@@ -175,7 +175,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			w = b.Width
 		} else {
 			// TODO: put stringwidth back
-			w = f.Font.stringwidth(ptr[:nr])
+			w = f.Font.MeasureBytes(ptr[:nr])
 		}
 		x = pt.X + w
 		if x > f.r.Max.X {
@@ -220,7 +220,7 @@ func (f *Frame) renderDec() {
 		sizer := f.Font.measureHex()
 		f.hex[i] = image.NewRGBA(image.Rect(0, 0, sizer, f.Dy()))
 		s := fmt.Sprintf("%03d", i)
-		pt := image.Pt(sizer-((stringwidth(*f.hexFont, s)+sizer)/2), 0)
+		pt := image.Pt(sizer-((MeasureBytes(*f.hexFont, s)+sizer)/2), 0)
 		stringnbg(f.hex[i], pt, f.Color.Text, image.ZP, *f.hexFont, []byte(s),
 			image.NewUniform(color.RGBA{0, 0, 0, 255}), image.ZP)
 	}
@@ -236,7 +236,7 @@ func (f *Frame) renderHex() {
 		sizer := f.Font.measureHex()
 		f.hex[i] = image.NewRGBA(image.Rect(0, 0, sizer, f.Dy()))
 		s := fmt.Sprintf("%02x", i)
-		pt := image.Pt(sizer-((stringwidth(*f.hexFont, s)+sizer)/2), 0)
+		pt := image.Pt(sizer-((MeasureBytes(*f.hexFont, s)+sizer)/2), 0)
 		stringnbg(f.hex[i], pt, f.Color.Text, image.ZP, *f.hexFont, []byte(s),
 			image.NewUniform(color.RGBA{0, 0, 0, 255}), image.ZP)
 	}
@@ -283,7 +283,7 @@ func (f *Frame) stringbg(dst draw.Image, p image.Point, src image.Image,
 	return int(p.X)
 }
 
-func stringwidth(f Font, p string) (w int) {
+func MeasureBytes(f Font, p string) (w int) {
 	for i := range p {
 		w += measure(f, rune(byte(p[i])))
 	}
