@@ -254,7 +254,6 @@ func (f *Frame) stringbg(dst draw.Image, p image.Point, src image.Image,
 		//		}
 		if !ok {
 			panic("Frame.stringbg")
-			break
 		}
 		dr.Min.Y += h
 		dr.Max.Y += h
@@ -307,7 +306,7 @@ func stringbg(dst draw.Image, p image.Point, src image.Image,
 		dr, mask, maskp, _, ok := font.Glyph(fp, rune(v))
 		if !ok {
 			panic("stringbg")
-			break
+
 		}
 		dr.Min.Y += h
 		dr.Max.Y += h
@@ -329,7 +328,7 @@ func stringnbg(dst draw.Image, p image.Point, src image.Image,
 		dr, mask, maskp, advance, ok := font.Glyph(fp, rune(v))
 		if !ok {
 			panic("stringnbg")
-			break
+
 		}
 		dr.Min.Y += h
 		dr.Max.Y += h
