@@ -92,6 +92,7 @@ func (f *Frame) SetDirty(dirty bool) {
 func (f *Frame) Reset(r image.Rectangle, b *image.RGBA, ft Font) {
 	f.r = r
 	f.b = b
+	f.SetFont(ft)
 }
 
 func (f *Frame) SetFont(ft Font){
