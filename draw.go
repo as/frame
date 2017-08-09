@@ -81,10 +81,10 @@ func (f *Frame) tickat(pt image.Point, ticked bool) {
 	} //
 	adj := image.Pt(0, -(f.Font.height / 6))
 	if ticked {
-		f.Draw(f.tickback, f.tickback.Bounds(), f.b, pt.Add(adj), draw.Over, "tickat: ticked: 1/2")
-		f.Draw(f.b, r.Add(adj), f.tick, image.ZP, draw.Over, "tickat: ticked: 2/2")
+		f.Draw(f.tickback, f.tickback.Bounds(), f.b, pt.Add(adj), draw.Src)
+		f.Draw(f.b, r.Add(adj), f.tick, image.ZP, draw.Over)
 	} else {
-		f.Draw(f.b, r.Add(adj), f.tickback, image.ZP, draw.Over, "tickat: unticked")
+		f.Draw(f.b, r.Add(adj), f.tickback, image.ZP, draw.Over)
 	}
 	f.Ticked = ticked
 }
@@ -155,7 +155,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 				//f.DumpBoxes()
 			}
 			if pt.Y > qt.Y {
-				f.Draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt, f.op, "drawsel: fill in end of wrapped line")
+				f.Draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt, f.op)
 			}
 		}
 		ptr = b.Ptr
@@ -175,16 +175,20 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			w = b.Width
 		} else {
 			// TODO: put stringwidth back
-			w = f.Font.MeasureBytes(ptr[:nr])
+			if nr > -1 {
+				w = f.Font.MeasureBytes(ptr[:nr])
+			}  
 		}
 		x = pt.X + w
 		if x > f.r.Max.X {
 			x = f.r.Max.X
 		}
-		f.Draw(f.b, image.Rect(pt.X, pt.Y, x, pt.Y+f.Font.height), back, pt, f.op, "drawsel")
+		f.Draw(f.b, image.Rect(pt.X, pt.Y, x, pt.Y+f.Font.height), back, pt, f.op)
 		if b.Nrune > 0 {
 			//TODO: must be stringnbg....
-			f.stringbg(f.b, pt, text, image.ZP, f.Font, ptr[:nr], back, image.ZP)
+			if nr <= int64(len(ptr)) && nr >= 0{
+				f.stringbg(f.b, pt, text, image.ZP, f.Font, ptr[:nr], back, image.ZP)
+			}
 		}
 		pt.X += w
 	Continue:
@@ -204,7 +208,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			//f.DumpBoxes()
 		}
 		if pt.Y > qt.Y {
-			f.Draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt, f.op, "drawsel: last")
+			f.Draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt, f.op) 
 		}
 	}
 	return pt

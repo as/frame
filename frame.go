@@ -7,7 +7,7 @@ package frame
 
 import (
 	"github.com/as/frame/box"
-	"github.com/as/text"
+	"github.com/as/drawcache"
 	"image"
 	"image/draw"
 )
@@ -48,7 +48,7 @@ type Frame struct {
 	noredraw  bool
 	op        draw.Op
 
-	text.Drawer
+	drawcache.Drawer
 
 	//	npts int
 	pts [][2]image.Point
@@ -74,7 +74,7 @@ func New(r image.Rectangle, ft Font, b *image.RGBA, cols Color) *Frame {
 	f.inittick()
 	f.fr = new(Frame)
 	f.renderHex()
-	f.Drawer = text.NewCached()
+	f.Drawer = drawcache.New()
 	return f
 }
 

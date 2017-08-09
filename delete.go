@@ -72,7 +72,7 @@ func (f *Frame) Delete(p0, p1 int64) int {
 				b = &f.Box[n1]
 			}
 			r.Max.X += b.Width
-			f.Draw(f.b, r, f.b, pt1, f.op, "delete: b.Nrune > 0")
+			f.Draw(f.b, r, f.b, pt1, f.op)
 			//drawBorder(f.b, r.Add(pt1).Inset(-4), Red, image.ZP, 8)
 			//drawBorder(f.b, r.Inset(-4), Green, image.ZP, 8)
 			cn1 += int64(b.Nrune)
@@ -85,7 +85,7 @@ func (f *Frame) Delete(p0, p1 int64) int {
 			if f.p0 <= cn1 && cn1 < f.p1 {
 				col = f.Color.Hi.Back
 			}
-			f.Draw(f.b, r, col, pt0, f.op, "delete: b.Nrune <= 0")
+			f.Draw(f.b, r, col, pt0, f.op)
 			cn1++
 		}
 		pt1 = f.advance(pt1, b)
@@ -122,8 +122,8 @@ func (f *Frame) Delete(p0, p1 int64) int {
 				q2 = f.r.Max.Y
 			}
 
-			f.Draw(f.b, image.Rect(pt0.X, pt0.Y, pt0.X+(f.r.Max.X-pt1.X), q0), f.b, pt1, f.op, "delete: pt1.Y != pt0.Y 1/2")
-			f.Draw(f.b, image.Rect(f.r.Min.X, q0, f.r.Max.X, q0+(q2-q1)), f.b, image.Pt(f.r.Min.X, q1), f.op, "delete: pt1.Y != pt0.Y 2/2")
+			f.Draw(f.b, image.Rect(pt0.X, pt0.Y, pt0.X+(f.r.Max.X-pt1.X), q0), f.b, pt1, f.op)
+			f.Draw(f.b, image.Rect(f.r.Min.X, q0, f.r.Max.X, q0+(q2-q1)), f.b, image.Pt(f.r.Min.X, q1), f.op)
 			//x := image.NewUniform(color.RGBA{123,52,44,255})
 			//			f.Paint(image.Pt(pt2.X, pt2.Y-(pt1.Y-pt0.Y)), pt2, f.Color.Back)
 		} else {

@@ -141,15 +141,15 @@ func (f *Frame) Paint(p0, p1 image.Point, col image.Image) {
 	n := (p1.Y - p0.Y) / h
 
 	if n == 0 { // one line
-		f.Draw(f.b, image.Rectangle{p0, q1}, col, image.ZP, draw.Over, "Paint: one line")
+		f.Draw(f.b, image.Rectangle{p0, q1}, col, image.ZP, draw.Over)
 	} else {
 		if p0.X >= f.r.Max.X {
 			p0.X = f.r.Max.X // - 1
 		}
-		f.Draw(f.b, image.Rect(p0.X, p0.Y, f.r.Max.X, q0.Y), col, image.ZP, draw.Over, "Paint: 1/3")
+		f.Draw(f.b, image.Rect(p0.X, p0.Y, f.r.Max.X, q0.Y), col, image.ZP, draw.Over)
 		if n > 1 {
-			f.Draw(f.b, image.Rect(f.r.Min.X, q0.Y, f.r.Max.X, p1.Y), col, image.ZP, draw.Over, "Paint: 2/3")
+			f.Draw(f.b, image.Rect(f.r.Min.X, q0.Y, f.r.Max.X, p1.Y), col, image.ZP, draw.Over)
 		}
-		f.Draw(f.b, image.Rect(f.r.Min.X, p1.Y, q1.X, q1.Y), col, image.ZP, draw.Over, "Paint: 3/3")
+		f.Draw(f.b, image.Rect(f.r.Min.X, p1.Y, q1.X, q1.Y), col, image.ZP, draw.Over)
 	}
 }
