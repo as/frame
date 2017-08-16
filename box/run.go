@@ -13,9 +13,9 @@ type Run struct {
 	Box     []Box
 }
 
-// Len recomputes and returns the number of bytes
+// Count recomputes and returns the number of bytes
 // stored between box nb and the last box
-func (f *Run) Len(nb int) int64 {
+func (f *Run) Count(nb int) int64 {
 	n := int64(0)
 	for ; nb < f.Nbox; nb++ {
 		n += int64((&f.Box[nb]).Len())

@@ -78,7 +78,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 		cn0 += int64(b.Len())
 	}
 	if pt1.Y == f.r.Max.Y && n0 < f.Nbox {
-		f.Nchars -= f.Len(n0)
+		f.Nchars -= f.Count(n0)
 		f.Run.Delete(n0, f.Nbox-1)
 	}
 

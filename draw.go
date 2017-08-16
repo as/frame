@@ -67,6 +67,7 @@ func (f *Frame) Redraw(pt image.Point, p0, p1 int64, issel bool) {
 // Recolor redraws the range p0:p1 with the given palette
 func (f *Frame) Recolor(pt image.Point, p0, p1 int64, cols Palette) {
 	f.drawsel(pt, p0, p1, cols.Back, cols.Text)
+
 }
 
 // Put
@@ -95,7 +96,7 @@ func (f *Frame) drawAt(pt image.Point) image.Point {
 		b := &f.Box[nb]
 		pt = f.lineWrap0(pt, b)
 		if pt.Y == f.r.Max.Y {
-			f.Nchars -= f.Len(nb)
+			f.Nchars -= f.Count(nb)
 			f.Run.Delete(nb, f.Nbox-1)
 			break
 		}

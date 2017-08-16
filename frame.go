@@ -135,6 +135,11 @@ func (f *Frame) Line() int {
 	return f.Nlines
 }
 
+// Len returns the number of bytes currently in the frame
+func (f *Frame) Len() int64 {
+	return f.Nchars
+}
+
 // Dot returns the range of the selected text
 func (f *Frame) Dot() (p0, p1 int64) {
 	return f.p0, f.p1

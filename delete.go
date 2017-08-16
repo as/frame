@@ -168,5 +168,5 @@ func (f *Frame) Delete(p0, p1 int64) int {
 
 	//	f.setlines("Delete",(pt0.Y-f.r.Min.Y)/f.Font.height + extra)
 	f.Nlines = (pt0.Y-f.r.Min.Y)/f.Font.height + extra
-	return n - f.Nlines
+	return int(p1-p0+1)//n - f.Nlines
 }

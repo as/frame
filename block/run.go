@@ -34,9 +34,9 @@ func NewRun() *Run {
 	}
 }
 
-// Len recomputes and returns the number of bytes
-// stored between box nb and the last box
-func (f *Run) Len(nb int) int64 {
+// Count recomputes and returns the number of bytes
+// stored between box nb and the last block
+func (f *Run) Count(nb int) int64 {
 	n := int64(0)
 	for ; nb < f.Nblock; nb++ {
 		n += int64((&f.Block[nb]).Len())
