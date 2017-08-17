@@ -161,9 +161,9 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	}
 	// insertion extends the selection
 	text, back = f.pick(p0, f.p0+1, f.p1+1)
-	fr := *f.fr
+	fr := f.ir
 	f.Paint(ppt0, ppt1, back)
-	(&fr).Redraw0(ppt0, text, back)
+	f.redrawRun0(fr, ppt0, text, back)
 	f.Add(nn0, fr.Nbox)
 	for n = 0; n < fr.Nbox; n++ {
 		f.Box[nn0+n] = fr.Box[n]

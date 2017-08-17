@@ -32,11 +32,10 @@ func (f *Frame) Refresh() {
 	pt = f.drawsel(pt, f.p1, f.Nchars, cols.Back, cols.Text)
 }
 
-// Redraw0 renders the frame's bitmap at pt.
-func (f *Frame) Redraw0(pt image.Point, text, back image.Image) {
+func (f *Frame) redrawRun0(r *box.Run, pt image.Point, text, back image.Image) {
 	nb := 0
-	for ; nb < f.Nbox; nb++ {
-		b := &f.Box[nb]
+	for ; nb < r.Nbox; nb++ {
+		b := &r.Box[nb]
 		pt = f.lineWrap(pt, b)
 		//if !f.noredraw && b.nrune >= 0 {
 		if b.Nrune >= 0 {
@@ -44,6 +43,11 @@ func (f *Frame) Redraw0(pt image.Point, text, back image.Image) {
 		}
 		pt.X += b.Width
 	}
+}
+
+// Redraw0 renders the frame's bitmap at pt.
+func (f *Frame) Redraw0(pt image.Point, text, back image.Image) {
+	f.redrawRun0(&(f.Run), pt, text, back)
 }
 
 // Redraw draws the range [p0:p1] at the given pt.
@@ -90,25 +94,24 @@ func (f *Frame) tickat(pt image.Point, ticked bool) {
 	f.Ticked = ticked
 }
 
-func (f *Frame) drawAt(pt image.Point) image.Point {
+func (f *Frame) drawRun(r *box.Run, pt image.Point) image.Point {
 	n := 0
-	for nb := 0; nb < f.Nbox; nb++ {
-		b := &f.Box[nb]
+	for nb := 0; nb < r.Nbox; nb++ {
+		b := &r.Box[nb]
 		pt = f.lineWrap0(pt, b)
 		if pt.Y == f.r.Max.Y {
-			f.Nchars -= f.Count(nb)
-			f.Run.Delete(nb, f.Nbox-1)
+			r.Nchars -= r.Count(nb)
+			r.Delete(nb, r.Nbox-1)
 			break
 		}
-
 		if b.Nrune > 0 {
 			n = f.canFit(pt, b)
 			if n == 0 {
-				panic("frame: draw: cant fit shit")
+				panic("frame: draw: cant fit anything")
 			}
 			if n != b.Nrune {
-				f.Split(nb, n)
-				b = &f.Box[nb]
+				r.Split(nb, n)
+				b = &r.Box[nb]
 			}
 			pt.X += b.Width
 		} else {
@@ -178,7 +181,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			// TODO: put stringwidth back
 			if nr > -1 {
 				w = f.Font.MeasureBytes(ptr[:nr])
-			}  
+			}
 		}
 		x = pt.X + w
 		if x > f.r.Max.X {
@@ -187,7 +190,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 		f.Draw(f.b, image.Rect(pt.X, pt.Y, x, pt.Y+f.Font.height), back, pt, f.op)
 		if b.Nrune > 0 {
 			//TODO: must be stringnbg....
-			if nr <= int64(len(ptr)) && nr >= 0{
+			if nr <= int64(len(ptr)) && nr >= 0 {
 				f.stringbg(f.b, pt, text, image.ZP, f.Font, ptr[:nr], back, image.ZP)
 			}
 		}
@@ -209,7 +212,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			//f.DumpBoxes()
 		}
 		if pt.Y > qt.Y {
-			f.Draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt, f.op) 
+			f.Draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt, f.op)
 		}
 	}
 	return pt

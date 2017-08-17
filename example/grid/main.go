@@ -92,8 +92,8 @@ func main() {
 		focused = focused
 		ft := mkfont(fsize)
 		var list = []string{}
-		if len(os.Args) > 1 {
-			list = append(list, os.Args[1:]...)
+		if len(flag.Args()) > 0 {
+			list = append(list, flag.Args()...)
 		} else {
 			list = append(list, "guide")
 			list = append(list, ".")
@@ -104,7 +104,7 @@ func main() {
 		act = actTag.W
 
 		go func() {
-			sc := bufio.NewScanner(os.Stdin)
+			sc := bufio.NewScanner(bufio.NewReader(os.Stdin))
 			for sc.Scan() {
 				if x := sc.Text(); x == "u" || x == "r" {
 					act.SendFirst(x)

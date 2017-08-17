@@ -1,9 +1,22 @@
 package box
 
 import (
+	"bytes"
 	"fmt"
 )
 
+func NewRun(minDx, maxDx int, measureFn func(s []byte) int) Run {
+	return Run{
+		minDx: minDx,
+		maxDx: maxDx,
+		ww:      bytes.NewBuffer(make([]byte, 256+3)),
+		ss:      bytes.NewReader([]byte{}),
+		Measure: measureFn,
+	}
+}
+
+// Run is a one-dimensional field of boxes. It can scan arbitrary text
+// into boxes with Bxscan().
 type Run struct {
 	Measure func(s []byte) int
 	Nchars  int64
@@ -11,6 +24,11 @@ type Run struct {
 	Nalloc  int
 	Nbox    int
 	Box     []Box
+
+	minDx, maxDx int
+	delta int
+	ss    *bytes.Reader
+	ww    *bytes.Buffer
 }
 
 // Count recomputes and returns the number of bytes
@@ -150,6 +168,15 @@ func (f *Run) Free(n0, n1 int) {
 // Grow allocates memory for delta more boxes
 func (f *Run) Grow(delta int) {
 	f.Nalloc += delta
+	//// New changes start here
+	//x := make([]Box, delta)
+	//for i := range x{
+	//	x[i].Ptr = make([]byte, 0, 256+3)
+	//}
+	//f.Box = append(f.Box, x...)
+	//// And end above
+
+	// To change things back uncomment below
 	f.Box = append(f.Box, make([]Box, delta)...)
 }
 

@@ -6,8 +6,8 @@
 package frame
 
 import (
-	"github.com/as/frame/box"
 	"github.com/as/drawcache"
+	"github.com/as/frame/box"
 	"image"
 	"image/draw"
 )
@@ -54,7 +54,7 @@ type Frame struct {
 	pts [][2]image.Point
 
 	Scroll func(int)
-	fr     *Frame
+	ir     *box.Run
 
 	hexFont *Font
 	hex     []draw.Image
@@ -63,16 +63,18 @@ type Frame struct {
 // New creates a new frame on b with bounds r. The image b is used
 // as the frame's internal bitmap cache.
 func New(r image.Rectangle, ft Font, b *image.RGBA, cols Color) *Frame {
+	spaceDx := ft.Measure(' ')
 	f := &Frame{
 		Font:   ft,
-		maxtab: 4 * ft.Measure(' '),
+		maxtab: 4 * spaceDx,
 		Color:  cols,
-		Run:    box.Run{Measure: ft.MeasureBytes},
+		Run:    box.NewRun(spaceDx, 5000, ft.MeasureBytes),
 		op:     draw.Src,
 	}
 	f.setrects(r, b)
 	f.inittick()
-	f.fr = new(Frame)
+	run := box.NewRun(spaceDx, 5000, ft.MeasureBytes)
+	f.ir = &run
 	f.renderHex()
 	f.Drawer = drawcache.New()
 	return f
