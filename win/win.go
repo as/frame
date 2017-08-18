@@ -386,13 +386,7 @@ func (w *Win) SetOrigin(org int64, exact bool) {
 			org++
 		}
 	}
-	if org < 0 {
-		org = 0
-	}
-	if org+w.Frame.Len() == w.Len() {
-		panic("!")
-	}
-	w.setOrigin(org)
+	w.setOrigin(clamp(org, 0, w.Nr))
 }
 func (w *Win) setOrigin(org int64) {
 	fl := w.Nr
