@@ -18,10 +18,10 @@ import (
 	window "github.com/as/ms/win"
 
 	"github.com/as/frame"
+	"github.com/as/frame/font"
 	"github.com/as/frame/tag"
 	"golang.org/x/exp/shiny/driver"
 	"golang.org/x/exp/shiny/screen"
-	"golang.org/x/image/font/gofont/gomono"
 	"golang.org/x/mobile/event/key"
 	"golang.org/x/mobile/event/lifecycle"
 	"golang.org/x/mobile/event/mouse"
@@ -35,9 +35,6 @@ func moveMouse(pt image.Point) {
 	cursor.MoveTo(window.ClientAbs().Min.Add(pt))
 }
 
-func mkfont(size int) frame.Font {
-	return frame.NewTTF(gomono.TTF, size)
-}
 
 // Put
 var (
@@ -90,7 +87,7 @@ func main() {
 		wind.Send(paint.Event{})
 		focused := false
 		focused = focused
-		ft := mkfont(fsize)
+		ft := font.NewGoMono(fsize)
 		var list = []string{}
 		if len(flag.Args()) > 0 {
 			list = append(list, flag.Args()...)

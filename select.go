@@ -134,7 +134,7 @@ func (f *Frame) Paint(p0, p1 image.Point, col image.Image) {
 	if f.r.Max.Y == p0.Y {
 		return
 	}
-	h := f.Font.height
+	h := f.Font.Dy()
 	q0, q1 := p0, p1
 	q0.Y += h
 	q1.Y += h

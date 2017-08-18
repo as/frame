@@ -2,14 +2,9 @@ package frame
 
 import (
 	"github.com/as/frame/box"
-	"golang.org/x/image/font/gofont/gomono"
-
-	"fmt"
-	"golang.org/x/image/math/fixed"
+	"github.com/as/frame/font"
 	"image"
-	"image/color"
 	"image/draw"
-	"unicode"
 )
 
 // Refresh renders the entire frame.
@@ -84,7 +79,7 @@ func (f *Frame) tickat(pt image.Point, ticked bool) {
 	if r.Max.X > f.r.Max.X {
 		r.Max.X = f.r.Max.X
 	} //
-	adj := image.Pt(0, -(f.Font.height / 6))
+	adj := image.Pt(0, -(f.Font.Dy() / 6))
 	if ticked {
 		f.Draw(f.tickback, f.tickback.Bounds(), f.b, pt.Add(adj), draw.Src)
 		f.Draw(f.b, r.Add(adj), f.tick, image.ZP, draw.Over)
@@ -117,7 +112,7 @@ func (f *Frame) drawRun(r *box.Run, pt image.Point) image.Point {
 		} else {
 			if b.BC == '\n' {
 				pt.X = f.r.Min.X
-				pt.Y += f.Font.height
+				pt.Y += f.Font.Dy()
 			} else {
 				pt.X += f.newWid(pt, b)
 			}
@@ -149,10 +144,6 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			qt = pt
 			pt = f.lineWrap(pt, b)
 			// fill in the end of a wrapped line
-			//print("before wrap ")
-			//println(qt.String())
-			//print("after wrap ")
-			//println(pt.String())
 			if qt.X > f.r.Max.X {
 				//println(f.r.Max.String())
 				qt.X -= 5000
@@ -187,11 +178,10 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 		if x > f.r.Max.X {
 			x = f.r.Max.X
 		}
-		f.Draw(f.b, image.Rect(pt.X, pt.Y, x, pt.Y+f.Font.height), back, pt, f.op)
+		f.Draw(f.b, image.Rect(pt.X, pt.Y, x, pt.Y+f.Font.Dy()), back, pt, f.op)
 		if b.Nrune > 0 {
-			//TODO: must be stringnbg....
 			if nr <= int64(len(ptr)) && nr >= 0 {
-				f.stringbg(f.b, pt, text, image.ZP, f.Font, ptr[:nr], back, image.ZP)
+				font.StringNBG(f.b, pt, text, image.ZP, f.Font, ptr[:nr])
 			}
 		}
 		pt.X += w
@@ -206,11 +196,6 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 	if p1 > p0 && nb != 0 && nb != f.Nbox && (&f.Box[nb-1]).Nrune > 0 && !trim {
 		qt = pt
 		pt = f.lineWrap(pt, b)
-		if qt.X > f.r.Max.X {
-			//println(f.r.Max.String())
-			//qt.X-=5000
-			//f.DumpBoxes()
-		}
 		if pt.Y > qt.Y {
 			f.Draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt, f.op)
 		}
@@ -218,132 +203,23 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 	return pt
 }
 
-func (f *Frame) renderDec() {
-	if f.hexFont == nil {
-		x := NewTTF(gomono.TTF, f.Dy()/4+3)
-		f.hexFont = &x
-	}
-	f.hex = make([]draw.Image, 256)
-	for i := range f.hex {
-		sizer := f.Font.measureHex()
-		f.hex[i] = image.NewRGBA(image.Rect(0, 0, sizer, f.Dy()))
-		s := fmt.Sprintf("%03d", i)
-		pt := image.Pt(sizer-((MeasureBytes(*f.hexFont, s)+sizer)/2), 0)
-		stringnbg(f.hex[i], pt, f.Color.Text, image.ZP, *f.hexFont, []byte(s),
-			image.NewUniform(color.RGBA{0, 0, 0, 255}), image.ZP)
-	}
+
+func (f *Frame) stringbg(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *font.Font, s []byte, bg image.Image, bgp image.Point) int {
+	return font.StringBG(dst,p,src,sp,ft,s,bg,bgp)
 }
-
-func (f *Frame) renderHex() {
-	if f.hexFont == nil {
-		x := NewTTF(gomono.TTF, f.Dy()/2+3)
-		f.hexFont = &x
-	}
-	f.hex = make([]draw.Image, 256)
-	for i := range f.hex {
-		sizer := f.Font.measureHex()
-		f.hex[i] = image.NewRGBA(image.Rect(0, 0, sizer, f.Dy()))
-		s := fmt.Sprintf("%02x", i)
-		pt := image.Pt(sizer-((MeasureBytes(*f.hexFont, s)+sizer)/2), 0)
-		stringnbg(f.hex[i], pt, f.Color.Text, image.ZP, *f.hexFont, []byte(s),
-			image.NewUniform(color.RGBA{0, 0, 0, 255}), image.ZP)
-	}
-}
-
-func (f *Frame) stringbg(dst draw.Image, p image.Point, src image.Image,
-	sp image.Point, font Font, s []byte, bg image.Image, bgp image.Point) int {
-	h := font.height
-	h = int(float64(h) - float64(h)/float64(5))
-	for _, v := range s {
-		fp := fixed.P(p.X, p.Y)
-		dr, mask, maskp, _, ok := font.Glyph(fp, rune(v))
-		//		if v == 0 {
-		//			dr, mask, maskp, _, ok = font.Glyph(fp, 1)
-		//		}
-		if !ok {
-			panic("Frame.stringbg")
-		}
-		dr.Min.Y += h
-		dr.Max.Y += h
-		//src = image.NewUniform(Rainbow)
-
-		advance := f.Font.Measure(rune(v))
-		if v == 0 || !unicode.IsGraphic(rune(v)) || v > 127 {
-			if len(f.hex) == 0 {
-				f.renderHex()
-			}
-			dr, _, _, _, _ := font.Glyph(fp, rune('@'))
-			dr.Max.X = dr.Min.X + advance
-			dr.Min.Y += font.height - 5
-			dr.Max.Y += font.height - 5
-			//draw.Draw(dst, dr, bg, bgp, draw.Src)
-			draw.Draw(dst, dr, f.hex[byte(v)], bgp, draw.Over)
-		} else {
-			//draw.Draw(dst, dr, bg, bgp, draw.Src)
-			//next()
-			//
-			draw.DrawMask(dst, dr, src, sp, mask, maskp, draw.Over)
-		}
-		//next()
-		p.X += advance
-	}
-	return int(p.X)
-}
-
-func MeasureBytes(f Font, p string) (w int) {
+/*
+func MeasureBytes(ft font.Font, p string) (w int) {
 	for i := range p {
-		w += measure(f, rune(byte(p[i])))
+		w += measure(ft, rune(byte(p[i])))
 	}
 	return w
 }
-func measure(f Font, r rune) int {
-	l, ok := f.Face.GlyphAdvance(r)
+func measure(ft font.Font, r rune) int {
+	l, ok := ft.Face.GlyphAdvance(r)
 	if !ok {
 		println("warn: glyph missing")
-		l, _ = f.Face.GlyphAdvance('@')
+		l, _ = ft.Face.GlyphAdvance('_')
 	}
-	return fix(l)
+	return font.Fix(l)
 }
-
-func stringbg(dst draw.Image, p image.Point, src image.Image,
-	sp image.Point, font Font, s []byte, bg image.Image, bgp image.Point) int {
-	h := font.height
-	h = int(float64(h) - float64(h)/float64(5))
-	for _, v := range s {
-		fp := fixed.P(p.X, p.Y)
-		dr, mask, maskp, _, ok := font.Glyph(fp, rune(v))
-		if !ok {
-			panic("stringbg")
-
-		}
-		dr.Min.Y += h
-		dr.Max.Y += h
-		//src = image.NewUniform(Rainbow)
-		draw.Draw(dst, dr, bg, bgp, draw.Src)
-		draw.DrawMask(dst, dr, src, sp, mask, maskp, draw.Over)
-		//next()
-		p.X += measure(font, rune(v)) //fix(advance)
-	}
-	return int(p.X)
-}
-
-func stringnbg(dst draw.Image, p image.Point, src image.Image,
-	sp image.Point, font Font, s []byte, bg image.Image, bgp image.Point) int {
-	h := font.height
-	h = int(float64(h) - float64(h)/float64(5))
-	for _, v := range s {
-		fp := fixed.P(p.X, p.Y)
-		dr, mask, maskp, advance, ok := font.Glyph(fp, rune(v))
-		if !ok {
-			panic("stringnbg")
-
-		}
-		dr.Min.Y += h
-		dr.Max.Y += h
-		//src = image.NewUniform(Rainbow)
-		draw.DrawMask(dst, dr, src, sp, mask, maskp, draw.Over)
-		//next()
-		p.X += fix(advance)
-	}
-	return int(p.X)
-}
+*/

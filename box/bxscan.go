@@ -1,18 +1,15 @@
 package box
 
-// MaxBytes is the largest capacity of bytes in a box
-var MaxBytes = 256+3
-
 func (r *Run) ensure(nb int) {
-	if nb == r.Nalloc{
+	if nb == r.Nalloc {
 		r.Grow(r.delta)
-		if r.delta < 16384{
+		if r.delta < 16384 {
 			r.delta *= 2
 		}
 	}
 }
 
-func (r *Run) Bxscan(s []byte, ymax int){
+func (r *Run) Bxscan(s []byte, ymax int) {
 	var nl int
 
 	r.delta = 32
@@ -51,14 +48,14 @@ func (r *Run) specialbox(nb int, c byte, min, max int) (nl int) {
 	return
 }
 
-func (r *Run) plainbox(nb int) (nl int){
+func (r *Run) plainbox(nb int) (nl int) {
 	r.ww.Reset()
 
 	nr := 0
 	for ; r.ss.Len() > 0; nr++ {
 		c, _ := r.ss.ReadByte()
 		rw := 1
-		if special(c) || nr+rw >= MaxBytes{
+		if special(c) || nr+rw >= MaxBytes {
 			r.ss.UnreadByte()
 			break
 		}
@@ -68,7 +65,7 @@ func (r *Run) plainbox(nb int) (nl int){
 	b := &r.Box[nb]
 	b.Ptr = make([]byte, nr)
 	copy(b.Ptr, r.ww.Bytes())
-	b.Width = r.MeasureBytes(b.Ptr)
+	b.Width = r.ww.Width()
 	b.Nrune = nr
 	r.Nchars += int64(nr)
 

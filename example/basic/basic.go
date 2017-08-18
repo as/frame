@@ -52,7 +52,7 @@ var (
 	Mauve  = image.NewUniform(color.RGBA{0x99, 0x99, 0xDD, 255})
 )
 
-func mkfont(size int) frame.Font {
+func mkfont(size int) font.Font {
 	return frame.NewTTF(gomono.TTF, size)
 }
 

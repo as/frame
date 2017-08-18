@@ -19,7 +19,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 		cn0                        int64
 		back, text                 image.Image
 	)
-	h := f.Font.height
+	h := f.Font.Dy()
 	if p0 > f.Nchars || len(s) == 0 || f.b == nil {
 		return
 	}

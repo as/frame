@@ -5,11 +5,14 @@ import (
 	"fmt"
 )
 
-func NewRun(minDx, maxDx int, measureFn func(s []byte) int) Run {
+// MaxBytes is the largest capacity of bytes in a box
+var MaxBytes = 128 + 3
+
+func NewRun(minDx, maxDx int, measureFn func(byte) int) Run {
 	return Run{
-		minDx: minDx,
-		maxDx: maxDx,
-		ww:      bytes.NewBuffer(make([]byte, 256+3)),
+		minDx:   minDx,
+		maxDx:   maxDx,
+		ww:      newRuler(measureFn, MaxBytes),
 		ss:      bytes.NewReader([]byte{}),
 		Measure: measureFn,
 	}
@@ -18,7 +21,7 @@ func NewRun(minDx, maxDx int, measureFn func(s []byte) int) Run {
 // Run is a one-dimensional field of boxes. It can scan arbitrary text
 // into boxes with Bxscan().
 type Run struct {
-	Measure func(s []byte) int
+	Measure func(b byte) int
 	Nchars  int64
 	Nlines  int
 	Nalloc  int
@@ -26,9 +29,16 @@ type Run struct {
 	Box     []Box
 
 	minDx, maxDx int
-	delta int
-	ss    *bytes.Reader
-	ww    *bytes.Buffer
+	delta        int
+	ss           *bytes.Reader
+	ww           *ruler
+}
+
+func (f *Run) MeasureBytes(s []byte) (n int) {
+	for b := range s {
+		n += f.Measure(s[b])
+	}
+	return
 }
 
 // Count recomputes and returns the number of bytes
@@ -45,11 +55,12 @@ func (f *Run) Count(nb int) int64 {
 // their data on the heap. If widthfn is not nill, it
 // becomes the new measuring function for the run. Boxes
 // in the run are not remeasured upon reset.
-func (f *Run) Reset(widthfn func([]byte) int) {
+func (f *Run) Reset(widthfn func(byte) int) {
 	f.Nbox = 0
 	f.Nchars = 0
 	if widthfn != nil {
 		f.Measure = widthfn
+		f.ww = newRuler(widthfn, MaxBytes)
 	}
 }
 
@@ -134,13 +145,6 @@ func (f *Run) Add(bn, n int) {
 	f.Nbox += n
 }
 
-func (b *Run) MeasureBytes(s []byte) int {
-	if b.Measure == nil {
-		panic("boxes: measure() is nil")
-	}
-	return b.Measure(s)
-}
-
 // Delete closes and deallocates n0-n1 inclusively
 func (f *Run) Delete(n0, n1 int) {
 	if n0 >= f.Nbox || n1 >= f.Nbox || n1 < n0 {
@@ -171,10 +175,10 @@ func (f *Run) Grow(delta int) {
 	//// New changes start here
 	//x := make([]Box, delta)
 	//for i := range x{
-	//	x[i].Ptr = make([]byte, 0, 256+3)
+	//	x[i].Ptr = make([]byte, 0, MaxBytes)
 	//}
 	//f.Box = append(f.Box, x...)
-	//// And end above
+	// And end above
 
 	// To change things back uncomment below
 	f.Box = append(f.Box, make([]Box, delta)...)

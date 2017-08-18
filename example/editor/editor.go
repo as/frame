@@ -170,7 +170,7 @@ func writefile(s string, p []byte) {
 	}
 	println("wrote", n, "bytes")
 }
-func mkfont(size int) frame.Font {
+func mkfont(size int) font.Font {
 	return frame.NewTTF(gomono.TTF, size)
 }
 

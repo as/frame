@@ -16,7 +16,7 @@ func (f *Frame) lineWrap(pt image.Point, b *box.Box) image.Point {
 	}
 	if width > f.r.Max.X-pt.X {
 		pt.X = f.r.Min.X
-		pt.Y += f.Font.height
+		pt.Y += f.Font.Dy()
 	}
 	return pt
 }
@@ -26,7 +26,7 @@ func (f *Frame) lineWrap(pt image.Point, b *box.Box) image.Point {
 func (f *Frame) lineWrap0(pt image.Point, b *box.Box) image.Point {
 	if f.canFit(pt, b) == 0 {
 		pt.X = f.r.Min.X
-		pt.Y += f.Font.height
+		pt.Y += f.Font.Dy()
 	}
 	return pt
 }
@@ -74,7 +74,7 @@ func (f *Frame) advance(pt image.Point, b *box.Box) (x image.Point) {
 	//	fmt.Println("boxes width: %d", b.width)
 	if b.Nrune < 0 && b.BC == '\n' {
 		pt.X = f.r.Min.X
-		pt.Y += f.Font.height
+		pt.Y += f.Font.Dy()
 	} else {
 		pt.X += b.Width
 	}

@@ -3,17 +3,16 @@ package tag
 import (
 	"bytes"
 	"fmt"
-	window "github.com/as/ms/win"
 	"image"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
 
+	window "github.com/as/ms/win"
+
 	"github.com/as/clip"
 	"github.com/as/cursor"
-	"github.com/as/frame"
-	"golang.org/x/image/font/gofont/gomono"
 )
 
 func readfile(s string) (p []byte) {
@@ -46,9 +45,6 @@ func writefile(s string, p []byte) {
 		log.Fatalln(err)
 	}
 	println("wrote", n, "bytes")
-}
-func mkfont(size int) frame.Font {
-	return frame.NewTTF(gomono.TTF, size)
 }
 
 func init() {

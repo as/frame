@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/as/frame"
+	"image"
+
+	"github.com/as/frame/font"
 	"github.com/as/frame/tag"
 	"golang.org/x/exp/shiny/screen"
-	"image"
 )
 
 type Col struct {
-	ft   frame.Font
+	ft   *font.Font
 	sp   image.Point
 	size image.Point
 	src  screen.Screen
@@ -19,7 +20,7 @@ type Col struct {
 	List []Plane
 }
 
-func NewCol(src screen.Screen, wind screen.Window, ft frame.Font, sp, size image.Point, files ...string) *Col {
+func NewCol(src screen.Screen, wind screen.Window, ft *font.Font, sp, size image.Point, files ...string) *Col {
 	N := len(files)
 	tdy := ft.Dy() * 2
 	T := tag.NewTag(src, wind, ft, image.Pt(sp.X, sp.Y), image.Pt(size.X, tdy), pad, cols)

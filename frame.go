@@ -8,6 +8,7 @@ package frame
 import (
 	"github.com/as/drawcache"
 	"github.com/as/frame/box"
+	"github.com/as/frame/font"
 	"image"
 	"image/draw"
 )
@@ -29,7 +30,7 @@ func (f *Frame) Size() image.Point {
 type Frame struct {
 	box.Run
 	Color
-	Font         Font
+	Font         *font.Font
 	b            *image.RGBA
 	r, entire    image.Rectangle
 	maxtab       int
@@ -56,26 +57,25 @@ type Frame struct {
 	Scroll func(int)
 	ir     *box.Run
 
-	hexFont *Font
+	hexFont *font.Font
 	hex     []draw.Image
 }
 
 // New creates a new frame on b with bounds r. The image b is used
 // as the frame's internal bitmap cache.
-func New(r image.Rectangle, ft Font, b *image.RGBA, cols Color) *Frame {
+func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color) *Frame {
 	spaceDx := ft.Measure(' ')
 	f := &Frame{
 		Font:   ft,
 		maxtab: 4 * spaceDx,
 		Color:  cols,
-		Run:    box.NewRun(spaceDx, 5000, ft.MeasureBytes),
+		Run:    box.NewRun(spaceDx, 5000, ft.MeasureByte),
 		op:     draw.Src,
 	}
 	f.setrects(r, b)
 	f.inittick()
-	run := box.NewRun(spaceDx, 5000, ft.MeasureBytes)
+	run := box.NewRun(spaceDx, 5000, ft.MeasureByte)
 	f.ir = &run
-	f.renderHex()
 	f.Drawer = drawcache.New()
 	return f
 }
@@ -91,15 +91,15 @@ func (f *Frame) SetDirty(dirty bool) {
 }
 
 // Reset resets the frame to display on image b with bounds r and font ft.
-func (f *Frame) Reset(r image.Rectangle, b *image.RGBA, ft Font) {
+func (f *Frame) Reset(r image.Rectangle, b *image.RGBA, ft *font.Font) {
 	f.r = r
 	f.b = b
 	f.SetFont(ft)
 }
 
-func (f *Frame) SetFont(ft Font) {
+func (f *Frame) SetFont(ft *font.Font) {
 	f.Font = ft
-	f.Run.Reset(f.Font.MeasureBytes)
+	f.Run.Reset(f.Font.MeasureByte)
 	f.Refresh()
 }
 
@@ -154,7 +154,7 @@ func (f *Frame) Select(p0, p1 int64) {
 }
 
 func (f *Frame) inittick() {
-	h := f.Font.height + (f.Font.height / 5)
+	h := f.Font.Dy() + (f.Font.Dy() / 5)
 	r := image.Rect(0, 0, TickWidth, h)
 	f.tickscale = 1 // TODO implement scalesize
 	f.tick = image.NewRGBA(r)
@@ -171,8 +171,8 @@ func (f *Frame) setrects(r image.Rectangle, b *image.RGBA) {
 	f.b = b
 	f.entire = r
 	f.r = r
-	f.r.Max.Y -= f.r.Dy() % f.Font.height
-	f.maxlines = f.r.Dy() / f.Font.height
+	f.r.Max.Y -= f.r.Dy() % f.Font.Dy()
+	f.maxlines = f.r.Dy() / f.Font.Dy()
 }
 
 func (f *Frame) clear(freeall bool) {

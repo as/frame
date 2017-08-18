@@ -25,16 +25,13 @@ func (f *Frame) Delete(p0, p1 int64) int {
 		p1 = f.Nchars
 	}
 	n0 = f.Find(0, 0, p0)
-	if n0 == f.Nbox {
-		panic("delete")
-	}
 	n1 = f.Find(n0, p0, p1)
 	pt0 = f.ptOfCharNBox(p0, n0)
 	pt1 = f.PointOf(p1)
 	if f.p0 == f.p1 {
 		f.tickat(f.PointOf(int64(f.p0)), false)
 	}
-
+	h := f.Font.Dy()
 	nn0 = n0
 	ppt0 = pt0
 	f.Free(n0, n1-1)
@@ -60,48 +57,29 @@ func (f *Frame) Delete(p0, p1 int64) int {
 		pt1 = f.lineWrap(pt1, b)
 		r.Min = pt0
 		r.Max = pt0
-		r.Max.Y += f.Font.height
+		r.Max.Y += h
 
 		if b.Nrune > 0 { // non-newline
 			n = f.canFit(pt0, b)
-			if n == 0 {
-				panic("delete: canfit==0")
-			}
 			if n != b.Nrune {
 				f.Split(n1, n)
 				b = &f.Box[n1]
 			}
 			r.Max.X += b.Width
 			f.Draw(f.b, r, f.b, pt1, f.op)
-			//drawBorder(f.b, r.Add(pt1).Inset(-4), Red, image.ZP, 8)
 			//drawBorder(f.b, r.Inset(-4), Green, image.ZP, 8)
 			cn1 += int64(b.Nrune)
 		} else {
-			r.Max.X += f.newWid0(pt0, b)
-			if r.Max.X > f.r.Max.X {
-				r.Max.X = f.r.Max.X
-			}
-			col = f.Color.Back
-			if f.p0 <= cn1 && cn1 < f.p1 {
-				col = f.Color.Hi.Back
-			}
+			r.Max.X = min(r.Max.X+f.newWid0(pt0, b), f.r.Max.X)
+			_, col = f.pick(cn1, f.p0, f.p1)
 			f.Draw(f.b, r, col, pt0, f.op)
 			cn1++
 		}
 		pt1 = f.advance(pt1, b)
 		pt0.X += f.newWid(pt0, b)
-		func() {
-			defer func() {
-				err := recover()
-				if err != nil {
-					fmt.Printf("debug info: Delete(%d, %d) -> f.Box[%d] = f.Box[%d], f.Nbox = %d, len(f.Run) = %d, pt0=%s, pt1=%s, ppt0=%s\n", p0, p1, n0, n1, f.Nbox, len(f.Run.Box), pt0, pt1, ppt0)
-				}
-			}()
-			f.Box[n0] = f.Box[n1]
-		}()
+		f.Box[n0] = f.Box[n1]
 		n0++
 		n1++
-		//		b = &f.Box[n1]
 	}
 
 	if n1 == f.Nbox && pt0.X != pt1.X {
@@ -114,18 +92,14 @@ func (f *Frame) Delete(p0, p1 int64) int {
 			panic(fmt.Sprintf("delete: PtOfCharPtBox %s > %s", pt2, f.r.Max))
 		}
 		if n1 < f.Nbox {
-			h := f.Font.height
 			q0 := pt0.Y + h
 			q1 := pt1.Y + h
 			q2 := pt2.Y + h
 			if q2 > f.r.Max.Y {
 				q2 = f.r.Max.Y
 			}
-
 			f.Draw(f.b, image.Rect(pt0.X, pt0.Y, pt0.X+(f.r.Max.X-pt1.X), q0), f.b, pt1, f.op)
 			f.Draw(f.b, image.Rect(f.r.Min.X, q0, f.r.Max.X, q0+(q2-q1)), f.b, image.Pt(f.r.Min.X, q1), f.op)
-			//x := image.NewUniform(color.RGBA{123,52,44,255})
-			//			f.Paint(image.Pt(pt2.X, pt2.Y-(pt1.Y-pt0.Y)), pt2, f.Color.Back)
 		} else {
 			f.Paint(pt0, pt2, f.Color.Back)
 		}
@@ -138,17 +112,15 @@ func (f *Frame) Delete(p0, p1 int64) int {
 	}
 
 	if n0 < f.Nbox-1 {
-		f.clean(ppt0, nn0, n0+1)
-	} else {
-		f.clean(ppt0, nn0, n0)
+		n0++
 	}
+	f.clean(ppt0, nn0, n0)
 
 	if f.p1 > p1 {
 		f.p1 -= p1 - p0
 	} else if f.p1 > p0 {
 		f.p1 = p0
 	}
-
 	if f.p0 > p1 {
 		f.p0 -= p1 - p0
 	} else if f.p0 > p0 {
@@ -165,8 +137,19 @@ func (f *Frame) Delete(p0, p1 int64) int {
 	if pt0.X > f.r.Min.X {
 		extra = 1
 	}
-
-	//	f.setlines("Delete",(pt0.Y-f.r.Min.Y)/f.Font.height + extra)
-	f.Nlines = (pt0.Y-f.r.Min.Y)/f.Font.height + extra
+	f.Nlines = (pt0.Y-f.r.Min.Y)/h + extra
 	return int(p1 - p0 + 1) //n - f.Nlines
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+func max(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

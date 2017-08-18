@@ -10,8 +10,9 @@ import (
 	"image/draw"
 	"sync"
 	"time"
-
+	"github.com/as/text"
 	"github.com/as/frame"
+	"github.com/as/frame/font"
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/mobile/event/mouse"
 )
@@ -168,7 +169,7 @@ func (w *Win) Size() image.Point {
 
 const minSbWidth = 5
 
-func New(scr screen.Screen, ft frame.Font, events screen.Window,
+func New(scr screen.Screen, ft *font.Font, events screen.Window,
 	sp, size, pad image.Point, cols frame.Color) *Win {
 	b, err := scr.NewBuffer(size)
 	if err != nil {
@@ -228,7 +229,7 @@ func (w *Win) Move(sp image.Point) {
 	w.Sp = sp
 }
 
-func (w *Win) SetFont(ft frame.Font) {
+func (w *Win) SetFont(ft *font.Font) {
 	if ft.Size() < 4 {
 		return
 	}
@@ -371,6 +372,55 @@ func (w *Win) BackNL(p int64, n int) int64 {
 }
 
 func (w *Win) SetOrigin(org int64, exact bool) {
+	org = clamp(org, 0, w.Nr)
+	if org == w.Org {
+		return
+	}
+	w.Mark()
+	if org > 0 && !exact {
+		for i := 0; i < 512 && org < w.Nr; i++ {
+			if w.R[org] == '\n' {
+				org++
+				break
+			}
+			org++
+		}
+	}
+	if org < 0 {
+		org = 0
+	}
+	if org+w.Frame.Len() == w.Len() {
+		panic("!")
+	}
+	w.setOrigin(org)
+}
+func (w *Win) setOrigin(org int64) {
+	fl := w.Nr
+	switch text.Region5(org, org+fl, w.Org, w.Org+fl) {
+	case -1:
+		w.Frame.Insert(w.Bytes()[org:org+(w.Org-org)], 0)
+		w.Org = org
+	case -2, 2:
+		w.Frame.Delete(0, w.Frame.Len())
+		w.Org = org
+		w.Fill()
+	case 1:
+		w.Frame.Delete(0, org-w.Org)
+		w.Org = org
+		w.Fill()
+	case 0:
+		panic("never happens")
+	}
+	fr := w.Frame.Bounds()
+	if pt := w.PointOf(w.Frame.Len()); pt.Y != fr.Max.Y {
+		w.Paint(pt, fr.Max, w.Frame.Color.Palette.Back)
+	}
+	q0, q1 := w.Dot()
+	w.drawsb()
+	w.Select(q0, q1)
+}
+
+func (w *Win) SetOriginX(org int64, exact bool) {
 	//fmt.Printf("SetOrigin: %d %v\n", org, exact)
 	org = clamp(org, 0, w.Nr)
 	if org == w.Org {

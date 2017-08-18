@@ -10,7 +10,9 @@ import (
 	"strings"
 
 	"github.com/as/frame"
+	"github.com/as/frame/font"
 	"github.com/as/frame/win"
+	//"github.com/as/text/win"
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/mobile/event/key"
 	"golang.org/x/mobile/event/mouse"
@@ -63,8 +65,7 @@ func (t *Tag) Loc() image.Rectangle {
 }
 
 // Put
-func NewTag(src screen.Screen, wind screen.Window, ft frame.Font,
-	sp, size, pad image.Point, cols frame.Color) *Tag {
+func NewTag(src screen.Screen, wind screen.Window, ft *font.Font, sp, size, pad image.Point, cols frame.Color) *Tag {
 
 	// Make the main tag
 	tagY := ft.Dy() * 2
@@ -179,7 +180,7 @@ func (t *Tag) Kbdin(act *Invertable, e key.Event) {
 			} else {
 				fsize += 2
 			}
-			act.SetFont(mkfont(fsize))
+			act.SetFont(font.NewGoMono(fsize))
 			t.Mark()
 			// act.SendFirst(paint.Event{})
 			return

@@ -3,7 +3,7 @@ package main
 import (
 	"image"
 
-	"github.com/as/frame"
+	"github.com/as/frame/font"
 	"github.com/as/frame/tag"
 	"golang.org/x/exp/shiny/screen"
 )
@@ -12,7 +12,7 @@ type Grid struct {
 	*Col
 }
 
-func NewGrid(src screen.Screen, wind screen.Window, ft frame.Font, sp, size image.Point, files ...string) *Grid {
+func NewGrid(src screen.Screen, wind screen.Window, ft *font.Font, sp, size image.Point, files ...string) *Grid {
 	N := len(files)
 	tdy := ft.Dy() * 2
 	T := tag.NewTag(src, wind, ft, image.Pt(sp.X, sp.Y), image.Pt(size.X, tdy), pad, cols)

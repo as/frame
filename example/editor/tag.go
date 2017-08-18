@@ -37,7 +37,7 @@ type Tag struct {
 }
 
 // Put
-func NewTag(src screen.Screen, wind screen.Window, ft frame.Font,
+func NewTag(src screen.Screen, wind screen.Window, ft font.Font,
 	sp, size, pad image.Point, cols frame.Color) *Tag {
 
 	// Make the main tag
