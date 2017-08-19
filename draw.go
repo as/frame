@@ -34,7 +34,7 @@ func (f *Frame) redrawRun0(r *box.Run, pt image.Point, text, back image.Image) {
 		pt = f.lineWrap(pt, b)
 		//if !f.noredraw && b.nrune >= 0 {
 		if b.Nrune >= 0 {
-			f.stringbg(f.b, pt, text, image.ZP, f.Font, b.Ptr, back, image.ZP)
+			font.StringBG(f.b, pt, text, image.ZP, f.Font, b.Ptr, back, image.ZP)
 		}
 		pt.X += b.Width
 	}
@@ -121,105 +121,58 @@ func (f *Frame) drawRun(r *box.Run, pt image.Point) image.Point {
 	return pt
 }
 
-func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) image.Point {
-	p := int64(0)
-	nr := p
-	w := 0
+func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) image.Point {{	// doubled
+	p0, p1 := int(p0), int(p1)
+	q0 := 0
 	trim := false
-	qt := image.ZP
-	var b *box.Box
-	nb := 0
-	x := 0
-	var ptr []byte
-	for ; nb < f.Nbox && p < p1; nb++ {
-		b = &f.Box[nb]
-		nr = int64(b.Nrune)
-		if nr < 0 {
-			nr = 1
-		}
-		if p+nr <= p0 {
-			goto Continue
-		}
-		if p >= p0 {
-			qt = pt
-			pt = f.lineWrap(pt, b)
-			// fill in the end of a wrapped line
-			if qt.X > f.r.Max.X {
-				//println(f.r.Max.String())
-				qt.X -= 5000
-				//f.DumpBoxes()
-			}
-			if pt.Y > qt.Y {
+
+	stepFill := func(bn int){
+			qt := pt
+			if pt = f.lineWrap(pt, (&f.Box[bn])); pt.Y > qt.Y {
 				f.Draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt, f.op)
 			}
+	}
+
+	nb := 0
+	for ; nb < f.Nbox && q0+f.LenBox(nb) <= p0; nb++ {
+		// region -2: skip
+		q0 += f.LenBox(nb)
+	}
+
+	for ; nb < f.Nbox && q0 < p1; nb++ {
+		if q0 >= p0 { // region 0 or 1 or 2
+			stepFill(nb)
 		}
-		ptr = b.Ptr
-		if p < p0 {
-			ptr = ptr[p0-p:] // todo: runes
-			nr -= p0 - p
-			p = p0
+		ptr := f.BoxBytes(nb)
+		if q0 < p0 {
+			// region -1: shift p right inside the selection
+			ptr = ptr[p0-q0:]
+			q0 = p0
 		}
 
 		trim = false
-		if p+nr > p1 {
-			nr -= (p + nr) - p1
+		if q1 := q0+len(ptr); q1 > p1 {
+			// region 1: would draw too much, retract the selection
+			lim := len(ptr)-(q1-p1)
+			ptr = ptr[:lim]
 			trim = true
 		}
 
-		if b.Nrune < 0 || nr == int64(b.Nrune) {
-			w = b.Width
-		} else {
-			// TODO: put stringwidth back
-			if nr > -1 {
-				w = f.Font.MeasureBytes(ptr[:nr])
-			}
-		}
-		x = pt.X + w
-		if x > f.r.Max.X {
-			x = f.r.Max.X
-		}
-		f.Draw(f.b, image.Rect(pt.X, pt.Y, x, pt.Y+f.Font.Dy()), back, pt, f.op)
-		if b.Nrune > 0 {
-			if nr <= int64(len(ptr)) && nr >= 0 {
-				font.StringNBG(f.b, pt, text, image.ZP, f.Font, ptr[:nr])
-			}
+		w := f.WidthBox(nb, ptr)
+		f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Font.Dy()), back, pt, f.op)
+		if f.PlainBox(nb) {
+			font.StringNBG(f.b, pt, text, image.ZP, f.Font, ptr)
 		}
 		pt.X += w
-	Continue:
-		if nb+1 >= f.Nbox {
+
+		if q0 += len(ptr); q0 >= p1{
 			break
 		}
-		b = &f.Box[nb+1]
-		p += nr
 	}
 
-	if p1 > p0 && nb != 0 && nb != f.Nbox && (&f.Box[nb-1]).Nrune > 0 && !trim {
-		qt = pt
-		pt = f.lineWrap(pt, b)
-		if pt.Y > qt.Y {
-			f.Draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt, f.op)
-		}
+	if p1 > p0 && nb != 0 && nb != f.Nbox && f.LenBox(nb-1) > 0 && !trim {
+		stepFill(nb)
 	}
 	return pt
-}
+}}
 
-
-func (f *Frame) stringbg(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *font.Font, s []byte, bg image.Image, bgp image.Point) int {
-	return font.StringBG(dst,p,src,sp,ft,s,bg,bgp)
-}
-/*
-func MeasureBytes(ft font.Font, p string) (w int) {
-	for i := range p {
-		w += measure(ft, rune(byte(p[i])))
-	}
-	return w
-}
-func measure(ft font.Font, r rune) int {
-	l, ok := ft.Face.GlyphAdvance(r)
-	if !ok {
-		println("warn: glyph missing")
-		l, _ = ft.Face.GlyphAdvance('_')
-	}
-	return font.Fix(l)
-}
-*/

@@ -59,7 +59,7 @@ func (f *Frame) canFit(pt image.Point, b *box.Box) int {
 		// TODO: need to measure actual rune width
 		// r := p[0]
 		w = 1
-		left -= f.Font.MeasureBytes(p[:1])
+		left -= f.Font.MeasureByte(p[0])
 		if left < 0 {
 			return nr
 		}

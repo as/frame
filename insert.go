@@ -11,6 +11,11 @@ func (f *Frame) Mark() {
 	f.modified = true
 }
 
+func (f *Frame) Untick() {
+	if f.p0 == f.p1 {
+		f.tickat(f.PointOf(int64(f.p0)), false)
+	}
+}
 func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	type Pts [2]image.Point
 	var (

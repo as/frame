@@ -389,7 +389,10 @@ func (w *Win) SetOrigin(org int64, exact bool) {
 	w.setOrigin(clamp(org, 0, w.Nr))
 }
 func (w *Win) setOrigin(org int64) {
-	fl := w.Nr
+	if org == w.Org{
+		return
+	}
+	fl := w.Frame.Len()
 	switch text.Region5(org, org+fl, w.Org, w.Org+fl) {
 	case -1:
 		w.Frame.Insert(w.Bytes()[org:org+(w.Org-org)], 0)
