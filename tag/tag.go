@@ -4,24 +4,34 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"image"
-	"os"
-	"path/filepath"
-	"strings"
-
+	"image/color"
+	"github.com/as/edit"
+	"github.com/as/event"
 	"github.com/as/frame"
 	"github.com/as/frame/font"
 	"github.com/as/frame/win"
-	//"github.com/as/text/win"
+	"github.com/as/text"
+	"github.com/as/text/action"
+	"github.com/as/text/find"
+	"github.com/as/text/kbd"
+	mus "github.com/as/text/mouse"
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/mobile/event/key"
 	"golang.org/x/mobile/event/mouse"
-	"golang.org/x/mobile/event/paint"
+	"image"
+	"log"
+	"os"
+	"strings"
 )
 
 var db = win.Db
 var un = win.Un
 var trace = win.Trace
+
+func p(e mouse.Event) image.Point {
+	return image.Pt(int(e.X), int(e.Y))
+
+}
 
 type doter interface {
 	Dot() (int64, int64)
@@ -40,16 +50,18 @@ var (
 )
 
 type Tag struct {
-	sp        image.Point
-	Wtag      *Invertable
-	W         *Invertable
+	sp image.Point
+	*win.Win
+	Body      *win.Win
 	Scrolling bool
 	scrolldy  int
 	dirty     bool
+	r0, r1 int64
+	red, green frame.Color 
 }
 
 func (t *Tag) Dirty() bool {
-	return t.dirty || t.Wtag.Dirty() || (t.W != nil && t.W.Dirty())
+	return t.dirty || t.Win.Dirty() || (t.Body != nil && t.Body.Dirty())
 }
 
 func (t *Tag) Mark() {
@@ -57,96 +69,97 @@ func (t *Tag) Mark() {
 }
 
 func (t *Tag) Loc() image.Rectangle {
-	r := t.Wtag.Loc()
-	if t.W != nil {
-		r.Max.Y += t.W.Loc().Dy()
+	r := t.Win.Loc()
+	if t.Body != nil {
+		r.Max.Y += t.Body.Loc().Dy()
 	}
 	return r
+}
+
+// TagSize returns the size of a tag given the font
+func TagSize(ft *font.Font) int {
+	return ft.Dy() + ft.Dy()/2
+}
+
+// TagPad returns the padding for the tag given the window's padding
+// always returns an x-aligned point
+func TagPad(wpad image.Point) image.Point {
+	return image.Pt(wpad.X, 3)
 }
 
 // Put
 func NewTag(src screen.Screen, wind screen.Window, ft *font.Font, sp, size, pad image.Point, cols frame.Color) *Tag {
 
 	// Make the main tag
-	tagY := ft.Dy() * 2
-	cols.Back = Cyan
+	tagY := TagSize(ft)
 
 	// Make tag
-	wtag := &Invertable{
-		win.New(src, ft, wind,
-			sp,
-			image.Pt(size.X, tagY),
-			pad, cols,
-		), nil, nil, 0,
-	}
+	wtag := win.New(src, ft, wind,
+		sp,
+		image.Pt(size.X, tagY),
+		TagPad(pad), cols,
+	)
 
 	sp = sp.Add(image.Pt(0, tagY))
 	size = size.Sub(image.Pt(0, tagY))
 	if size.Y < tagY {
-		return &Tag{sp: sp, Wtag: wtag, W: nil}
+		return &Tag{sp: sp, Win: wtag, Body: nil}
 	}
 	// Make window
 	cols.Back = Yellow
-	w := &Invertable{
-		win.New(src, ft, wind,
-			sp,
-			size,
-			pad, cols,
-		), nil, nil, 0,
-	}
-	return &Tag{sp: sp, Wtag: wtag, W: w}
+	w := win.New(src, ft, wind,
+		sp,
+		size,
+		pad, frame.A,
+	)
+	acol := frame.A
+	Green := image.NewUniform(color.RGBA{0x99, 0xDD, 0x99, 192})
+	acol.Hi.Back = Green
+	green := acol
+
+	Red := image.NewUniform(color.RGBA{0xDD, 0x99, 0x99, 192})
+	acol.Hi.Back = Red
+	red := acol
+
+	return &Tag{sp: sp, Win: wtag, Body: w, red:red, green:green}
 }
 
 func (t *Tag) Move(pt image.Point) {
-	t.Wtag.Move(pt)
-	if t.W == nil {
+	t.Win.Move(pt)
+	if t.Body == nil {
 		return
 	}
-	pt.Y += t.Wtag.Loc().Dy()
-	t.W.Move(pt)
+	pt.Y += t.Win.Loc().Dy()
+	t.Body.Move(pt)
 }
 
 func (t *Tag) Resize(pt image.Point) {
-	dy := t.Wtag.Font.Dy() * 2
-	if t.W != nil && dy < t.W.Font.Dy() {
-		dy = t.W.Font.Dy() * 2
-	}
+	dy := TagSize(t.Win.Font)
 	if pt.X < dy || pt.Y < dy {
 		println("ignore daft size request:", pt.String())
 		return
 	}
-	t.Wtag.Resize(image.Pt(pt.X, dy))
+	t.Win.Resize(image.Pt(pt.X, dy))
 	pt.Y -= dy
-	if t.W != nil {
-		t.W.Resize(pt)
+	if t.Body != nil {
+		t.Body.Resize(pt)
 	}
 }
 
-func (t *Tag) split(path string) (name string, addr string) {
-	name = path
-	x := strings.Index(name, ":")
-	if x == -1 {
-		return name, ""
+func mustCompile(prog string) *edit.Command {
+	p, err := edit.Compile(prog)
+	if err != nil {
+		log.Printf("tag.go:/mustCompile/: failed to compile %q\n", prog)
+		return nil
 	}
-	if x == 0 {
-		if len(name) == 1 {
-			return ":", "" // This is invalid
-		}
-		return "", name[1:]
-	}
-	if x == 1 && strings.IndexAny(name, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") == 0 {
-		if isdir(name[:2]) {
-			n, a := t.split(name[2:])
-			return name[:2] + n, a
-		}
-	}
-	return name[:x], name[x+1:]
+	return p
 }
 
-func (t *Tag) Open(name string) {
-	name, addr := t.split(name)
-	w := t.W
-	wtag := t.Wtag
+func (t *Tag) Get(name string) {
+	name, addr := action.SplitPath(name)
+	w := t.Body
+	wtag := t.Win
+	wtag.Delete(0, wtag.Len())
 	wtag.InsertString(name+"\tPut Del [Edit , ]", 0)
 	wtag.Refresh()
 	if w == nil {
@@ -154,185 +167,10 @@ func (t *Tag) Open(name string) {
 	}
 	s := readfile(name)
 	fmt.Printf("files size is %d\n", len(s))
-	w.Insert(s, w.Q1)
+	w.Insert(s, 0)
 	if addr != "" {
-		w.Send(cmdparse("#0"))
-		w.Send(cmdparse(addr))
-	}
-}
-func (t *Tag) Kbdin(act *Invertable, e key.Event) {
-	if e.Direction == key.DirRelease {
-		return
-	}
-	if e.Rune == '\r' {
-		e.Rune = '\n'
-	}
-	q0, q1 := act.Dot()
-	switch e.Code {
-	case key.CodeEqualSign, key.CodeHyphenMinus:
-		if e.Direction == key.DirRelease {
-			return
-		}
-		fsize := act.Font.Size()
-		if e.Modifiers == key.ModControl {
-			if key.CodeHyphenMinus == e.Code {
-				fsize -= 2
-			} else {
-				fsize += 2
-			}
-			act.SetFont(font.NewGoMono(fsize))
-			t.Mark()
-			// act.SendFirst(paint.Event{})
-			return
-		}
-	case key.CodeUpArrow, key.CodePageUp, key.CodeDownArrow, key.CodePageDown:
-		org := act.Org
-		n := act.MaxLine() / 7
-		if e.Code == key.CodePageUp || e.Code == key.CodePageDown {
-			n *= 10
-		}
-		if e.Code == key.CodeUpArrow || e.Code == key.CodePageUp {
-			org = act.BackNL(org, n)
-		}
-		if e.Code == key.CodeDownArrow || e.Code == key.CodePageDown {
-			r := act.Bounds()
-			org += act.IndexOf(image.Pt(r.Min.X, r.Min.Y+n*act.Frame.Dy()))
-		}
-		act.SetOrigin(org, true)
-		t.Mark()
-		return
-	case key.CodeLeftArrow, key.CodeRightArrow:
-		if e.Code == key.CodeLeftArrow {
-			if e.Modifiers&key.ModShift == 0 {
-				q1--
-			}
-			q0--
-		} else {
-			if e.Modifiers&key.ModShift == 0 {
-				q0++
-			}
-			q1++
-		}
-		act.Select(q0, q1)
-		t.Mark()
-		return
-	}
-	switch e.Rune {
-	case -1:
-		return
-	case '\x01', '\x05', '\x08', '\x15', '\x17':
-		if q0 == 0 && q1 == 0 {
-			return
-		}
-		if q0 == q1 && q0 != 0 {
-			q0--
-		}
-		switch e.Rune {
-		case '\x15', '\x01': // ^U, ^A
-			p := act.Bytes()
-			if q0 < int64(len(p))-1 {
-				q0++
-			}
-			n0, n1 := findlinerev(act.Bytes(), q0, 0)
-			if e.Rune == '\x15' {
-				act.Delete(n0, n1)
-			}
-			act.Select(n0, n0)
-		case '\x05': // ^E
-			_, n1 := findline3(act.Bytes(), q1, 1)
-			if n1 > 0 {
-				n1--
-			}
-			act.Select(n1, n1)
-		case '\x17':
-			if isany(act.Bytes()[q0], AlphaNum) {
-				q0 = acceptback(act.Bytes(), q0, AlphaNum)
-			}
-			act.Delete(q0, q1)
-			act.Select(q0, q0)
-		case '\x08':
-			fallthrough
-		default:
-			act.Delete(q0, q1)
-		}
-		t.Mark()
-		return
-	}
-
-	ch := []byte(string(e.Rune))
-	if q1 != q0 {
-		act.Delete(q0, q1)
-		if region(act.Org, act.Org+act.Nchars, q0) == 0 || region(act.Org, act.Org+act.Nchars, q1) == 0 {
-			t.Mark()
-		}
-		q1 = q0
-	}
-	q1 += act.Insert(ch, q0)
-
-	if region(act.Org, act.Org+act.Nchars, q0) == 0 || region(act.Org, act.Org+act.Nchars, q1) == 0 {
-		t.Mark()
-	}
-	q0 = q1
-	act.Select(q0, q1)
-	if region(act.Org, act.Org+act.Nchars, q0) == 0 || region(act.Org, act.Org+act.Nchars, q1) == 0 {
-		t.Mark()
-	}
-}
-
-func (t *Tag) MouseIn(act *Invertable, e mouse.Event) {
-	//	defer un(trace(db, "Tag.Mousein"))
-	//	      func(){db.Trace(whatsdot(t.W))}()
-	//	defer func(){db.Trace(whatsdot(t.W))}()
-
-	pt := Pt(e)
-	if e.Direction == mouse.DirRelease {
-		t.Scrolling = false
-	}
-
-	if (e.Button != 0 && pt.In(act.Scrollr.Sub(act.Sp))) || t.Scrolling {
-		//fmt.Printf("mouse.Event: %s\n", e)
-		if e.Direction == mouse.DirRelease {
-			return
-		}
-		if t.Scrolling {
-			act.Clicksb(pt, 0)
-			t.Mark()
-		} else {
-			if e.Button == 2 {
-				t.Scrolling = true
-			}
-			act.Clicksb(pt, int(e.Button)-2)
-			t.Mark()
-		}
-
-		return
-	}
-	switch e.Direction {
-	case mouse.DirPress:
-		lastclickpt = Pt(e)
-		t.press(act, e)
-		t.Mark()
-	case mouse.DirRelease:
-		lastclickpt = image.Pt(-5, -5)
-		t.release(act, e)
-		t.Mark()
-	case mouse.DirNone:
-		if !noselect && down(1) && ones(Buttonsdown) == 1 {
-			r := image.Rect(0, 0, 5, 5).Add(lastclickpt)
-			pt := Pt(e)
-			if pt.In(r) {
-				return
-			}
-			// Double click happened so select function
-			// never fired.
-			act.Sweeping = true
-			act.Sweep(lastclickpt, act, act.Upload)
-			act.Sweeping = false
-			P0, P1 := act.Frame.Dot()
-			act.Select(act.Org+P0, act.Org+P1)
-			act.Selectq = act.Org + P0
-			act.Refresh()
-		}
+		w.Send(mustCompile("#0"))
+		w.Send(mustCompile(addr))
 	}
 }
 
@@ -340,6 +178,180 @@ type GetEvent struct {
 	Path  string
 	Addr  string
 	IsDir bool
+}
+
+func (t *Tag) FileName() string {
+	if t == nil || t.Win == nil {
+		return ""
+	}
+	name, err := bufio.NewReader(bytes.NewReader(t.Win.Bytes())).ReadString('\t')
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(name)
+}
+
+func (t *Tag) Put() (err error) {
+	name := t.FileName()
+	if name == "" {
+		return fmt.Errorf("no file")
+	}
+	writefile(name, t.Body.Bytes())
+	return nil
+}
+func (t *Tag) Mouse(act text.Editor, e interface{}) {
+	win := act.(*win.Win)
+	if act := win; true {
+		org := act.Origin()
+		switch e := e.(type) {
+		case mus.SnarfEvent:
+			snarf(act)
+		case mus.InsertEvent:
+			paste(act)
+		case mus.MarkEvent:
+			if e.Button != 1{
+				t.r0, t.r1 = act.Dot()
+			}
+			q0 := org + act.IndexOf(p(e.Event))
+			act.Sq = q0
+			act.Select(q0, q0)
+		case mus.SweepEvent:
+			q0, q1 := act.Dot()
+			//r0 := org+act.IndexOf(p(e.Event)) 
+			sweeper := text.Sweeper(act)
+			if act == t.Win{
+				sweeper = mus.NewNopScroller(act)
+			}
+		act.Sq, q0, q1 = mus.Sweep(sweeper, e, 15, act.Sq, q0, q1, act)	
+			if e.Button == 1{
+				act.Select(q0, q1)
+			} else {
+				
+				act.Select(q0, q1)
+			}
+		case mus.SelectEvent:
+			q0, q1 := act.Dot()
+			if e.Button == 1 {
+				act.Select(q0, q1)
+				break
+			}
+			if e.Button == 2 || e.Button == 3 {
+				q0, q1 := act.Dot()
+				if q0 == q1 && text.Region3(q0, t.r0-1, t.r1) == 0{
+					// just use the existing selection and look
+					q0,q1 = t.r0, t.r1
+					act.Select(q0,q1) 
+				}
+				if q0 == q1{
+					q0, q1 = find.ExpandFile(act.Bytes(), q0)
+				}
+
+				from := text.Editor(act)
+				if from == t.Win{
+					from = t
+				}
+				if e.Button == 3 {
+					act.Select(q0,q1) 
+					act.SendFirst(event.Look{
+						Rec: event.Rec{
+							Q0: q0,
+							Q1: q1,
+							P:  act.Bytes()[q0:q1],
+						},
+						From: from,
+						To:   []event.Editor{t.Body},
+						FromFile: t.FileName(),
+					})
+				} else {
+					act.SendFirst(event.Cmd{
+						Rec: event.Rec{
+							Q0: q0, Q1: q1,
+							P: act.Bytes()[q0:q1],
+						},
+						From: from,
+						To:   []event.Editor{t.Body},
+						FromFile: t.FileName(),
+					})
+				}
+			}
+		case mus.ClickEvent:
+			q0 := org + act.IndexOf(p(e.Event))
+			q1 := q0
+			if e.Double {
+				q0, q1 = find.FreeExpand(act, q0)
+			}
+			act.Select(q0, q1)
+		}
+	}
+}
+
+// Put
+func (t *Tag) Handle(act text.Editor, e interface{}) {
+	switch e := e.(type) {
+	case mus.MarkEvent, mus.SweepEvent, mus.SelectEvent, mus.ClickEvent, mus.SnarfEvent, mus.InsertEvent:
+		t.Mouse(act, e)
+	case string:
+		if e == "Redo" {
+			//			act.Redo()
+		} else if e == "Undo" {
+			//			act.Undo()
+		} else if e == "Put" {
+			t.Put()
+		} else if e == "Get" {
+			println(t.FileName())
+			t.Get(t.FileName())
+		}
+		t.Mark()
+	case *edit.Command:
+		fmt.Printf("command %#v\n", e)
+		if e == nil {
+			break
+		}
+		fn := e.Func()
+		if fn != nil {
+			fn(t.Body) // Always execute on body for now
+		}
+		t.Mark()
+	case key.Event:
+		if e.Direction == 2{
+			break
+		}
+		ntab := int64(-1)
+		if e.Rune == '\n' || e.Rune == '\r' && act == t.Body{
+			q0, q1 := act.Dot()
+			if q0 == q1 {
+				p := act.Bytes()
+				l0, _ := find.Findlinerev(p, q0, 0)
+				ntab = find.Accept(p, l0,  []byte{'\t'})
+				ntab -= l0+1
+			}
+		}
+		kbd.SendClient(act, e)
+		e.Rune = '\t'
+		for ntab >= 0{
+			kbd.SendClient(act, e)
+			ntab--
+		}
+	}
+	t.dirty = true
+}
+
+func (t *Tag) Upload(wind screen.Window) {
+	if t.Body != nil && t.Body.Dirty() {
+		t.Body.Upload()
+	}
+	if t.Win.Dirty() {
+		t.Win.Upload()
+	}
+}
+
+func (t *Tag) Refresh() {
+	if t.Body != nil {
+		t.Body.Refresh()
+	}
+	if t.Win.Dirty() {
+		t.Win.Refresh()
+	}
 }
 
 func isdir(path string) bool {
@@ -356,120 +368,4 @@ func isdir(path string) bool {
 func isfile(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
-}
-
-func (t *Tag) Look(w *win.Win, q0, q1 int64) bool {
-	if q0 == q1 {
-		q1 = accept(w.Bytes(), q1, []byte(string(AlphaNum)+`\/.:`))
-		q0 = acceptback(w.Bytes(), q0, []byte(string(AlphaNum)+`\/.:`))
-	}
-	name, addr := t.split(string(w.Bytes()[q0:q1]))
-	fmt.Printf("name=%s addr=%s\n", name, addr)
-	if name == "" && addr != "" {
-		w.SendFirst(cmdparse(addr))
-		return true
-	}
-	name = filepath.Clean(name)
-	if !filepath.IsAbs(name) {
-		pref := filepath.Clean(t.FileName())
-		if !isdir(pref) {
-			pref = filepath.Dir(pref)
-		}
-		name = filepath.Clean(filepath.Join(pref, name))
-	}
-	if isdir(name) {
-		if addr != "" {
-			// A directory with an address doesn't make sense
-			// user probably refers to a file on another system
-			// with the same name as the dir, so look should fail
-			return false
-		}
-		w.SendFirst(GetEvent{Path: name, IsDir: true})
-		return true
-	} else if isfile(name) {
-		w.SendFirst(GetEvent{Path: name, Addr: addr})
-		return true
-	}
-	return false
-}
-
-func (t *Tag) FileName() string {
-	if t.Wtag == nil {
-		return ""
-	}
-	name, err := bufio.NewReader(bytes.NewReader(t.Wtag.Bytes())).ReadString('\t')
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(name)
-}
-
-func (t *Tag) Get() (err error) {
-	name := t.FileName()
-	if name == "" {
-		return fmt.Errorf("no file")
-	}
-	t.W.Delete(0, t.W.Nr)
-	t.W.Insert(readfile(name), 0)
-	return nil
-}
-
-func (t *Tag) Put() (err error) {
-	name := t.FileName()
-	if name == "" {
-		return fmt.Errorf("no file")
-	}
-	writefile(name, t.W.Bytes())
-	return nil
-}
-
-// Put
-func (t *Tag) Handle(act *Invertable, e interface{}) {
-	switch e := e.(type) {
-	case string:
-		if e == "Redo" {
-			act.Redo()
-		} else if e == "Undo" {
-			act.Undo()
-		} else if e == "Put" {
-			t.Put()
-		} else if e == "Get" {
-			t.Get()
-		}
-		t.Mark()
-	case *Command:
-		fmt.Printf("command %#v\n", e)
-		if e == nil {
-			break
-		}
-		if e.fn != nil {
-			e.fn(t.W) // Always execute on body for now
-		}
-		t.Mark()
-	case ScrollEvent:
-		e.wind.FrameScroll(e.dy)
-		e.flushwith(paint.Event{})
-	case mouse.Event:
-		if e.Button.IsWheel() {
-			scroll(act, e)
-		} else {
-			t.MouseIn(act, e)
-		}
-	case key.Event:
-		t.Kbdin(act, e)
-	}
-	if t.Dirty() {
-		act.Send(paint.Event{})
-	}
-}
-
-func (t *Tag) Upload(wind screen.Window) {
-	if t.W != nil {
-		wind.Upload(t.W.Sp, t.W.Buffer(), t.W.Buffer().Bounds())
-		t.W.Flush()
-		t.W.SetDirty(false)
-	}
-	wind.Upload(t.Wtag.Sp, t.Wtag.Buffer(), t.Wtag.Buffer().Bounds())
-	t.Wtag.SetDirty(false)
-	t.dirty = false
 }

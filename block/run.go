@@ -24,7 +24,7 @@ type local struct {
 func NewRun() *Run {
 	return &Run{
 		Block: []Block{
-			Block{
+			{
 				Ptr: make([]byte, Size),
 			},
 		},

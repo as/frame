@@ -42,7 +42,7 @@ func writefile(s string, p []byte) {
 	}
 	n, err := io.Copy(fd, bytes.NewReader(p))
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 	println("wrote", n, "bytes")
 }

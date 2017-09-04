@@ -1,7 +1,6 @@
 package frame
 
 import (
-	"fmt"
 	"image"
 )
 
@@ -89,7 +88,8 @@ func (f *Frame) Delete(p0, p1 int64) int {
 	if pt1.Y != pt0.Y {
 		pt2 := f.ptOfCharPtBox(32768, pt1, n1)
 		if pt2.Y > f.r.Max.Y {
-			panic(fmt.Sprintf("delete: PtOfCharPtBox %s > %s", pt2, f.r.Max))
+			pt2.Y = f.r.Max.Y - h
+			//panic(fmt.Sprintf("delete: PtOfCharPtBox %s > %s", pt2, f.r.Max))
 		}
 		if n1 < f.Nbox {
 			q0 := pt0.Y + h

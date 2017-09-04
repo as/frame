@@ -13,12 +13,6 @@ import (
 	"image/draw"
 )
 
-const (
-	TickWidth = 3
-	tickOff   = 0
-	tickOn    = 1
-)
-
 func (f *Frame) RGBA() *image.RGBA {
 	return f.b
 }
@@ -50,13 +44,9 @@ type Frame struct {
 	op        draw.Op
 
 	drawcache.Drawer
-
-	//	npts int
-	pts [][2]image.Point
-
-	Scroll func(int)
-	ir     *box.Run
-
+	pts     [][2]image.Point
+	Scroll  func(int)
+	ir      *box.Run
 	hexFont *font.Font
 	hex     []draw.Image
 }
@@ -90,6 +80,11 @@ func (f *Frame) SetDirty(dirty bool) {
 	f.modified = dirty
 }
 
+func (f *Frame) SetOp(op draw.Op) {
+	f.op = op
+
+}
+
 // Reset resets the frame to display on image b with bounds r and font ft.
 func (f *Frame) Reset(r image.Rectangle, b *image.RGBA, ft *font.Font) {
 	f.r = r
@@ -116,10 +111,6 @@ func (f *Frame) Dy() int {
 // Bounds returns the frame's clipping rectangle
 func (f *Frame) Bounds() image.Rectangle {
 	return f.r.Bounds()
-}
-
-func (f *Frame) SetTick(style int) {
-	f.tickoff = style == tickOff
 }
 
 // Full returns true if the last line in the frame is full
@@ -151,20 +142,6 @@ func (f *Frame) Dot() (p0, p1 int64) {
 func (f *Frame) Select(p0, p1 int64) {
 	f.modified = true
 	f.p0, f.p1 = p0, p1
-}
-
-func (f *Frame) inittick() {
-	h := f.Font.Dy() + (f.Font.Dy() / 5)
-	r := image.Rect(0, 0, TickWidth, h)
-	f.tickscale = 1 // TODO implement scalesize
-	f.tick = image.NewRGBA(r)
-	f.tickback = image.NewRGBA(r)
-	drawtick := func(x0, y0, x1, y1 int) {
-		draw.Draw(f.tick, image.Rect(x0, y0, x1, y1), f.Color.Text, image.ZP, draw.Src)
-	}
-	drawtick(TickWidth/2, 0, TickWidth/2+1, h)
-	drawtick(0, 0, TickWidth, h/5)
-	drawtick(0, h-h/5, TickWidth, h)
 }
 
 func (f *Frame) setrects(r image.Rectangle, b *image.RGBA) {
