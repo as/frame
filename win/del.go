@@ -17,28 +17,23 @@ func (w *Win) Delete(q0, q1 int64) (n int) {
 	case -2:
 		// Logically adjust origin to the left (up)
 		w.org -= q1 - q0
-		println(-2)
 	case -1:
 		// Remove the visible text and adjust left
 		w.Frame.Delete(0, q1-w.org)
 		w.org = q0
 		w.Fill()
 		w.dirty = true
-		println(-1)
 	case 0:
 		//q0 = clamp(q0, w.org, w.Frame.Len())
 		//q1 = clamp(q1, w.org, w.Frame.Len())
 		w.Frame.Delete(q0-w.org, q1-w.org)
 		w.Fill()
 		w.dirty = true
-		println(0)
 	case 1:
 		w.Frame.Delete(q0-w.org, w.Frame.Len())
 		w.Fill()
 		w.dirty = true
-		println(1)
 	case 2:
-		println(2)
 	}
 	return int(q1 - q0 + 1)
 }

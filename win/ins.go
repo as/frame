@@ -1,6 +1,5 @@
 package win
 
-import "log"
 import "github.com/as/text"
 
 // Insert inserts the bytes in p at position q0. When q0
@@ -25,7 +24,6 @@ func (w *Win) Insert(p []byte, q0 int64) (n int) {
 		println(-2)
 		w.dirty = true
 	case 1:
-		log.Printf("insert len(p)=%d q0=%d worg=%d\n", len(p), q0, w.org)
 		w.Frame.Insert(p, q0-w.org)
 		w.dirty = true
 	case 0:
