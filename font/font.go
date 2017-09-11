@@ -11,6 +11,7 @@ import (
 	"golang.org/x/image/font/gofont/gomono"
 	"golang.org/x/image/font/gofont/goregular"
 	"golang.org/x/image/math/fixed"
+	 "golang.org/x/image/font/basicfont"
 )
 
 type Font struct {
@@ -34,6 +35,29 @@ func NewGoRegular(size int) *Font {
 
 func NewGoMono(size int) *Font {
 	return NewTTF(gomono.TTF, size)
+}
+
+// NewBasic always returns a 7x13 basic font
+func NewBasic(size int) *Font{
+	f := basicfont.Face7x13
+	size = 13
+	ft := &Font{
+		Face: f,
+		size:    size,
+		ascent:  2,
+		descent: 1,
+		stride:  0,
+	}
+	ft.dy = ft.ascent + ft.descent + ft.size
+	hexFt := makefont(gomono.TTF, ft.Dy()/4+3)
+	ft.hexDx = ft.genChar('_').Bounds().Dx()
+	for i := 0; i != 256; i++ {
+		ft.cache[i] = ft.genChar(byte(i))
+		if ft.cache[i] == nil {
+			ft.cache[i] = hexFt.genHexChar(ft.Dy(), byte(i))
+		}
+	}
+	return ft	
 }
 
 func NewTTF(data []byte, size int) *Font {
