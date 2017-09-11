@@ -39,7 +39,7 @@ func (w *Win) setOrigin(org int64) {
 		w.Frame.Delete(0, org-w.org)
 		w.org = org
 		w.Fill()
-		w.fixEnd()
+		//w.fixEnd()
 
 	case 0:
 		panic("never happens")
