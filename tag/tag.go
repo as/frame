@@ -166,21 +166,29 @@ func mustCompile(prog string) *edit.Command {
 }
 
 func (t *Tag) Get(name string) {
-	name, addr := action.SplitPath(name)
 	w := t.Body
-	wtag := t.Win
-	wtag.Delete(0, wtag.Len())
-	wtag.InsertString(name+"\tPut Del [Edit , ]", 0)
-	wtag.Refresh()
-	if w == nil {
+	if w == nil{
+		w.SendFirst(fmt.Errorf("tag: no body to get %q\n", name))
 		return
 	}
+	name, addr := action.SplitPath(name)
+	wtag := t.Win
+	p := wtag.Bytes()
+	maint := find.Find(p, 0, []byte{'|'})
+	if maint == -1 {
+		maint = int64(len(p))
+	}
+	wtag.Delete(0, maint+1)
+	wtag.InsertString(name+"\tPut Del |", 0)
+	wtag.Refresh()
 	s := readfile(name)
 	fmt.Printf("files size is %d\n", len(s))
+	w.Delete(0, w.Len())
 	w.Insert(s, 0)
+	w.Select(0,0)
 	if addr != "" {
-		w.Send(mustCompile("#0"))
-		w.Send(mustCompile(addr))
+		w.SendFirst(mustCompile("#0"))
+		w.SendFirst(mustCompile(addr))
 	}
 }
 
@@ -361,7 +369,7 @@ func (t *Tag) Handle(act text.Editor, e interface{}) {
 			break
 		}
 		ntab := int64(-1)
-		if e.Rune == '\n' || e.Rune == '\r' && act == t.Body {
+		if (e.Rune == '\n' || e.Rune == '\r') && act == t.Body {
 			q0, q1 := act.Dot()
 			if q0 == q1 {
 				p := act.Bytes()
@@ -371,8 +379,8 @@ func (t *Tag) Handle(act text.Editor, e interface{}) {
 			}
 		}
 		kbd.SendClient(act, e)
-		e.Rune = '\t'
 		for ntab >= 0 {
+			e.Rune = '\t'
 			kbd.SendClient(act, e)
 			ntab--
 		}
