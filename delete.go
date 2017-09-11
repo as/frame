@@ -100,6 +100,7 @@ func (f *Frame) Delete(p0, p1 int64) int {
 			}
 			f.Draw(f.b, image.Rect(pt0.X, pt0.Y, pt0.X+(f.r.Max.X-pt1.X), q0), f.b, pt1, f.op)
 			f.Draw(f.b, image.Rect(f.r.Min.X, q0, f.r.Max.X, q0+(q2-q1)), f.b, image.Pt(f.r.Min.X, q1), f.op)
+			f.Paint(image.Pt(pt2.X, pt2.Y-(pt1.Y-pt0.Y)), pt2, f.Color.Back)
 		} else {
 			f.Paint(pt0, pt2, f.Color.Back)
 		}
