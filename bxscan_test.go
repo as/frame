@@ -2,6 +2,6 @@ package frame
 
 import "testing"
 
-func BenchmarkScanASCII(t *testing.T) {
+func BenchmarkScanASCII(b *testing.B) {
 
 }
