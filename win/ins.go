@@ -1,6 +1,10 @@
 package win
 
-import "github.com/as/text"
+import (
+	"log"
+
+	"github.com/as/text"
+)
 
 // Insert inserts the bytes in p at position q0. When q0
 // is zero, Insert prepends the bytes in p to the underlying
@@ -28,7 +32,9 @@ func (w *Win) Insert(p []byte, q0 int64) (n int) {
 		w.dirty = true
 	case 0:
 		if q0 < w.org {
-			w.Frame.Insert(p[q0-w.org:], 0)
+			p0 := w.org-q0
+			log.Printf("p0 is %d\n", p0)
+			w.Frame.Insert(p[p0:], 0)
 			w.org += w.org - q0
 		} else {
 			w.Frame.Insert(p, q0-w.org)
