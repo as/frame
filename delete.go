@@ -2,6 +2,7 @@ package frame
 
 import (
 	"image"
+	_ "github.com/as/etch"
 )
 
 // Put
