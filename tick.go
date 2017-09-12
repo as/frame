@@ -51,7 +51,7 @@ func (f *Frame) tickat(pt image.Point, ticked bool) {
 	} //
 	adj := image.Pt(1, 1)
 	if ticked {
-		f.Draw(f.tickback, f.tickback.Bounds(), f.b, pt.Sub(adj), draw.Src)
+		draw.Draw(f.tickback, f.tickback.Bounds(), f.b, pt.Sub(adj), draw.Src)
 		f.Draw(f.b, r.Sub(adj), f.tick, image.ZP, draw.Over)
 	} else {
 		f.Draw(f.b, r, f.tickback, image.ZP.Sub(adj), draw.Src)
