@@ -24,9 +24,9 @@ func (w *Win) Delete(q0, q1 int64) (n int) {
 		w.Fill()
 		w.dirty = true
 	case 0:
-		//q0 = clamp(q0, w.org, w.Frame.Len())
-		//q1 = clamp(q1, w.org, w.Frame.Len())
-		w.Frame.Delete(q0-w.org, q1-w.org)
+		p0 := clamp(q0-w.org, 0, w.Frame.Len())
+		p1 := clamp(q1-w.org, 0, w.Frame.Len())
+		w.Frame.Delete(p0,p1 )
 		w.Fill()
 		w.dirty = true
 	case 1:
@@ -37,3 +37,50 @@ func (w *Win) Delete(q0, q1 int64) (n int) {
 	}
 	return int(q1 - q0 + 1)
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
