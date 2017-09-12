@@ -33,8 +33,10 @@ import (
 	"github.com/as/frame"
 	"github.com/as/frame/font"
 	"github.com/as/frame/tag"
+	"github.com/as/frame/win"
 	window "github.com/as/ms/win"
 	"github.com/as/text"
+	
 )
 
 var xx Cursor
@@ -42,7 +44,7 @@ var eprint = fmt.Println
 
 // Put
 var (
-	winSize = image.Pt(1900, 1000)
+	winSize = image.Pt(1024, 768)
 	pad     = image.Pt(15, 15)
 	fsize   = 11
 )
@@ -114,7 +116,14 @@ func main() {
 	}
 	list := argparse()
 	driver.Main(func(src screen.Screen) {
-		wind, _ := src.NewWindow(&screen.NewWindowOptions{winSize.X, winSize.Y, "A"})
+		wind, _ := src.NewWindow(
+			&screen.NewWindowOptions{
+				Width: winSize.X, Height: winSize.Y, Title: "A",
+			},
+		)
+
+		//
+		// Linux will segfault here if X is not present
 		wind.Send(paint.Event{})
 		ft := font.NewGoMono(fsize)
 
@@ -231,12 +240,15 @@ func main() {
 			if text.Region5(q0, q1, sc.Origin(), sc.Origin()+nchars) != 0 {
 				sc.SetOrigin(q0, true)
 				sc.Scroll(-3)
-				ck()
 			}
 			if cursor {
 				jmp := proj.PointOf(q0 - sc.Origin())
 				moveMouse(sc.(text.Plane).Bounds().Min.Add(jmp))
 			}
+			ck()
+		}
+		ismeta := func(ed Plane) bool{
+			return ed == g.List[0].(*tag.Tag).Body
 		}
 		alook := func(e event.Look) {
 			// First we find out if its coming from a tag or
@@ -256,6 +268,21 @@ func main() {
 			}
 
 			t2 := g.FindName(name)
+			if len(e.To) > 0{
+					ed := e.To[0].(*win.Win)
+					if ismeta(ed){ 
+						for _, c := range g.List[1:] {
+							c := c.(*Col)
+							for _, w := range c.List[1:] {
+								w := w.(*tag.Tag)
+								q0, q1 := find.FindNext(w.Body, e.P)
+								w.Body.Select(q0, q1)
+								ajump(w.Body, false)
+							}
+						}
+						return
+					}
+			}
 			if name == "" && addr != "" {
 				// Just an address with no name:
 				// jump to it in the current file
@@ -348,7 +375,7 @@ func main() {
 						if tophit() {
 							detachcol()
 						} else {
-							detachwin() //markwin()
+							detachwin()
 						}
 						context = sizer
 					} else {
@@ -359,22 +386,9 @@ func main() {
 					context = scrollbar
 					act.Clicksb(p(e.Event), int(e.Button))
 				} else {
-					//TODO: start here
-					markwin = markwin
 					actTag.Handle(act, e)
 					context = window
 				}
-				ck()
-			case mus.ClickEvent:
-				println("ClickEvent")
-				switch context {
-				case scrollbar:
-					act.Clicksb(p(e.Event), 0)
-				case sizer:
-				case window:
-					actTag.Handle(act, e)
-				}
-				context = 0
 				ck()
 			case mus.ScrollEvent:
 				if e.Button == -1 {
@@ -388,11 +402,21 @@ func main() {
 					act.Clicksb(p(e.Event), 0)
 				case sizer:
 				case window:
+					// A very effective optimization eliminates several function
+					// calls completely if the cursor isn't moving and the use is still
+					// in the window's bounds. 
+					if !e.Motion() && act != nil{
+							r := act.Frame.Bounds()
+							if p(e.Event).In(r){
+								continue
+							}
+					}
 					actTag.Handle(act, e)
 				}
 				ck()
 			case mus.CommitEvent:
-				//context = 0
+				context = 0
+				ck()
 			case mus.SnarfEvent, mus.InsertEvent:
 				actTag.Handle(act, e)
 				ck()
@@ -432,14 +456,24 @@ func main() {
 				log.Printf("string: %q\n", s)
 				switch s {
 				case "Put", "Get":
+					if act == nil{
+						continue
+					}
 					actTag.Handle(act, s)
 					aerr(s)
+					ck()
 				case "New":
 					moveMouse(New(actCol, "").Loc().Min)
 				case "Newcol":
 					moveMouse(NewCol2(g, "").Loc().Min)
 				case "Del":
 					Del(actCol, actCol.ID(actTag))
+				case "Sort":
+					aerr("Sort: TODO")
+				case "Delcol":
+					aerr("Delcol: TODO")
+				case "Exit":
+					aerr("Exit: TODO")
 				default:
 					if len(e.To) == 0 {
 						aerr("cmd has no destination: %q", s)
@@ -450,7 +484,12 @@ func main() {
 							prog.Run(e.To[0])
 						}
 					} else {
-						cmd(e.To[0], s)
+						ed := e.To[0].(*win.Win)
+						if ismeta(ed){
+							ed = New(g.List[len(g.List)-1].(*Col), fmt.Sprintf("%s+Errors", s)).(*tag.Tag).Body
+							moveMouse(ed.Loc().Min)
+						}
+						cmd(ed, s)
 					}
 				}
 				ck()
@@ -459,6 +498,9 @@ func main() {
 				g.Resize(winSize)
 				ck()
 			case paint.Event:
+				if !focused {
+					g.Resize(winSize)
+				}
 				g.Upload(wind)
 				wind.Publish()
 			case lifecycle.Event:
@@ -468,6 +510,7 @@ func main() {
 				// NT doesn't repaint the window if another window covers it
 				if e.Crosses(lifecycle.StageFocused) == lifecycle.CrossOff {
 					focused = false
+					wind.SendFirst(paint.Event{})
 				} else if e.Crosses(lifecycle.StageFocused) == lifecycle.CrossOn {
 					focused = true
 				}
