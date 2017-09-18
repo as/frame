@@ -8,6 +8,11 @@ import (
 
 const minSbWidth = 10
 
+type ScrollBar struct {
+	bar     image.Rectangle
+	Scrollr image.Rectangle
+}
+
 func (w *Win) scrollinit(pad image.Point) {
 	w.Scrollr = image.ZR
 	if pad.X > minSbWidth+2 {
@@ -18,6 +23,25 @@ func (w *Win) scrollinit(pad image.Point) {
 	w.Frame.Draw(w.Frame.RGBA(), w.Scrollr, frame.ATag0.Back, image.ZP, draw.Src)
 }
 
+func (w *Win) Scroll(dl int) {
+	if dl == 0 {
+		return
+	}
+	org := w.org
+	if dl < 0 {
+		org = w.BackNL(org, -dl)
+		w.SetOrigin(org, true)
+	} else {
+		if org+w.Frame.Nchars == w.Len() {
+			return
+		}
+		r := w.Frame.Bounds()
+		org += w.IndexOf(image.Pt(r.Min.X, r.Min.Y+dl*w.Font.Dy()))
+		w.SetOrigin(org, true)
+	}
+	w.updatesb()
+	w.dirty = true
+}
 /*
  */
 func (w *Win) Clicksb(pt image.Point, dir int) {

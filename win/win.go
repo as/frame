@@ -57,11 +57,6 @@ func (n *Win) Bounds() image.Rectangle {
 	return image.Rectangle{n.Sp, n.Size()}
 }
 
-type ScrollBar struct {
-	bar     image.Rectangle
-	Scrollr image.Rectangle
-}
-
 func (w *Win) Origin() int64 {
 	return w.org
 }
@@ -84,25 +79,6 @@ func New(scr screen.Screen, ft *font.Font, events screen.Window, sp, size, pad i
 	return w
 }
 
-func (w *Win) Scroll(dl int) {
-	if dl == 0 {
-		return
-	}
-	org := w.org
-	if dl < 0 {
-		org = w.BackNL(org, -dl)
-		w.SetOrigin(org, true)
-	} else {
-		if org+w.Frame.Nchars == w.Len() {
-			return
-		}
-		r := w.Frame.Bounds()
-		org += w.IndexOf(image.Pt(r.Min.X, r.Min.Y+dl*w.Font.Dy()))
-		w.SetOrigin(org, true)
-	}
-	w.updatesb()
-	w.dirty = true
-}
 func (w *Win) Buffer() screen.Buffer {
 	return w.b
 }
