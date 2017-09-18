@@ -25,7 +25,6 @@ func (w *Win) Insert(p []byte, q0 int64) (n int) {
 		// Insertion to the left
 		w.Frame.Insert(p[q1-w.org:], 0)
 		w.org += w.org - q0
-		println(-2)
 		w.dirty = true
 	case 1:
 		w.Frame.Insert(p, q0-w.org)

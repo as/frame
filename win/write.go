@@ -1,17 +1,17 @@
 package win
 
-import "github.com/as/text"
+import (
+	"fmt"
+	"io"
 
-// Delete deletes the range [q0:q1] inclusive. If there
-// is nothing to delete, it returns 0.
-func (w *Win) Delete(q0, q1 int64) (n int) {
-	if w.Len() == 0 {
-		return 0
-	}
-	if q0 > q1 {
-		q0, q1 = q1, q0
-	}
-	w.Editor.Delete(q0, q1)
+	"github.com/as/text"
+)
+
+func (w *Win) WriteAt(p []byte, at int64) (n int, err error) {
+	fmt.Println(at)
+	fmt.Println(len(p))
+	n, err = w.Editor.(io.WriterAt).WriteAt(p, at)
+	q0, q1 := at, at+int64(len(p))
 
 	switch text.Region5(q0, q1, w.org-1, w.org+w.Frame.Len()+1) {
 	case -2:
@@ -35,5 +35,5 @@ func (w *Win) Delete(q0, q1 int64) (n int) {
 		w.dirty = true
 	case 2:
 	}
-	return int(q1 - q0)
+	return
 }

@@ -24,7 +24,7 @@ func (w *Win) Clicksb(pt image.Point, dir int) {
 	var (
 		rat float64
 	)
-//	pt.Y -= w.pad.Y
+	//	pt.Y -= w.pad.Y
 	fl := float64(w.Frame.Len())
 	n := w.org
 	barY0 := float64(w.bar.Min.Y)
