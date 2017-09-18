@@ -8,10 +8,10 @@ import (
 
 	"github.com/golang/freetype/truetype"
 	gofont "golang.org/x/image/font"
+	"golang.org/x/image/font/basicfont"
 	"golang.org/x/image/font/gofont/gomono"
 	"golang.org/x/image/font/gofont/goregular"
 	"golang.org/x/image/math/fixed"
-	 "golang.org/x/image/font/basicfont"
 )
 
 type Font struct {
@@ -38,11 +38,11 @@ func NewGoMono(size int) *Font {
 }
 
 // NewBasic always returns a 7x13 basic font
-func NewBasic(size int) *Font{
+func NewBasic(size int) *Font {
 	f := basicfont.Face7x13
 	size = 13
 	ft := &Font{
-		Face: f,
+		Face:    f,
 		size:    size,
 		ascent:  2,
 		descent: 1,
@@ -57,7 +57,7 @@ func NewBasic(size int) *Font{
 			ft.cache[i] = hexFt.genHexChar(ft.Dy(), byte(i))
 		}
 	}
-	return ft	
+	return ft
 }
 
 func NewTTF(data []byte, size int) *Font {
@@ -93,6 +93,17 @@ func makefont(data []byte, size int) *Font {
 	}
 	ft.dy = ft.ascent + ft.descent + ft.size
 	return ft
+}
+
+func (f *Font) NewSize(dy int) *Font{
+println(dy)
+	if dy == f.Dy(){
+		return f
+	}
+	if f.data == nil{
+		return NewBasic(dy)
+	}
+	return NewTTF(f.data, dy)
 }
 
 func (f *Font) SetAscent(px int) {
