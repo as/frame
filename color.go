@@ -9,7 +9,7 @@ var (
 	Yellow = image.NewUniform(color.RGBA{255, 255, 224, 255})
 	Green  = image.NewUniform(color.RGBA{0x99, 0xCC, 0x99, 255})
 	Red    = image.NewUniform(color.RGBA{0xCC, 0x99, 0x99, 255})
-	Gray   = image.NewUniform(color.RGBA{0x55, 0x55, 0x55, 255})
+	Gray   = image.NewUniform(color.RGBA{0x12, 0x12, 0x12, 255})
 	Mauve  = image.NewUniform(color.RGBA{0x99, 0x99, 0xDD, 255})
 
 	Ozone  = image.NewUniform(color.RGBA{216, 216, 232, 255})
