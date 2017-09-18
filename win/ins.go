@@ -31,7 +31,7 @@ func (w *Win) Insert(p []byte, q0 int64) (n int) {
 		w.dirty = true
 	case 0:
 		if q0 < w.org {
-			p0 := w.org-q0
+			p0 := w.org - q0
 			log.Printf("p0 is %d\n", p0)
 			w.Frame.Insert(p[p0:], 0)
 			w.org += w.org - q0
