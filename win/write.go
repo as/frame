@@ -1,7 +1,6 @@
 package win
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/as/text"

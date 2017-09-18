@@ -146,9 +146,9 @@ func (w *Win) SetFont(ft *font.Font) {
 	if ft.Size() < 4 {
 		return
 	}
-	r := image.Rectangle{w.pad, w.size}.Inset(1)
+	r := image.Rectangle{w.pad, w.size}
 	w.Frame = frame.New(r, ft, w.b.RGBA(), w.Frame.Color)
-	w.init()
+	w.Resize(w.size)
 }
 
 func (w *Win) NextEvent() (e interface{}) {
