@@ -8,8 +8,6 @@ import (
 )
 
 func (w *Win) WriteAt(p []byte, at int64) (n int, err error) {
-	fmt.Println(at)
-	fmt.Println(len(p))
 	n, err = w.Editor.(io.WriterAt).WriteAt(p, at)
 	q0, q1 := at, at+int64(len(p))
 
