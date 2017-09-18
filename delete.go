@@ -1,8 +1,8 @@
 package frame
 
 import (
-	"image"
 	_ "github.com/as/etch"
+	"image"
 )
 
 // Put
@@ -140,7 +140,7 @@ func (f *Frame) Delete(p0, p1 int64) int {
 		extra = 1
 	}
 	f.Nlines = (pt0.Y-f.r.Min.Y)/h + extra
-	return int(p1 - p0 + 1) //n - f.Nlines
+	return int(p1 - p0) //n - f.Nlines
 }
 
 func min(a, b int) int {

@@ -1,11 +1,11 @@
 package tag
 
 import (
+	"fmt"
 	"github.com/as/frame"
+	"github.com/as/text"
 	"io"
 	"io/ioutil"
-	"github.com/as/text"
-	"fmt"
 )
 
 // Open returns an Editor capable of managing a selection
@@ -45,7 +45,7 @@ func (c *client) Select(q0, q1 int64) {
 			}
 		}
 	}
-	c.q0, c.q1 = q0,q1
+	c.q0, c.q1 = q0, q1
 }
 func (c *client) Insert(s []byte, q0 int64) (n int) {
 	return n
