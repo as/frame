@@ -9,7 +9,7 @@ import (
 	"log"
 	"os"
 	"strings"
-//	"time"
+	//	"time"
 
 	"github.com/as/edit"
 	"github.com/as/event"
@@ -61,9 +61,19 @@ type Tag struct {
 	dirty      bool
 	r0, r1     int64
 	red, green frame.Color
-	escR image.Rectangle
-//	Log        worm.Logger	// TODO  
+	escR       image.Rectangle
+	//	Log        worm.Logger	// TODO
 	offset int64
+}
+
+func (w *Tag) SetFont(ft *font.Font) {
+	if ft.Size() < 3 || w.Body == nil {
+		return
+	}
+	w.Body.SetFont(ft)
+	w.dirty=true
+	w.Mark()
+	w.Body.Refresh()
 }
 
 func (t *Tag) Dirty() bool {
@@ -72,6 +82,7 @@ func (t *Tag) Dirty() bool {
 
 func (t *Tag) Mark() {
 	t.dirty = true
+	t.Win.Mark()
 }
 
 func (t *Tag) Loc() image.Rectangle {
@@ -118,8 +129,8 @@ func NewTag(src screen.Screen, wind screen.Window, ft *font.Font, sp, size, pad 
 		size,
 		pad, frame.A,
 	)
-//	lg := worm.NewCoalescer(worm.NewLogger(), time.Second*3)
-//	w.Editor = text.NewHistory(w.Editor, lg)
+	//	lg := worm.NewCoalescer(worm.NewLogger(), time.Second*3)
+	//	w.Editor = text.NewHistory(w.Editor, lg)
 	acol := frame.A
 	Green := image.NewUniform(color.RGBA{0x99, 0xDD, 0x99, 192})
 	acol.Hi.Back = Green
@@ -130,7 +141,7 @@ func NewTag(src screen.Screen, wind screen.Window, ft *font.Font, sp, size, pad 
 	red := acol
 
 	return &Tag{sp: sp, Win: wtag, Body: w,
-		 // Log: lg, 
+		// Log: lg,
 		red: red, green: green}
 }
 
@@ -146,7 +157,7 @@ func (t *Tag) Move(pt image.Point) {
 func (t *Tag) Resize(pt image.Point) {
 	dy := TagSize(t.Win.Font)
 	if pt.X < dy || pt.Y < dy {
-		println("ignore daft size request:", pt.String())
+		println("bad size request:", pt.String())
 		return
 	}
 	t.Win.Resize(image.Pt(pt.X, dy))
@@ -167,7 +178,7 @@ func mustCompile(prog string) *edit.Command {
 
 func (t *Tag) Get(name string) {
 	w := t.Body
-	if w == nil{
+	if w == nil {
 		w.SendFirst(fmt.Errorf("tag: no body to get %q\n", name))
 		return
 	}
@@ -185,7 +196,7 @@ func (t *Tag) Get(name string) {
 	fmt.Printf("files size is %d\n", len(s))
 	w.Delete(0, w.Len())
 	w.Insert(s, 0)
-	w.Select(0,0)
+	w.Select(0, 0)
 	if addr != "" {
 		w.SendFirst(mustCompile("#0"))
 		w.SendFirst(mustCompile(addr))
@@ -217,7 +228,7 @@ func (t *Tag) Put() (err error) {
 	writefile(name, t.Body.Bytes())
 	return nil
 }
-func pt(e mouse.Event) image.Point{
+func pt(e mouse.Event) image.Point {
 	return image.Pt(int(e.X), int(e.Y))
 }
 func (t *Tag) Mouse(act text.Editor, e interface{}) {
@@ -238,14 +249,12 @@ func (t *Tag) Mouse(act text.Editor, e interface{}) {
 			act.Sq = q0
 			if e.Button == 1 && e.Double {
 				q0, q1 = find.FreeExpand(act, q0)
-				t.escR = image.Rect(-3,-3,3,3).Add(pt(e.Event))
-				println(q0,q1)
-				println("double click")
+				t.escR = image.Rect(-3, -3, 3, 3).Add(pt(e.Event))
 			}
 			act.Select(q0, q1)
 		case mus.SweepEvent:
 			if t.escR != image.ZR {
-				if pt(e.Event).In(t.escR){
+				if pt(e.Event).In(t.escR) {
 					break
 				}
 				t.escR = image.ZR
@@ -265,7 +274,6 @@ func (t *Tag) Mouse(act text.Editor, e interface{}) {
 			}
 		case mus.SelectEvent:
 			q0, q1 := act.Dot()
-			println(q0,q1)
 			if e.Button == 1 {
 				act.Select(q0, q1)
 				break
@@ -322,31 +330,31 @@ func (t *Tag) Handle(act text.Editor, e interface{}) {
 		if e == "Redo" {
 			//			act.Redo()
 		} else if e == "Undo" {
-		/*
-			ev, err := t.Log.ReadAt(t.Log.Len()-1-t.offset)
-			t.offset++
-			if err != nil{
-				t.SendFirst(err)
-				return
-			}
-			ev2 := event.Invert(ev)
-			switch ev2 := ev2.(type){
-			case *event.Insert:
-			t.Send(fmt.Errorf("INsert %#v\n", ev))
-				act.Insert(ev2.P, ev2.Q0)
-			case *event.Delete:
-				q0,q1 := ev2.Q0, ev2.Q1
-				if q0 > q1{
-					q0,q1=q1,q0
+			/*
+				ev, err := t.Log.ReadAt(t.Log.Len()-1-t.offset)
+				t.offset++
+				if err != nil{
+					t.SendFirst(err)
+					return
 				}
-				if q0 != q1{
-					q1--
+				ev2 := event.Invert(ev)
+				switch ev2 := ev2.(type){
+				case *event.Insert:
+				t.Send(fmt.Errorf("INsert %#v\n", ev))
+					act.Insert(ev2.P, ev2.Q0)
+				case *event.Delete:
+					q0,q1 := ev2.Q0, ev2.Q1
+					if q0 > q1{
+						q0,q1=q1,q0
+					}
+					if q0 != q1{
+						q1--
+					}
+				t.Send(fmt.Errorf("Delete %#v\n", ev))
+					act.Delete(q0,q1)
 				}
-			t.Send(fmt.Errorf("Delete %#v\n", ev))
-				act.Delete(q0,q1)
-			}
-			t.Send(fmt.Errorf("%#v\n", ev))
-		*/
+				t.Send(fmt.Errorf("%#v\n", ev))
+			*/
 			//			act.Undo()
 		} else if e == "Put" {
 			t.Put()
@@ -362,11 +370,27 @@ func (t *Tag) Handle(act text.Editor, e interface{}) {
 		fn := e.Func()
 		if fn != nil {
 			fn(t.Body) // Always execute on body for now
-		}
+		}	
 		t.Mark()
 	case key.Event:
 		if e.Direction == 2 {
 			break
+		}
+		switch e.Code {
+		case key.CodeEqualSign, key.CodeHyphenMinus:
+			if e.Modifiers == key.ModControl {
+				size := t.Body.Frame.Font.Size()
+				if key.CodeHyphenMinus == e.Code {
+					size-=3
+				} else {
+					size+=3
+				}
+					if size < 3{
+						size = 6
+					}
+				t.SetFont(t.Body.Frame.Font.NewSize(size))
+				return
+			}
 		}
 		ntab := int64(-1)
 		if (e.Rune == '\n' || e.Rune == '\r') && act == t.Body {
@@ -384,9 +408,11 @@ func (t *Tag) Handle(act text.Editor, e interface{}) {
 			kbd.SendClient(act, e)
 			ntab--
 		}
+		t.Mark()
 	}
 	t.dirty = true
 }
+
 
 func (t *Tag) Upload(wind screen.Window) {
 	if t.Body != nil && t.Body.Dirty() {

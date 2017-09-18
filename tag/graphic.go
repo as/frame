@@ -1,10 +1,10 @@
 package tag
 
 import (
-	"image"
-	"github.com/as/text"
-	"github.com/as/frame"
 	"fmt"
+	"github.com/as/frame"
+	"github.com/as/text"
+	"image"
 )
 
 type painter interface {
