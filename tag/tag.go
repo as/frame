@@ -11,6 +11,7 @@ import (
 	"strings"
 	//	"time"
 
+	"github.com/as/path"
 	"github.com/as/edit"
 	"github.com/as/event"
 	"github.com/as/frame"
@@ -64,6 +65,7 @@ type Tag struct {
 	escR       image.Rectangle
 	//	Log        worm.Logger	// TODO
 	offset int64
+	Path path.Path
 }
 
 func (w *Tag) SetFont(ft *font.Font) {
@@ -139,9 +141,10 @@ func NewTag(src screen.Screen, wind screen.Window, ft *font.Font, sp, size, pad 
 	Red := image.NewUniform(color.RGBA{0xDD, 0x99, 0x99, 192})
 	acol.Hi.Back = Red
 	red := acol
-
+	
 	return &Tag{sp: sp, Win: wtag, Body: w,
 		// Log: lg,
+		Path: path.NewPath(""),
 		red: red, green: green}
 }
 
@@ -176,13 +179,20 @@ func mustCompile(prog string) *edit.Command {
 	return p
 }
 
+func (t *Tag) Open(path path.Path){
+	t.Path = path
+	t.Get("")
+}
+
 func (t *Tag) Get(name string) {
 	w := t.Body
 	if w == nil {
 		w.SendFirst(fmt.Errorf("tag: no body to get %q\n", name))
 		return
 	}
+	name = t.Path.Name()
 	name, addr := action.SplitPath(name)
+	t.Path = t.Path.Look(name)
 	wtag := t.Win
 	p := wtag.Bytes()
 	maint := find.Find(p, 0, []byte{'|'})
@@ -192,7 +202,7 @@ func (t *Tag) Get(name string) {
 	wtag.Delete(0, maint+1)
 	wtag.InsertString(name+"\tPut Del |", 0)
 	wtag.Refresh()
-	s := readfile(name)
+	s := t.readfile(t.Path.Abs())
 	fmt.Printf("files size is %d\n", len(s))
 	w.Delete(0, w.Len())
 	w.Insert(s, 0)
@@ -204,7 +214,7 @@ func (t *Tag) Get(name string) {
 }
 
 type GetEvent struct {
-	Path  string
+	Path  path.Path
 	Addr  string
 	IsDir bool
 }
@@ -217,11 +227,13 @@ func (t *Tag) FileName() string {
 	if err != nil {
 		return ""
 	}
-	return strings.TrimSpace(name)
+	name = strings.TrimSpace(name)
+	t.Path = t.Path.Blank().Look(name)
+	return t.Path.Name()
 }
 
 func (t *Tag) Put() (err error) {
-	name := t.FileName()
+	name := t.Path.Abs()
 	if name == "" {
 		return fmt.Errorf("no file")
 	}
@@ -303,7 +315,7 @@ func (t *Tag) Mouse(act text.Editor, e interface{}) {
 						},
 						From:     from,
 						To:       []event.Editor{t.Body},
-						FromFile: t.FileName(),
+						Path: t.Path,
 					})
 				} else {
 					act.SendFirst(event.Cmd{
@@ -313,7 +325,7 @@ func (t *Tag) Mouse(act text.Editor, e interface{}) {
 						},
 						From:     from,
 						To:       []event.Editor{t.Body},
-						FromFile: t.FileName(),
+						Path: t.Path,
 					})
 				}
 			}
