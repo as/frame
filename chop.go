@@ -20,4 +20,3 @@ func (f *Frame) chopFrame(pt image.Point, p int64, bn int) {
 		f.Run.Delete(bn, f.Nbox-1)
 	}
 }
-

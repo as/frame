@@ -4,6 +4,7 @@ import (
 	"image"
 )
 
+// bxscan resets the measuring function and calls Bxscan in the embedded run
 func (f *Frame) bxscan(s []byte, ppt image.Point) (image.Point, image.Point) {
 	f.ir.Reset(f.ir.Measure)
 	f.ir.Bxscan(s, f.maxlines)
