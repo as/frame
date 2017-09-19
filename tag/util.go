@@ -8,14 +8,16 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-
+	"text/tabwriter"
+	"sort"
+	"strings"
 	window "github.com/as/ms/win"
 
 	"github.com/as/clip"
 	"github.com/as/cursor"
 )
 
-func readfile(s string) (p []byte) {
+func (t *Tag) readfile(s string) (p []byte) {
 	var err error
 	if isdir(s) {
 		fi, err := ioutil.ReadDir(s)
@@ -23,10 +25,33 @@ func readfile(s string) (p []byte) {
 			log.Println(err)
 			return nil
 		}
+		sort.SliceStable(fi, func(i, j int) bool{
+			if fi[i].IsDir() && !fi[j].IsDir(){
+				return true
+			}
+			ni,nj := fi[i].Name(), fi[j].Name()
+			return strings.Compare(ni, nj) < 0
+		})
+		x := t.Font.MeasureByte('e')
+		n := t.Frame.Bounds().Dx()/x
+		m := 0
 		b := new(bytes.Buffer)
+		w := tabwriter.NewWriter(b, 0, 0, 3, ' ', 0)
 		for _, v := range fi {
-			fmt.Fprintf(b, "%s\t", v.Name())
+			nm := v.Name()
+			if v.IsDir(){
+				nm += string(os.PathSeparator)
+			}
+			entry := fmt.Sprintf("%s\t", nm)
+			dm := m+len(entry)
+			if dm > n{
+				fmt.Fprintf(w, "\n")
+				m=-(dm+3)
+			}
+			fmt.Fprintf(w, entry)
+			m+=dm+3
 		}
+		w.Flush()
 		return b.Bytes()
 	}
 	p, err = ioutil.ReadFile(s)
