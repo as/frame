@@ -3,19 +3,26 @@ package tag
 import (
 	"bytes"
 	"fmt"
+	window "github.com/as/ms/win"
 	"image"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
-	"text/tabwriter"
 	"sort"
 	"strings"
-	window "github.com/as/ms/win"
+	"text/tabwriter"
 
 	"github.com/as/clip"
 	"github.com/as/cursor"
 )
+
+func max(a, b int) int {
+	if a < b {
+		return b
+	}
+	return a
+}
 
 func (t *Tag) readfile(s string) (p []byte) {
 	var err error
@@ -25,31 +32,33 @@ func (t *Tag) readfile(s string) (p []byte) {
 			log.Println(err)
 			return nil
 		}
-		sort.SliceStable(fi, func(i, j int) bool{
-			if fi[i].IsDir() && !fi[j].IsDir(){
+		sort.SliceStable(fi, func(i, j int) bool {
+			if fi[i].IsDir() && !fi[j].IsDir() {
 				return true
 			}
-			ni,nj := fi[i].Name(), fi[j].Name()
+			ni, nj := fi[i].Name(), fi[j].Name()
 			return strings.Compare(ni, nj) < 0
 		})
-		x := t.Font.MeasureByte('e')
-		n := t.Frame.Bounds().Dx()/x
-		m := 0
+		dx := t.Font.MeasureByte('e')
+		x := 0
 		b := new(bytes.Buffer)
-		w := tabwriter.NewWriter(b, 0, 0, 3, ' ', 0)
+		w := tabwriter.NewWriter(b, 0, 8, 3, ' ', 0)
+		maxx := t.Frame.Bounds().Dx()
 		for _, v := range fi {
 			nm := v.Name()
-			if v.IsDir(){
+			if v.IsDir() {
 				nm += string(os.PathSeparator)
 			}
-			entry := fmt.Sprintf("%s\t", nm)
-			dm := m+len(entry)
-			if dm > n{
-				fmt.Fprintf(w, "\n")
-				m=-(dm+3)
+			word := fmt.Sprintf("\t%s", nm)
+			wordlen := len(word) - 1
+			wordpix := wordlen * dx
+			advance := max(wordpix, 8*x)
+			if x+advance > maxx {
+				fmt.Fprintf(w, "\t\n")
+				x = -advance
 			}
-			fmt.Fprintf(w, entry)
-			m+=dm+3
+			fmt.Fprintf(w, word)
+			x += advance
 		}
 		w.Flush()
 		return b.Bytes()
