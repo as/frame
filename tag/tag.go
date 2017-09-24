@@ -109,17 +109,13 @@ func TagPad(wpad image.Point) image.Point {
 }
 
 // Put
-func NewTag(src screen.Screen, wind screen.Window, ft *font.Font, sp, size, pad image.Point, cols frame.Color) *Tag {
+func New(src screen.Screen, wind screen.Window, sp, size, pad image.Point, ft *font.Font, cols frame.Color) *Tag {
 
 	// Make the main tag
 	tagY := TagSize(ft)
 
 	// Make tag
-	wtag := win.New(src, ft, wind,
-		sp,
-		image.Pt(size.X, tagY),
-		TagPad(pad), cols,
-	)
+	wtag := win.New(src, wind,sp,image.Pt(size.X, tagY),TagPad(pad), ft, cols,)
 
 	sp = sp.Add(image.Pt(0, tagY))
 	size = size.Sub(image.Pt(0, tagY))
@@ -128,10 +124,10 @@ func NewTag(src screen.Screen, wind screen.Window, ft *font.Font, sp, size, pad 
 	}
 	// Make window
 	cols.Back = Yellow
-	w := win.New(src, ft, wind,
+	w := win.New(src, wind,
 		sp,
 		size,
-		pad, frame.A,
+		pad, ft, frame.A,
 	)
 	//	lg := worm.NewCoalescer(worm.NewLogger(), time.Second*3)
 	//	w.Editor = text.NewHistory(w.Editor, lg)

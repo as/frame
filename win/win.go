@@ -61,7 +61,7 @@ func (w *Win) Origin() int64 {
 	return w.org
 }
 
-func New(scr screen.Screen, ft *font.Font, events screen.Window, sp, size, pad image.Point, cols frame.Color) *Win {
+func New(scr screen.Screen, events screen.Window, sp, size, pad image.Point, ft *font.Font, cols frame.Color) *Win {
 	b, err := scr.NewBuffer(size)
 	if err != nil {
 		panic(size)
