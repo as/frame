@@ -10,6 +10,8 @@ import (
 	"os"
 	"strings"
 	//	"time"
+	"path/filepath"
+	
 
 	"github.com/as/path"
 	"github.com/as/edit"
@@ -65,7 +67,7 @@ type Tag struct {
 	escR       image.Rectangle
 	//	Log        worm.Logger	// TODO
 	offset int64
-	Path path.Path
+	basedir string
 }
 
 func (w *Tag) SetFont(ft *font.Font) {
@@ -142,9 +144,9 @@ func NewTag(src screen.Screen, wind screen.Window, ft *font.Font, sp, size, pad 
 	acol.Hi.Back = Red
 	red := acol
 	
+	wd, _ := os.Getwd()
 	return &Tag{sp: sp, Win: wtag, Body: w,
-		// Log: lg,
-		Path: path.NewPath(""),
+		basedir: wd,
 		red: red, green: green}
 }
 
@@ -179,9 +181,17 @@ func mustCompile(prog string) *edit.Command {
 	return p
 }
 
-func (t *Tag) Open(path path.Path){
-	t.Path = path
-	t.Get("")
+func (t *Tag) Open(basepath, title string){
+	t.basedir = path.DirOf(basepath)
+	t.Get(title)
+}
+
+func (t *Tag) Dir() string{
+	x := path.DirOf(t.FileName())
+	if filepath.IsAbs(x){
+		return x
+	}
+	return filepath.Join(t.basedir, x)
 }
 
 func (t *Tag) Get(name string) {
@@ -190,9 +200,18 @@ func (t *Tag) Get(name string) {
 		w.SendFirst(fmt.Errorf("tag: no body to get %q\n", name))
 		return
 	}
-	name = t.Path.Name()
+	abs := ""
 	name, addr := action.SplitPath(name)
-	t.Path = t.Path.Look(name)
+	if filepath.IsAbs(name) && path.Exists(name) {
+		t.basedir = path.DirOf(name)
+		abs = name
+	} else {
+		abs = filepath.Join(t.basedir, name)
+		if !path.Exists(abs) {
+			// 
+		}
+	}
+	
 	wtag := t.Win
 	p := wtag.Bytes()
 	maint := find.Find(p, 0, []byte{'|'})
@@ -200,23 +219,30 @@ func (t *Tag) Get(name string) {
 		maint = int64(len(p))
 	}
 	wtag.Delete(0, maint+1)
-	wtag.InsertString(name+"\tPut Del |", 0)
+	wtag.InsertString(abs+"\tPut Del |", 0)
 	wtag.Refresh()
-	s := t.readfile(t.Path.Abs())
-	fmt.Printf("files size is %d\n", len(s))
 	w.Delete(0, w.Len())
-	w.Insert(s, 0)
+	w.Insert(t.readfile(abs), 0)
 	w.Select(0, 0)
+	w.SetOrigin(0,true)
 	if addr != "" {
-		w.SendFirst(mustCompile("#0"))
 		w.SendFirst(mustCompile(addr))
 	}
 }
 
 type GetEvent struct {
-	Path  path.Path
+	Basedir string
+	Name string
 	Addr  string
 	IsDir bool
+}
+
+func (t *Tag) abs() string{
+	name := t.FileName()
+	if !filepath.IsAbs(name){
+		name = filepath.Join(t.basedir, name)
+	}
+	return name
 }
 
 func (t *Tag) FileName() string {
@@ -227,13 +253,11 @@ func (t *Tag) FileName() string {
 	if err != nil {
 		return ""
 	}
-	name = strings.TrimSpace(name)
-	t.Path = t.Path.Blank().Look(name)
-	return t.Path.Name()
+	return strings.TrimSpace(name)
 }
 
 func (t *Tag) Put() (err error) {
-	name := t.Path.Abs()
+	name := t.abs()
 	if name == "" {
 		return fmt.Errorf("no file")
 	}
@@ -315,7 +339,8 @@ func (t *Tag) Mouse(act text.Editor, e interface{}) {
 						},
 						From:     from,
 						To:       []event.Editor{t.Body},
-						Path: t.Path,
+						Basedir: t.basedir,
+						Name: t.FileName(),
 					})
 				} else {
 					act.SendFirst(event.Cmd{
@@ -325,7 +350,8 @@ func (t *Tag) Mouse(act text.Editor, e interface{}) {
 						},
 						From:     from,
 						To:       []event.Editor{t.Body},
-						Path: t.Path,
+						Basedir: t.basedir,
+						Name: t.FileName(),
 					})
 				}
 			}
