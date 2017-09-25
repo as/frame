@@ -14,16 +14,16 @@ func (f *Frame) clean(pt image.Point, n0, n1 int) {
 			f.Merge(n0)
 			n1--
 		}
-		
+
 		pt = f.advance(pt, &f.Box[n0]) // dont simplify this
 	}
-	
+
 	for ; n0 < f.Nbox; n0++ {
 		b0 := &f.Box[n0]
 		pt = f.lineWrap(pt, b0)
 		pt = f.advance(pt, b0)
 	}
-	
+
 	f.lastlinefull = 0
 	if pt.Y >= f.r.Max.Y {
 		f.lastlinefull = 1

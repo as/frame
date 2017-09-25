@@ -42,10 +42,10 @@ func main() {
 			}
 			dirty = false
 		}
-		
+
 		fr.Insert([]byte("This is basic example of an editable text frame.\n"), fr.Len())
-		fr.Insert([]byte("You can edit this text with the mouse.\n"),  fr.Len())
-		fr.Insert([]byte("Or keyboard.\n"),  fr.Len())
+		fr.Insert([]byte("You can edit this text with the mouse.\n"), fr.Len())
+		fr.Insert([]byte("Or keyboard.\n"), fr.Len())
 
 		for {
 			switch e := wind.NextEvent().(type) {
@@ -71,24 +71,24 @@ func main() {
 				if e.Rune == '\r' {
 					e.Rune = '\n'
 				}
-				if e.Rune > 0x79 || e.Rune < 0{
+				if e.Rune > 0x79 || e.Rune < 0 {
 					continue
 				}
 				p0, p1 := fr.Dot()
-				if e.Rune == '\x08'{
-					if p0 == p1 && p0 > 0{
+				if e.Rune == '\x08' {
+					if p0 == p1 && p0 > 0 {
 						p0--
 					}
-					fr.Delete(p0,p1)
+					fr.Delete(p0, p1)
 				} else {
 					fr.Insert([]byte{byte(e.Rune)}, p0)
 					p0++
 				}
-				fr.Select(p0, p0)	
+				fr.Select(p0, p0)
 				dirty = true
 				ck()
 			case size.Event:
-				wind.Upload(image.ZP,b, b.Bounds())
+				wind.Upload(image.ZP, b, b.Bounds())
 				fr.Refresh()
 				ck()
 			case paint.Event:

@@ -6,8 +6,8 @@ import (
 	"image/draw"
 )
 
-func (f *Frame) Select(p0, p1 int64){
-	pp0, pp1 := f.Dot()	
+func (f *Frame) Select(p0, p1 int64) {
+	pp0, pp1 := f.Dot()
 	if pp1 <= p0 || p1 <= pp0 || p0 == p1 || pp1 == pp0 {
 		f.Redraw(f.PointOf(pp0), pp0, pp1, false)
 		f.Redraw(f.PointOf(p0), p0, p1, true)
@@ -26,7 +26,6 @@ func (f *Frame) Select(p0, p1 int64){
 	f.modified = true
 	f.p0, f.p1 = p0, p1
 }
-
 
 func (fr *Frame) Sweep(ep EventPipe, flush func()) {
 	p0, p1 := fr.Dot()

@@ -95,12 +95,12 @@ func makefont(data []byte, size int) *Font {
 	return ft
 }
 
-func (f *Font) NewSize(dy int) *Font{
-println(dy)
-	if dy == f.Dy(){
+func (f *Font) NewSize(dy int) *Font {
+	println(dy)
+	if dy == f.Dy() {
 		return f
 	}
-	if f.data == nil{
+	if f.data == nil {
 		return NewBasic(dy)
 	}
 	return NewTTF(f.data, dy)

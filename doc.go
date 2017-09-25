@@ -77,7 +77,7 @@
 // Redraw(pt image.Point, p0, p1 int64, issel bool)
 //   Redraw redraws the characters between p0:p1. It accesses the cache of drawn glyph widths
 //   to avoid remeasuring strings
-// 
+//
 // RedrawAt(pt image.Point, text, back image.Image)
 //   RedrawAt refreshes the entire image to the right of the given pt. Everything below is redrawn.
 //

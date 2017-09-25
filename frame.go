@@ -8,7 +8,6 @@ import (
 	"image/draw"
 )
 
-
 // Frame is a write-only container for editable text
 type Frame struct {
 	box.Run
