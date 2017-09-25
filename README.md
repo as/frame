@@ -1,24 +1,27 @@
-Package frame provides plan9-like editable text images on a raster display. This implementation
-is similar to plan9's libframe, except:
+## Frame
 
-- NUL bytes are preserved
-- Semantic replacement characters for unrenderable text
+Package frame provides plan9-like editable text images. The package is similar to plan9's libframe, except:
+
+- `NUL` bytes are preserved
+- Semantic replacement characters are used for unrenderable text
 - No UTF8 (yet)
 
-A frame's text is not addressable. Once the characters are written to the frame, there is no
-mechanism to retrieve their position from within the frame. Use a buffer to store text for reading
-and the range addresses of the frame to access bytes from that buffer.
+## Basic Example
 
-See github.com/as/ui/win for an example.
+https://github.com/as/frame/blob/master/example/basic/basic.go
 
-A frame is created using the New function
+## Init
+
+A `frame` is created using the New function
 
 ```
   img := image.NewRGBA(image.Rect(0,0,100,100))
   fr := frame.New(img, img.Bounds(), frame.NewGoMono(), frame.Mono)
 ```
 
-A frame supports these common operations
+## Common Operations
+
+A `frame` supports these common operations
 
 ```
   Insert: Insert text
@@ -29,12 +32,11 @@ A frame supports these common operations
   Dot: Return selected range
 ```
 
-Insert and Delete
+## Insert and Delete
 
-Frames supports two operations for rendering text: Insert and Delete. Insert inserts text at the
-given index and moves existing characters after the index to the right. Delete deletes text in the
-given range (a range is a pair of indices) and moves existing character after the index to the
-left.
+Frames supports two operations for rendering text: `Insert` and `Delete`. 
+- `Insert` inserts text at the given index and moves existing characters after the index to the right. 
+- `Delete` deletes text in the given range (pair of indices) and moves existing character after the index to the left.
 
 The two operations are inverses of each other.
 
@@ -43,9 +45,9 @@ The two operations are inverses of each other.
   fr.Delete(0, 11)
 ```
 
-Insert and delete return the number of characters inserted or deleted.
+`Insert` and `delete` return the number of characters inserted or deleted.
 
-To delete the last insertion:
+To `delete` the last insertion:
 ```
   p0 := 0
   n := fr.Insert([]byte("123"), p0)
@@ -59,17 +61,16 @@ To execute a traditional "write" operation:
   fr.Insert(s, 0)
 ```
 
-Projection
+## Projection
 
-Frames can translate between coordinates of the mouse and character offsets in the frame itself using
-IndexOf and PointOf.
+Frames can translate between coordinates of the mouse and character offsets in the `frame` using `IndexOf` and `PointOf`.
 
 ```
   p0  := fr.IndexOf(image.Pt(0, 0)) Returns the index under the 2D point (0,0)
   pt0 := fr.PointOf(5) Returns the 2D point over the index
 ```
 
-Selection
+## Selection
 
 Frames support selecting ranges of text along with returning those selected ranges.
 
@@ -78,18 +79,17 @@ Frames support selecting ranges of text along with returning those selected rang
   fr.Dot()
 ```
 
-A more complicated facility exists for making a live selection. See example/basic for an example of
+A more complicated facility exists for making a live selection. `Sweep`. See example/basic for an example of
 how to use it.
 
 ```
  fr.Sweep(...)
 ```
 
-Drawing
+## Drawing
 
-No special operations are needed after a call to Insert, Delete, or Select. The frame's bitmap
-is updated. However, there are four functions that will redraw the frame on the bitmap if
-this is necessary.
+No special operations are needed after a call to `Insert`, `Delete`, or `Select`. The frame's bitmap
+is updated. However, there are four functions that will redraw the frame on the bitmap if necessary.
 
 ```
 Recolor(pt image.Point, p0, p1 int64, cols Palette)
@@ -107,14 +107,13 @@ Refresh()
   to redraw
 ```
 
-Display Sync
+## Display Sync
 
-After any operation that alters the frame, one can be sure that the changes can be written to
+After any frame altering operation, one can be sure that the changes can be written to
 the frame's bitmap. However, the same can not be said for the exp/shiny window. There currently
 exists an optimization (see github.com/as/drawcache) that caches rectangles that need to be
-redrawn to the screen. This is because shiny (or the native drivers for it) are too slow to
-refresh the entire window is that window's resolution is very high.
-
+redrawn to the screen. This is because shiny (or the native drivers used by it) are too slow to
+refresh the entire window if that window's resolution is high.
 
 This rendering pipeline is bottlenecked, so an optimization is located between the |*|
 
@@ -122,3 +121,10 @@ This rendering pipeline is bottlenecked, so an optimization is located between t
 insert | frame | shiny buffer |*| shiny window
 ```
 
+# Note
+
+A frame's text is not addressable. Once the characters are written to the frame, there is no
+mechanism to retrieve their position from within the frame. Use a buffer to store text for reading
+and the range addresses of the frame to access bytes from that buffer.
+
+See `github.com/as/ui/win` for an example.
