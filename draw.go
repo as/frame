@@ -4,7 +4,6 @@ import (
 	"image"
 
 	"github.com/as/frame/box"
-	"github.com/as/frame/font"
 )
 
 // Refresh renders the entire frame, including the underlying
@@ -66,7 +65,7 @@ func (f *Frame) redrawRun0(r *box.Run, pt image.Point, text, back image.Image) {
 		pt = f.lineWrap(pt, b)
 		//if !f.noredraw && b.nrune >= 0 {
 		if b.Nrune >= 0 {
-			font.StringBG(f.b, pt, text, image.ZP, f.Font, b.Ptr, back, image.ZP)
+			f.stringBG(f.b, pt, text, image.ZP, f.Font, b.Ptr, back, image.ZP)
 		}
 		pt.X += b.Width
 	}
@@ -145,7 +144,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			w := f.WidthBox(nb, ptr)
 			f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Font.Dy()), back, pt, f.op)
 			if f.PlainBox(nb) {
-				font.StringNBG(f.b, pt, text, image.ZP, f.Font, ptr)
+				f.stringNBG(f.b, pt, text, image.ZP, f.Font, ptr)
 			}
 			pt.X += w
 

@@ -1,7 +1,6 @@
 package frame
 
 import (
-	"github.com/as/frame/box"
 	"image"
 )
 
@@ -12,7 +11,7 @@ func (f *Frame) ptOfCharPtBox(p int64, pt image.Point, bn int) (x image.Point) {
 		l := b.Len()
 		if p < int64(l) {
 			if b.Nrune > 0 {
-				br := box.NewByteRuler(b.Ptr, f.Font)
+				br := f.newRulerFunc(b.Ptr, f.Font)
 				for p > 0 {
 					size, width, err := br.Next()
 					if err != nil {
@@ -80,7 +79,7 @@ func (f *Frame) IndexOf(pt image.Point) int64 {
 			if b.Nrune < 0 {
 				qt = f.advance(qt, b)
 			} else {
-				bs := box.NewByteRuler(b.Ptr, f.Font)
+				bs := f.newRulerFunc(b.Ptr, f.Font)
 				for {
 					size, width, err := bs.Next()
 					if err != nil {

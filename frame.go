@@ -30,6 +30,11 @@ type Frame struct {
 	modified  bool
 	noredraw  bool
 	op        draw.Op
+	
+	// Points to the font subpackage's StringN?BG or RuneN?BG functions
+	stringBG  func (draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte, image.Image, image.Point) int
+	stringNBG func (draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte) int
+	newRulerFunc func(s []byte, ft *font.Font) box.Ruler
 
 	drawcache.Drawer
 	pts     [][2]image.Point
@@ -39,15 +44,41 @@ type Frame struct {
 	hex     []draw.Image
 }
 
+func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, runes ...bool) *Frame{
+	spaceDx := ft.Measure(' ')
+	f := &Frame{
+		Font:   ft,
+		maxtab: 4 * spaceDx,
+		Color:  cols,
+		Run:    box.NewRun(spaceDx, 5000, ft, box.NewRuneRuler),
+		stringBG: font.RuneBG,
+		stringNBG: font.RuneNBG,
+		newRulerFunc: box.NewRuneRuler,
+		op:     draw.Src,
+	}
+	f.setrects(r, b)
+	f.inittick()
+	run := box.NewRun(spaceDx, 5000, ft, box.NewRuneRuler)
+	f.ir = &run
+	f.Drawer = drawcache.New()
+	return f
+}
+
 // New creates a new frame on b with bounds r. The image b is used
 // as the frame's internal bitmap cache.
-func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color) *Frame {
+func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, runes ...bool) *Frame {
+	if len(runes) > 0 && runes[0] {
+		return newRuneFrame(r,ft,b,cols)
+	}
 	spaceDx := ft.Measure(' ')
 	f := &Frame{
 		Font:   ft,
 		maxtab: 4 * spaceDx,
 		Color:  cols,
 		Run:    box.NewRun(spaceDx, 5000, ft),
+		stringBG: font.StringBG,
+		stringNBG: font.StringNBG,
+		newRulerFunc: box.NewByteRuler,
 		op:     draw.Src,
 	}
 	f.setrects(r, b)

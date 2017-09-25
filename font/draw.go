@@ -53,7 +53,7 @@ func RuneBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *
 	return p.X
 }
 
-func RuneNBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *Font, s []byte, bg image.Image, bgp image.Point) int {
+func RuneNBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *Font, s []byte) int {
 	p.Y += ft.Size()
 	for {
 		b, size := utf8.DecodeRune(s)

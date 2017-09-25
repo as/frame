@@ -1,5 +1,7 @@
 package box
 
+//import "log"
+
 func (r *Run) ensure(nb int) {
 	if nb == r.Nalloc {
 		r.Grow(r.delta)
@@ -13,13 +15,15 @@ func (r *Run) Bxscan(s []byte, ymax int) {
 	var nl int
 	var err error
 	r.delta = 32
-	r.br = r.newRulerFunc(s)
+	r.br = r.newRulerFunc(s, r.Font)
+//		log.Printf("s: %#v\n", s)
 	for nb := 0; err == nil && nl <= ymax; nb++ {
 		r.ensure(nb)
 		_, _, err = r.br.Next()
-		if err != nil {
+		if err != nil{
 			break
 		}
+//		log.Printf("r.br.Last: %#v\n", r.br.Last())
 		if special(r.br.Last()[0]) {
 			nl += r.specialbox(nb, r.minDx, r.maxDx)
 		} else {
@@ -54,7 +58,7 @@ func (r *Run) specialbox(nb int, min, max int) (nl int) {
 func (r *Run) plainbox(nb int) (nl int) {
 	for {
 		_, _, err := r.br.Next()
-		if err != nil {
+		if err != nil{
 			break
 		}
 		if special(r.br.Last()[0]) || r.br.Len() >= MaxBytes {

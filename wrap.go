@@ -3,8 +3,8 @@ package frame
 import (
 	"fmt"
 	"image"
-
 	"github.com/as/frame/box"
+
 )
 
 // LineWrap checks whether the box would wrap across a line boundary
@@ -54,7 +54,7 @@ func (f *Frame) canFit(pt image.Point, b *box.Box) (nr int) {
 	if left >= b.Width {
 		return b.Nrune
 	}
-	for bx := box.NewByteRuler(b.Ptr, f.Font); ; {
+	for bx := f.newRulerFunc(b.Ptr, f.Font); ; {
 		_, px, err := bx.Next()
 		if err != nil {
 			break
