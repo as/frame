@@ -1,28 +1,24 @@
 package frame
 
 import (
-	"github.com/as/frame/box"
 	"image"
-	//"fmt"
 )
 
 func (f *Frame) ptOfCharPtBox(p int64, pt image.Point, bn int) (x image.Point) {
-	var (
-		b    *box.Box
-		l, w int
-		//r rune
-	)
 	for ; bn < f.Nbox; bn++ {
-		b = &f.Box[bn]
+		b := &f.Box[bn]
 		pt = f.lineWrap(pt, b)
-		l = b.Len()
-		//fmt.Printf("bn=%d nbox=%d pt=%s p=%d\n", bn, f.Nbox, pt, p)
+		l := b.Len()
 		if p < int64(l) {
 			if b.Nrune > 0 {
-				for s := b.Ptr; p > 0; p, s = p-1, s[w:] {
-					// TODO: runes
-					w = 1
-					pt.X += f.Font.MeasureByte(s[0])
+				br := newByteRuler(b, f.Font)
+				for p > 0{
+					size, width, err := br.Next()
+					if err != nil{
+						break
+					}
+					p -= int64(size)
+					pt.X += width
 					if pt.X > f.r.Max.X {
 						panic("PtOfCharPtBox")
 					}
@@ -83,23 +79,17 @@ func (f *Frame) IndexOf(pt image.Point) int64 {
 			if b.Nrune < 0 {
 				qt = f.advance(qt, b)
 			} else {
-				s := b.Ptr
+				bs := newByteRuler(b, f.Font)
 				for {
-					if s == nil {
-						panic("Frame.IndexOf: s == nil")
+					size, width, err := bs.Next()
+					if err != nil{
+						break
 					}
-					r := s[0]
-					//TODO: rune
-					w := 1
-					if r == 0 {
-						//println("calm panic: nul in string")
-					}
-					qt.X += f.Font.MeasureBytes(s[:1])
-					s = s[w:]
+					qt.X += width
 					if qt.X > pt.X {
 						break
 					}
-					p++
+					p += int64(size)
 				}
 			}
 		} else {

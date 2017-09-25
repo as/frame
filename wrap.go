@@ -2,8 +2,9 @@ package frame
 
 import (
 	"fmt"
-	"github.com/as/frame/box"
 	"image"
+
+	"github.com/as/frame/box"
 )
 
 // LineWrap checks whether the box would wrap across a line boundary
@@ -42,9 +43,8 @@ func (f *Frame) canFitLeft(pt image.Point, b *box.Box) int {
 
 // CanFit returns the number of runes that can fit
 // on the line at pt. A newline yields 1.
-func (f *Frame) canFit(pt image.Point, b *box.Box) int {
+func (f *Frame) canFit(pt image.Point, b *box.Box) (nr int) {
 	left := f.r.Max.X - pt.X
-	w := 0
 	if b.Nrune < 0 {
 		if b.Minwidth <= left {
 			return 1
@@ -54,24 +54,22 @@ func (f *Frame) canFit(pt image.Point, b *box.Box) int {
 	if left >= b.Width {
 		return b.Nrune
 	}
-	p := b.Ptr
-	for nr := 0; len(p) > 0; p, nr = p[w:], nr+1 {
-		// TODO: need to measure actual rune width
-		// r := p[0]
-		w = 1
-		left -= f.Font.MeasureByte(p[0])
+	for bx := newByteRuler(b, f.Font); ; {
+		_, px, err := bx.Next()
+		if err != nil {
+			break
+		}
+		left -= px
 		if left < 0 {
 			return nr
 		}
+		nr++
 	}
 	// The box was too short and didn't end on a line boundary
-	panic(fmt.Sprintf("CanFit: short box: len=%d left=%d box=%s\n", len(p), left, b))
+	panic(fmt.Sprintf("CanFit: short box: len=%d left=%d box=%s\n", len(b.Ptr), left, b))
 }
 
 func (f *Frame) advance(pt image.Point, b *box.Box) (x image.Point) {
-	//	pt0 := pt
-	//	defer func(){fmt.Printf("Advance: pt=%d -> %d\n",pt0,x)}()
-	//	fmt.Println("boxes width: %d", b.width)
 	if b.Nrune < 0 && b.BC == '\n' {
 		pt.X = f.r.Min.X
 		pt.Y += f.Font.Dy()
