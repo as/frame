@@ -11,17 +11,18 @@ func (r *Run) ensure(nb int) {
 
 func (r *Run) Bxscan(s []byte, ymax int) {
 	var nl int
-
+	var err error
 	r.delta = 32
-	r.ss.Reset(s)
-
-	for nb := 0; r.ss.Len() > 0 && nl <= ymax; nb++ {
+	r.br = r.newRulerFunc(s)
+	for nb := 0; err == nil && nl <= ymax; nb++ {
 		r.ensure(nb)
-		c, _ := r.ss.ReadByte()
-		if special(c) {
-			nl += r.specialbox(nb, c, r.minDx, r.maxDx)
+		_, _, err = r.br.Next()
+		if err != nil {
+			break
+		}
+		if special(r.br.Last()[0]) {
+			nl += r.specialbox(nb, r.minDx, r.maxDx)
 		} else {
-			r.ss.UnreadByte()
 			nl += r.plainbox(nb)
 		}
 		r.Nbox++
@@ -32,7 +33,8 @@ func special(c byte) bool {
 	return c == '\t' || c == '\n'
 }
 
-func (r *Run) specialbox(nb int, c byte, min, max int) (nl int) {
+func (r *Run) specialbox(nb int, min, max int) (nl int) {
+	c := r.br.Last()[0]
 	b := &r.Box[nb]
 	if c == '\n' {
 		b.Minwidth = 0
@@ -45,29 +47,26 @@ func (r *Run) specialbox(nb int, c byte, min, max int) (nl int) {
 	b.Nrune = -1
 	b.Width = max
 	r.Nchars++
+	r.br.Advance()
 	return
 }
 
 func (r *Run) plainbox(nb int) (nl int) {
-	r.ww.Reset()
-
-	nr := 0
-	for ; r.ss.Len() > 0; nr++ {
-		c, _ := r.ss.ReadByte()
-		rw := 1
-		if special(c) || nr+rw >= MaxBytes {
-			r.ss.UnreadByte()
+	for {
+		_, _, err := r.br.Next()
+		if err != nil {
 			break
 		}
-		r.ww.WriteByte(c)
+		if special(r.br.Last()[0]) || r.br.Len() >= MaxBytes {
+			r.br.Unread()
+			break
+		}
 	}
-
 	b := &r.Box[nb]
-	b.Ptr = make([]byte, nr)
-	copy(b.Ptr, r.ww.Bytes())
-	b.Width = r.ww.Width()
-	b.Nrune = nr
-	r.Nchars += int64(nr)
-
+	b.Ptr = append([]byte{}, r.br.Bytes()...)
+	b.Width = r.br.Width()
+	b.Nrune = r.br.Len()
+	r.Nchars += int64(r.br.Len())
+	r.br.Advance()
 	return 0
 }

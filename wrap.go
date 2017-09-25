@@ -54,7 +54,7 @@ func (f *Frame) canFit(pt image.Point, b *box.Box) (nr int) {
 	if left >= b.Width {
 		return b.Nrune
 	}
-	for bx := newByteRuler(b, f.Font); ; {
+	for bx := box.NewByteRuler(b.Ptr, f.Font); ; {
 		_, px, err := bx.Next()
 		if err != nil {
 			break
@@ -66,7 +66,7 @@ func (f *Frame) canFit(pt image.Point, b *box.Box) (nr int) {
 		nr++
 	}
 	// The box was too short and didn't end on a line boundary
-	panic(fmt.Sprintf("CanFit: short box: len=%d left=%d box=%s\n", len(b.Ptr), left, b))
+	panic(fmt.Sprintf("CanFit: short box: len=%d left=%d box=%q\n", len(b.Ptr), left, b.Ptr))
 }
 
 func (f *Frame) advance(pt image.Point, b *box.Box) (x image.Point) {

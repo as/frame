@@ -47,12 +47,12 @@ func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color) *Frame {
 		Font:   ft,
 		maxtab: 4 * spaceDx,
 		Color:  cols,
-		Run:    box.NewRun(spaceDx, 5000, ft.MeasureByte),
+		Run:    box.NewRun(spaceDx, 5000, ft),
 		op:     draw.Src,
 	}
 	f.setrects(r, b)
 	f.inittick()
-	run := box.NewRun(spaceDx, 5000, ft.MeasureByte)
+	run := box.NewRun(spaceDx, 5000, ft)
 	f.ir = &run
 	f.Drawer = drawcache.New()
 	return f
@@ -90,7 +90,7 @@ func (f *Frame) Reset(r image.Rectangle, b *image.RGBA, ft *font.Font) {
 
 func (f *Frame) SetFont(ft *font.Font) {
 	f.Font = ft
-	f.Run.Reset(f.Font.MeasureByte)
+	f.Run.Reset(ft)
 	f.Refresh()
 }
 

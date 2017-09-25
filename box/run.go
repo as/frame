@@ -1,44 +1,39 @@
 package box
 
 import (
-	"bytes"
 	"fmt"
+	"github.com/as/frame/font"
 )
 
 // MaxBytes is the largest capacity of bytes in a box
 var MaxBytes = 128 + 3
 
-func NewRun(minDx, maxDx int, measureFn func(byte) int) Run {
+func NewRun(minDx, maxDx int, ft *font.Font) Run {
 	return Run{
-		minDx:   minDx,
-		maxDx:   maxDx,
-		ww:      newRuler(measureFn, MaxBytes),
-		ss:      bytes.NewReader([]byte{}),
-		Measure: measureFn,
+		minDx: minDx,
+		maxDx: maxDx,
+		Font:  ft,
+		newRulerFunc: func(s []byte) Ruler {
+			return NewByteRuler(s, ft)
+		},
 	}
 }
 
 // Run is a one-dimensional field of boxes. It can scan arbitrary text
 // into boxes with Bxscan().
 type Run struct {
-	Measure func(b byte) int
-	Nchars  int64
-	Nlines  int
-	Nalloc  int
-	Nbox    int
-	Box     []Box
+	*font.Font
+	Nchars int64
+	Nlines int
+	Nalloc int
+	Nbox   int
+	Box    []Box
 
 	minDx, maxDx int
 	delta        int
-	ss           *bytes.Reader
-	ww           *ruler
-}
 
-func (f *Run) MeasureBytes(s []byte) (n int) {
-	for b := range s {
-		n += f.Measure(s[b])
-	}
-	return
+	newRulerFunc func([]byte) Ruler
+	br           Ruler
 }
 
 // Count recomputes and returns the number of bytes
@@ -55,12 +50,11 @@ func (f *Run) Count(nb int) int64 {
 // their data on the heap. If widthfn is not nill, it
 // becomes the new measuring function for the run. Boxes
 // in the run are not remeasured upon reset.
-func (f *Run) Reset(widthfn func(byte) int) {
+func (f *Run) Reset(ft *font.Font) {
 	f.Nbox = 0
 	f.Nchars = 0
-	if widthfn != nil {
-		f.Measure = widthfn
-		f.ww = newRuler(widthfn, MaxBytes)
+	if ft != nil {
+		f.Font = ft
 	}
 }
 
