@@ -1,10 +1,10 @@
 package frame
 
+/*
 import (
 	"github.com/as/etch"
 	"testing"
 )
-/*
 func TestInsertOneChar(t *testing.T) {
 	h, _, have, _ := abtestbg(R)
 	h.Insert([]byte("1"), 0)
