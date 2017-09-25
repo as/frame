@@ -9,6 +9,27 @@ import (
 	//		"golang.org/x/mobile/event/paint"
 )
 
+func (f *Frame) Select(p0, p1 int64){
+	pp0, pp1 := f.Dot()	
+	if pp1 <= p0 || p1 <= pp0 || p0 == p1 || pp1 == pp0 {
+		f.Redraw(f.PointOf(pp0), pp0, pp1, false)
+		f.Redraw(f.PointOf(p0), p0, p1, true)
+	} else {
+		if p0 < pp0 {
+			f.Redraw(f.PointOf(p0), p0, pp0, true)
+		} else if p0 > pp0 {
+			f.Redraw(f.PointOf(pp0), pp0, p0, false)
+		}
+		if pp1 < p1 {
+			f.Redraw(f.PointOf(pp1), pp1, p1, true)
+		} else if pp1 > p1 {
+			f.Redraw(f.PointOf(p1), p1, pp1, false)
+		}
+	}
+	f.modified = true
+	f.p0, f.p1 = p0, p1
+}
+
 func (f *Frame) Sweep(mp image.Point, ed screen.EventDeque, paintfn func()) {
 	f.modified = false
 	f.Redraw(f.PointOf(f.p0), f.p0, f.p1, false)
