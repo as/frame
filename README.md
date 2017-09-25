@@ -1,4 +1,5 @@
-## Frame
+## Frame 
+[![Go Report Card](https://goreportcard.com/badge/github.com/as/frame)](https://goreportcard.com/report/github.com/as/frame)
 
 Package frame provides plan9-like editable text images. The package is similar to plan9's libframe, except:
 
