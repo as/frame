@@ -71,5 +71,4 @@ func (r *ruler) measureProc() {
 			r.widthretc <- r.w
 		}
 	}
-	return
 }
