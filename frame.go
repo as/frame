@@ -138,12 +138,6 @@ func (f *Frame) Dot() (p0, p1 int64) {
 	return f.p0, f.p1
 }
 
-// Select sets the range of the selected text
-func (f *Frame) Select(p0, p1 int64) {
-	f.modified = true
-	f.p0, f.p1 = p0, p1
-}
-
 func (f *Frame) setrects(r image.Rectangle, b *image.RGBA) {
 	f.b = b
 	f.entire = r
