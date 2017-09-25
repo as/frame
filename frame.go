@@ -8,6 +8,8 @@ import (
 	"image/draw"
 )
 
+var ForceUTF8Experiment = false
+
 // Frame is a write-only container for editable text
 type Frame struct {
 	box.Run
@@ -67,7 +69,7 @@ func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, r
 // New creates a new frame on b with bounds r. The image b is used
 // as the frame's internal bitmap cache.
 func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, runes ...bool) *Frame {
-	if len(runes) > 0 && runes[0] {
+	if (len(runes) > 0 && runes[0]) || ForceUTF8Experiment {
 		return newRuneFrame(r,ft,b,cols)
 	}
 	spaceDx := ft.Measure(' ')
