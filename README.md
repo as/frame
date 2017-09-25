@@ -6,6 +6,10 @@ Package frame provides plan9-like editable text images. The package is similar t
 - Semantic replacement characters are used for unrenderable text
 - No UTF8 (yet)
 
+## Basic Example
+
+https://github.com/as/frame/blob/master/example/basic/basic.go
+
 ## Init
 
 A `frame` is created using the New function
