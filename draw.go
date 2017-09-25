@@ -117,7 +117,6 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 				f.Draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt, f.op)
 			}
 		}
-
 		nb := 0
 		for ; nb < f.Nbox && q0+f.LenBox(nb) <= p0; nb++ {
 			// region -2: skip
@@ -136,7 +135,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			}
 
 			trim = false
-			if q1 := q0 + len(ptr); q1 > p1 {
+			if q1 := q0 + len(ptr); q1 >= p1 {
 				// region 1: would draw too much, retract the selection
 				lim := len(ptr) - (q1 - p1)
 				ptr = ptr[:lim]
@@ -155,7 +154,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			}
 		}
 
-		if p1 > p0 && nb != 0 && nb != f.Nbox && f.LenBox(nb-1) > 0 && !trim {
+		if p1 > p0 && nb != 0 && nb < f.Nbox && f.LenBox(nb-1) > 0 && !trim {
 			stepFill(nb)
 		}
 		return pt
