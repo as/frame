@@ -1,12 +1,9 @@
 package frame
 
 import (
-	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/mobile/event/mouse"
 	"image"
 	"image/draw"
-	"time"
-	//		"golang.org/x/mobile/event/paint"
 )
 
 func (f *Frame) Select(p0, p1 int64){
@@ -30,119 +27,64 @@ func (f *Frame) Select(p0, p1 int64){
 	f.p0, f.p1 = p0, p1
 }
 
-func (f *Frame) Sweep(mp image.Point, ed screen.EventDeque, paintfn func()) {
-	f.modified = false
-	f.Redraw(f.PointOf(f.p0), f.p0, f.p1, false)
-	p1 := f.IndexOf(mp)
-	p0 := p1
-	pt0 := f.PointOf(p0)
-	pt1 := f.PointOf(p1)
-	f.Redraw(pt0, p0, p1, true)
 
-	Region := func(a, b int64) int64 {
-		if a < b {
-			return -1
-		}
-		if a == b {
-			return 0
-		}
-		return 1
-	}
-
-	clock60hz := time.NewTicker(time.Second / 60).C
-	paintfn()
-
-	reg := int64(0)
+func (fr *Frame) Sweep(ep EventPipe, flush func()) {
+	p0, p1 := fr.Dot()
+Loop:
 	for {
-		sc := false
-		if f.Scroll != nil {
-
-			if mp.Y < f.r.Min.Y {
-				f.Scroll(-(f.r.Min.Y - mp.Y) / (f.Dy() - 1))
-				p0 = f.p1
-				p1 = f.p0
-				sc = true
-			} else if mp.Y > f.r.Max.Y {
-				f.Scroll((mp.Y - f.r.Max.Y) / (f.Dy() + 1))
-				p0 = f.p0
-				p1 = f.p1
-				sc = true
-			}
-			if sc {
-				if reg != Region(p1, p0) {
-					p0, p1 = p1, p0
-				}
-				pt0 = f.PointOf(p0)
-				pt1 = f.PointOf(p1)
-				reg = Region(p1, p0)
-			}
-		}
-		q := f.IndexOf(mp)
-		if p1 != q {
-			if reg != Region(q, p0) {
-				if reg > 0 {
-					f.Redraw(pt0, p0, p1, false)
-				} else if reg < 0 {
-					f.Redraw(pt1, p1, p0, false)
-				}
-				p1 = p0
-				pt1 = pt0
-				reg = Region(q, p0)
-				if reg == 0 {
-					f.Redraw(pt0, p0, p1, true)
-				}
-			}
-			qt := f.PointOf(q)
-			if reg > 0 {
-				if q > p1 {
-					f.Redraw(pt1, p1, q, true)
-				} else if q < p1 {
-					f.Redraw(qt, q, p1, false)
-				}
-			} else if reg < 0 {
-				if q > p1 {
-					f.Redraw(pt1, p1, q, false)
-				} else {
-					f.Redraw(qt, q, p1, true)
-				}
-			}
-			p1 = q
-			pt1 = qt
-		}
-		f.modified = false
-		if p0 < p1 {
-			f.p0 = p0
-			f.p1 = p1
-		} else {
-			f.p0 = p1
-			f.p1 = p0
-		}
-
-		if sc {
-			ed.Send(ScrollEvent{})
-			//f.Scroll(0)
-		}
-
-		switch e := ed.NextEvent().(type) {
-		case ScrollEvent:
+		e := ep.NextEvent()
+		switch e := e.(type) {
 		case mouse.Event:
-			if e.Button == 1 && e.Direction == 2 || e.Button == 2 || e.Button == 3 {
-				ed.SendFirst(e)
-				return
+			if e.Direction != 0 {
+				ep.SendFirst(e)
+				break Loop
 			}
-			mp = image.Pt(int(e.X), int(e.Y))
+			p1 = fr.IndexOf(pt(e))
+			fr.Select(min64(p0, p1), max64(p0, p1))
+			flush()
 		case interface{}:
-			ed.SendFirst(e)
-			return
-		}
-		select {
-		case <-clock60hz:
-			if !sc {
-				paintfn()
-			}
-		default:
+			ep.SendFirst(e)
+			break Loop
 		}
 	}
+}
+
+type EventPipe interface {
+	Send(e interface{})
+	SendFirst(e interface{})
+	NextEvent() interface{}
+}
+
+type (
+	Selector interface {
+		Select(p0, p1 int64)
+		Dot() (p0, p1 int64)
+	}
+	Projector interface {
+		PointOf(int64) image.Point
+		IndexOf(image.Point) int64
+	}
+	Sweeper interface {
+		Projector
+		Selector
+	}
+)
+
+func pt(e mouse.Event) image.Point {
+	return image.Pt(int(e.X), int(e.Y))
+}
+
+func min64(a, b int64) int64 {
+	if a < b {
+		return a
+	}
+	return b
+}
+func max64(a, b int64) int64 {
+	if a < b {
+		return b
+	}
+	return a
 }
 
 type ScrollEvent struct {

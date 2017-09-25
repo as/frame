@@ -1,8 +1,3 @@
-// Package frame provides plan9-like editable text images on a raster display. This implementation
-// preserves NUL bytes, and uses a set of replacement characters for undenderable text glyphs generated
-// with a smaller sized font (hexidecimal or ascii representation).
-//
-// A frame's text is not addressable
 package frame
 
 import (
@@ -13,14 +8,8 @@ import (
 	"image/draw"
 )
 
-func (f *Frame) RGBA() *image.RGBA {
-	return f.b
-}
-func (f *Frame) Size() image.Point {
-	r := f.RGBA().Bounds()
-	return image.Pt(r.Dx(), r.Dy())
-}
 
+// Frame is a write-only container for editable text
 type Frame struct {
 	box.Run
 	Color
@@ -70,6 +59,14 @@ func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color) *Frame {
 	return f
 }
 
+func (f *Frame) RGBA() *image.RGBA {
+	return f.b
+}
+func (f *Frame) Size() image.Point {
+	r := f.RGBA().Bounds()
+	return image.Pt(r.Dx(), r.Dy())
+}
+
 // Dirty returns true if the contents of the frame have changes since the last redraw
 func (f *Frame) Dirty() bool {
 	return f.modified
@@ -96,16 +93,6 @@ func (f *Frame) SetFont(ft *font.Font) {
 	f.Font = ft
 	f.Run.Reset(f.Font.MeasureByte)
 	f.Refresh()
-}
-
-// Dx returns the width of s in pixels
-func (f *Frame) Dx(s string) int {
-	return f.Font.Dx(s)
-}
-
-// Dy returns the height of a glyphs bounding box
-func (f *Frame) Dy() int {
-	return f.Font.Dy()
 }
 
 // Bounds returns the frame's clipping rectangle
