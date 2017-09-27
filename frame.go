@@ -8,7 +8,12 @@ import (
 	"image/draw"
 )
 
-var ForceUTF8Experiment = false
+var (
+	// Enables the UTF-8 experiment
+	ForceUTF8Experiment = false
+	// Enables the Elastic Tabstop experiement
+	ForceElasticTabstopExperiment = false
+)
 
 // Frame is a write-only container for editable text
 type Frame struct {
@@ -50,7 +55,7 @@ func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, r
 	spaceDx := ft.Measure(' ')
 	f := &Frame{
 		Font:   ft,
-		maxtab: 4 * spaceDx,
+		maxtab: 400 * spaceDx,
 		Color:  cols,
 		Run:    box.NewRun(spaceDx, 5000, ft, box.NewRuneRuler),
 		stringBG: font.RuneBG,
@@ -112,6 +117,11 @@ func (f *Frame) SetDirty(dirty bool) {
 func (f *Frame) SetOp(op draw.Op) {
 	f.op = op
 
+}
+
+// Close closes the frame
+func (f *Frame) Close() error{
+	return nil
 }
 
 // Reset resets the frame to display on image b with bounds r and font ft.

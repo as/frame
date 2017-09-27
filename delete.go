@@ -107,7 +107,7 @@ func (f *Frame) Delete(p0, p1 int64) int {
 		}
 	}
 
-	f.Close(n0, n1-1)
+	f.Run.Close(n0, n1-1)
 	if nn0 > 0 && f.Box[nn0-1].Nrune >= 0 && ppt0.X-f.Box[nn0-1].Width >= f.r.Min.X {
 		nn0--
 		ppt0.X -= f.Box[nn0].Width
@@ -140,6 +140,14 @@ func (f *Frame) Delete(p0, p1 int64) int {
 		extra = 1
 	}
 	f.Nlines = (pt0.Y-f.r.Min.Y)/h + extra
+	if ForceElasticTabstopExperiment{
+		// Just to see if the algorithm works not ideal to sift through all of
+		// the boxes per insertion, although surprisingly faster than expected
+		// to the point of where its almost unnoticable without the print
+		// statements
+		f.Stretch(0)
+		f.Refresh()	// must do this until line mapper is fixed
+	}
 	return int(p1 - p0) //n - f.Nlines
 }
 
