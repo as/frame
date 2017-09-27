@@ -5,7 +5,9 @@ Package frame provides plan9-like editable text images. The package is similar t
 
 - `NUL` bytes are preserved
 - Semantic replacement characters are used for unrenderable text
-- No UTF8 (yet)
+- Experimental UTF8 Support (see `frame.ForceUTF8Experiment`)
+- In-work elastic tabstop support (see `frame.ForceElasticTabstopExperiment`)
+
 
 ## Basic Example
 
