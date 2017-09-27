@@ -42,7 +42,7 @@ func RuneBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *
 		if !ok {
 			panic("RuneBG")
 		}
-		draw.Draw(dst, dr, bg, bgp, draw.Src)
+		//draw.Draw(dst, dr, bg, bgp, draw.Src)
 		draw.DrawMask(dst, dr, src, sp, mask, maskp, draw.Over)
 		p.X += Fix(advance)
 		if len(s)-size == 0 {

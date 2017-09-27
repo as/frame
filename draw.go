@@ -2,7 +2,6 @@ package frame
 
 import (
 	"image"
-
 	"github.com/as/frame/box"
 )
 

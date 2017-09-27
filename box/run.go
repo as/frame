@@ -38,6 +38,7 @@ type Run struct {
 	br Ruler
 }
 
+
 // Count recomputes and returns the number of bytes
 // stored between box nb and the last box
 func (f *Run) Count(nb int) int64 {
