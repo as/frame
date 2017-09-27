@@ -55,7 +55,7 @@ func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, r
 	spaceDx := ft.Measure(' ')
 	f := &Frame{
 		Font:   ft,
-		maxtab: 400 * spaceDx,
+		maxtab: 4 * spaceDx,
 		Color:  cols,
 		Run:    box.NewRun(spaceDx, 5000, ft, box.NewRuneRuler),
 		stringBG: font.RuneBG,
