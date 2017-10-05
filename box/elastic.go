@@ -5,10 +5,44 @@ import (
 )
 
 // Elastic tabstop experiment section. Not ready for general use by any means
+// the text/tabwriter package implements elastic tabstops, but this package
+// assumes that all chars are the same width and that text needs to be rescanned.
+//
+// The frame already distinguishes between tabs, newlines, and plain text characters
+// by encapsulating them in measured boxes. A direct copy of the tabwriter code would
+// ignore the datastructures in the frame and their sublinear runtime cost.
+//
+// A few cases need to be handles for elastic tabstops:
+//
+// Insertion:
+// 	An insert always creates a new box, this box can take on the form '\n', '\t'
+//  or be part of the plain text character set which for this purpose is the set
+//  of characters not equal to '\t' or '\n'. A successful insert operation runs
+//  to completion and results in a net gain of runes (not taking into consideration
+//  the runes which run off the frame and are deleted). An insert never subtracts
+//  of boxes assuming that all characters stay on the frame. There are now a few
+//  cases:
+//
+//  1. The insert contains plain text characters
+//		This is already a non-trivial case. Plaintext characters can move a column of
+//		text far enough to extend the range of the column's tab stop. The procedure then
+//		is to seek forth and determine if a tab follows the insertion point. This can be
+//		completed in sub-linear time, as plain text boxes are merged into one before the
+//		start of a hard newline or soft wrap (when a box width exceeds frame.r.Max). The
+//		soft line wrap property of boxes may aggregate the runtime performance of this
+//		implementation by containing sparse newlines. In this case we consider an algorithm
+//		that gives up and favors performance over elasticity. Elastic tabstops have little
+//		use in binary files anyway and we probably want to give users the opportunity to turn
+//		them off. The seek forth operation scans forward and locates the first newline, while
+//		counting the occurence of \t boxes and measuring their width. The maximum width column
+//		is tracked as well. The seek forth operation terminates whenever a column-less line is
+//		located (formally defined as a run of boxes seperated by a newline containing no \t boxes
+//
+//
 
 func (f *Run) Stretch(nb int) {
-//	fmt.Println()
-//	fmt.Printf("\n\ntrace bn=%d\n", nb)
+	//	fmt.Println()
+	//	fmt.Printf("\n\ntrace bn=%d\n", nb)
 	nc := 0
 	nl := 0
 	dx := 0
@@ -31,7 +65,7 @@ func (f *Run) Stretch(nb int) {
 			if dx > max {
 				cmax[nc] = dx
 			}
-//			fmt.Printf("line %d col %d width %d\n", nl, nc, dx)
+			//			fmt.Printf("line %d col %d width %d\n", nl, nc, dx)
 			nc++
 			dx = 0
 		}
