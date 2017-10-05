@@ -7,18 +7,30 @@ import (
 
 // Delete deletes the text range represented by [p0,p1) and
 // returns the number of text glyphs deleted.
-func (f *Frame) Deletex(p0, p1 int64) int {
+func (f *Frame) Deletex(p0, p1 int64) int {}
+func (f *Frame) Delete(p0, p1 int64) int {
+
 	if p0 >= f.Nchars || p0 == p1 || f.b == nil {
 		return 0
 	}
+
 	if p1 > f.Nchars {
 		p1 = f.Nchars
 	}
 	if f.p0 == f.p1 {
 		f.tickat(f.PointOf(int64(f.p0)), false)
 	}
+	
+	n0 := f.Find(0, 0, p0)
+	nn0 := n0
+	n1 := f.Find(n0, p0, p1)
+	pt0 := f.ptOfCharNBox(p0, n0)
+	ppt0 := pt0
+	pt1 := f.PointOf(p1)
+	f.Free(n0, n1-1)
 	f.modified = true
-
+	cn1 := int64(p1)
+	
 	// Advance forward, copying the first un-deleted box
 	// on the right all the way to the left, splitting them
 	// when necessary to fit on a wrapped line. A bit of draw
@@ -33,96 +45,14 @@ func (f *Frame) Deletex(p0, p1 int64) int {
 	// n0/n1: deleted box/first surviving box
 	// cn1: char index of the surviving box
 
-	n0 := f.Find(0, 0, p0)
-	n1 := f.Find(n0, p0, p1)
-	cn1 := int64(p1)
-	nn0 := n0
-	f.Free(n0, n1-1)
-
-	pt0 := f.ptOfCharNBox(p0, n0)
-	pt1 := f.PointOf(p1)
-	ppt0 := pt0
-
-	h := f.Font.Dy()
-	pt0, pt1, n0, n1, cn1 = f.delete(pt0, pt1, n0, n1, cn1)
-
-	// Delete more than a line. All the boxes have been shifted
-	// but the bitmap might still have a copy of them down below
-	if pt1.Y != pt0.Y {
-		pt0, pt1, n1 = f.fixTrailer(pt0, pt1, n1)
-	}
-
-	f.Run.Close(n0, n1-1)
-	if nn0 > 0 && f.Box[nn0-1].Nrune >= 0 && ppt0.X-f.Box[nn0-1].Width >= f.r.Min.X {
-		nn0--
-		ppt0.X -= f.Box[nn0].Width
-	}
-
-	if n0 < f.Nbox-1 {
-		n0++
-	}
-	f.clean(ppt0, nn0, n0)
-
-	if f.p1 > p1 {
-		f.p1 -= p1 - p0
-	} else if f.p1 > p0 {
-		f.p1 = p0
-	}
-	if f.p0 > p1 {
-		f.p0 -= p1 - p0
-	} else if f.p0 > p0 {
-		f.p0 = p0
-	}
-
-	f.Nchars -= p1 - p0
-	if f.p0 == f.p1 {
-		f.tickat(f.PointOf(f.p0), true)
-	}
-	pt0 = f.PointOf(f.Nchars)
-	extra := 0
-	if pt0.X > f.r.Min.X {
-		extra = 1
-	}
-	f.Nlines = (pt0.Y-f.r.Min.Y)/h + extra
-	if ForceElasticTabstopExperiment {
-		// Just to see if the algorithm works not ideal to sift through all of
-		// the boxes per insertion, although surprisingly faster than expected
-		// to the point of where its almost unnoticable without the print
-		// statements
-		f.Stretch(0)
-		f.Refresh() // must do this until line mapper is fixed
-	}
-	return int(p1 - p0) //n - f.Nlines
-}
-func (f *Frame) Delete(p0, p1 int64) int {
-
-	if p0 >= f.Nchars || p0 == p1 || f.b == nil {
-		return 0
-	}
-
-	if p1 > f.Nchars {
-		p1 = f.Nchars
-	}
-	if f.p0 == f.p1 {
-		f.tickat(f.PointOf(int64(f.p0)), false)
-	}
-	n0 := f.Find(0, 0, p0)
-	nn0 := n0
-	n1 := f.Find(n0, p0, p1)
-	pt0 := f.ptOfCharNBox(p0, n0)
-	ppt0 := pt0
-	pt1 := f.PointOf(p1)
-	f.Free(n0, n1-1)
-	f.modified = true
-
-	cn1 := int64(p1)
-
 	pt0, pt1, n0, n1, cn1 = f.delete(pt0, pt1, n0, n1, cn1)
 
 	if n1 == f.Nbox && pt0.X != pt1.X {
 		f.Paint(pt0, pt1, f.Color.Back)
 	}
 
+	// Delete more than a line. All the boxes have been shifted
+	// but the bitmap might still have a copy of them down below
 	if pt1.Y != pt0.Y {
 		pt0, pt1, n1 = f.fixTrailer(pt0, pt1, n1)
 	}
