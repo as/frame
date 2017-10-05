@@ -38,10 +38,9 @@ func (f *Frame) Delete(p0, p1 int64) int {
 	//
 	// pt0/pt1: deletion start/stop
 	// n0/n1: deleted box/first surviving box
-	// cn1: char index of the surviving box
+	// int64(p1): char index of the surviving box
 
-	cn1 := int64(p1)
-	pt0, pt1, n0, n1, cn1 = f.delete(pt0, pt1, n0, n1, cn1)
+	pt0, pt1, n0, n1 = f.delete(pt0, pt1, n0, n1, int64(p1))
 
 	if n1 == f.Nbox && pt0.X != pt1.X {
 		f.Paint(pt0, pt1, f.Color.Back)
@@ -96,7 +95,7 @@ func (f *Frame) Delete(p0, p1 int64) int {
 	}
 	return int(p1 - p0) //n - f.Nlines
 }
-func (f *Frame) delete(pt0, pt1 image.Point, n0, n1 int, cn1 int64) (image.Point, image.Point, int, int, int64) {
+func (f *Frame) delete(pt0, pt1 image.Point, n0, n1 int, cn1 int64) (image.Point, image.Point, int, int) {
 	h := f.Font.Dy()
 	for pt1.X != pt0.X && n1 < f.Nbox {
 		b := &f.Box[n1]
@@ -127,7 +126,7 @@ func (f *Frame) delete(pt0, pt1 image.Point, n0, n1 int, cn1 int64) (image.Point
 		n0++
 		n1++
 	}
-	return pt0, pt1, n0, n1, cn1
+	return pt0, pt1, n0, n1
 }
 func (f *Frame) fixTrailer(pt0, pt1 image.Point, n1 int) (image.Point, image.Point, int) {
 	if n1 == f.Nbox && pt0.X != pt1.X {

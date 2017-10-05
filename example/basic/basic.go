@@ -2,12 +2,8 @@ package main
 
 import (
 	"sync"
-	//	"github.com/as/clip"
-	//
-
 	"image"
 	"image/draw"
-
 	"github.com/as/frame"
 	"github.com/as/frame/font"
 	"golang.org/x/exp/shiny/driver"
@@ -27,7 +23,6 @@ func pt(e mouse.Event) image.Point {
 }
 
 func main() {
-	var focused = false
 	driver.Main(func(src screen.Screen) {
 		var dirty = true
 		wind, _ := src.NewWindow(&screen.NewWindowOptions{winSize.X, winSize.Y, "basic"})
@@ -100,12 +95,6 @@ func main() {
 			case lifecycle.Event:
 				if e.To == lifecycle.StageDead {
 					return
-				}
-				// NT doesn't repaint the window if another window covers it
-				if e.Crosses(lifecycle.StageFocused) == lifecycle.CrossOff {
-					focused = false
-				} else if e.Crosses(lifecycle.StageFocused) == lifecycle.CrossOn {
-					focused = true
 				}
 			}
 		}

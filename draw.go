@@ -25,7 +25,7 @@ func (f *Frame) Refresh() {
 	pt := f.PointOf(0)
 	pt = f.drawsel(pt, 0, f.p0, cols.Back, cols.Text)
 	pt = f.drawsel(pt, f.p0, f.p1, cols.Hi.Back, cols.Hi.Text)
-	pt = f.drawsel(pt, f.p1, f.Nchars, cols.Back, cols.Text)
+	f.drawsel(pt, f.p1, f.Nchars, cols.Back, cols.Text)
 }
 
 // RedrawAt renders the frame's bitmap starting at pt and working downwards.
