@@ -37,10 +37,10 @@ type Frame struct {
 	modified  bool
 	noredraw  bool
 	op        draw.Op
-	
+
 	// Points to the font subpackage's StringN?BG or RuneN?BG functions
-	stringBG  func (draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte, image.Image, image.Point) int
-	stringNBG func (draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte) int
+	stringBG     func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte, image.Image, image.Point) int
+	stringNBG    func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte) int
 	newRulerFunc func(s []byte, ft *font.Font) box.Ruler
 
 	drawcache.Drawer
@@ -51,17 +51,17 @@ type Frame struct {
 	hex     []draw.Image
 }
 
-func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, runes ...bool) *Frame{
+func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, runes ...bool) *Frame {
 	spaceDx := ft.Measure(' ')
 	f := &Frame{
-		Font:   ft,
-		maxtab: 4 * spaceDx,
-		Color:  cols,
-		Run:    box.NewRun(spaceDx, 5000, ft, box.NewRuneRuler),
-		stringBG: font.RuneBG,
-		stringNBG: font.RuneNBG,
+		Font:         ft,
+		maxtab:       4 * spaceDx,
+		Color:        cols,
+		Run:          box.NewRun(spaceDx, 5000, ft, box.NewRuneRuler),
+		stringBG:     font.RuneBG,
+		stringNBG:    font.RuneNBG,
 		newRulerFunc: box.NewRuneRuler,
-		op:     draw.Src,
+		op:           draw.Src,
 	}
 	f.setrects(r, b)
 	f.inittick()
@@ -75,18 +75,18 @@ func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, r
 // as the frame's internal bitmap cache.
 func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, runes ...bool) *Frame {
 	if (len(runes) > 0 && runes[0]) || ForceUTF8Experiment {
-		return newRuneFrame(r,ft,b,cols)
+		return newRuneFrame(r, ft, b, cols)
 	}
 	spaceDx := ft.Measure(' ')
 	f := &Frame{
-		Font:   ft,
-		maxtab: 4 * spaceDx,
-		Color:  cols,
-		Run:    box.NewRun(spaceDx, 5000, ft),
-		stringBG: font.StringBG,
-		stringNBG: font.StringNBG,
+		Font:         ft,
+		maxtab:       4 * spaceDx,
+		Color:        cols,
+		Run:          box.NewRun(spaceDx, 5000, ft),
+		stringBG:     font.StringBG,
+		stringNBG:    font.StringNBG,
 		newRulerFunc: box.NewByteRuler,
-		op:     draw.Src,
+		op:           draw.Src,
 	}
 	f.setrects(r, b)
 	f.inittick()
@@ -120,7 +120,7 @@ func (f *Frame) SetOp(op draw.Op) {
 }
 
 // Close closes the frame
-func (f *Frame) Close() error{
+func (f *Frame) Close() error {
 	return nil
 }
 

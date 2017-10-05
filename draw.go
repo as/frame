@@ -1,8 +1,8 @@
 package frame
 
 import (
-	"image"
 	"github.com/as/frame/box"
+	"image"
 )
 
 // Refresh renders the entire frame, including the underlying

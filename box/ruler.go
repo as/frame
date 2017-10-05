@@ -1,21 +1,20 @@
 package box
 
 import (
+	"errors"
+	"github.com/as/frame/font"
 	"io"
 	"unicode/utf8"
-	"github.com/as/frame/font"
-	"errors"
-//	"log"
+	//	"log"
 )
 
-var(
-	ErrZeroRead = errors.New("zero length read")
+var (
+	ErrZeroRead     = errors.New("zero length read")
 	ErrDoubleUnread = errors.New("double unread")
 )
 
-
-type Ruler interface{
-	Advance() (error)
+type Ruler interface {
+	Advance() error
 	Bytes() []byte
 	Next() (size, width int, err error)
 	Last() []byte
@@ -26,17 +25,17 @@ type Ruler interface{
 
 type byteRuler struct {
 	*font.Font
-	b []byte
-	i int
-	w int
+	b                   []byte
+	i                   int
+	w                   int
 	lastSize, lastWidth int
 }
 
 type runeRuler struct {
 	*font.Font
-	b []byte
-	i int
-	w int
+	b                   []byte
+	i                   int
+	w                   int
 	lastSize, lastWidth int
 }
 
@@ -48,8 +47,8 @@ func NewRuneRuler(b []byte, ft *font.Font) Ruler {
 	return &runeRuler{Font: ft, b: b}
 }
 
-func (bs *byteRuler) Bytes() []byte{ return bs.b[:bs.i]}
-func (bs *runeRuler) Bytes() []byte{ return bs.b[:bs.i]}
+func (bs *byteRuler) Bytes() []byte { return bs.b[:bs.i] }
+func (bs *runeRuler) Bytes() []byte { return bs.b[:bs.i] }
 
 func (bs *byteRuler) Advance() (err error) {
 	if bs.i == len(bs.b) {
@@ -60,7 +59,7 @@ func (bs *byteRuler) Advance() (err error) {
 	bs.w = 0
 	bs.lastSize = 0
 	bs.lastWidth = 0
-	
+
 	return nil
 }
 
@@ -73,7 +72,7 @@ func (bs *runeRuler) Advance() (err error) {
 	bs.w = 0
 	bs.lastSize = 0
 	bs.lastWidth = 0
-	
+
 	return nil
 }
 
@@ -95,9 +94,9 @@ func (bs *runeRuler) Next() (size, widthPx int, err error) {
 		return 0, 0, io.EOF
 	}
 	r, size := utf8.DecodeRune(bs.b[bs.i:])
-	if r == utf8.RuneError{
+	if r == utf8.RuneError {
 	}
-	if size == 0{
+	if size == 0 {
 		panic("size = 0")
 	}
 	widthPx = bs.MeasureRune(r)
@@ -105,15 +104,15 @@ func (bs *runeRuler) Next() (size, widthPx int, err error) {
 	bs.w += widthPx
 	bs.lastSize = size
 	bs.lastWidth = widthPx
-//	log.Printf("size:%d widthpx: %d err=%s\n", size, widthPx, err)
+	//	log.Printf("size:%d widthpx: %d err=%s\n", size, widthPx, err)
 	return
 }
 
-func (bs *byteRuler) Unread() (size, widthPx int, err error){
-	if bs.lastSize == -1{
+func (bs *byteRuler) Unread() (size, widthPx int, err error) {
+	if bs.lastSize == -1 {
 		return 0, 0, ErrDoubleUnread
 	}
-	if bs.i - bs.lastSize < 0{
+	if bs.i-bs.lastSize < 0 {
 		return 0, 0, ErrZeroRead
 	}
 	lsz := bs.lastSize
@@ -123,11 +122,11 @@ func (bs *byteRuler) Unread() (size, widthPx int, err error){
 	return lsz, bs.lastWidth, nil
 }
 
-func (bs *runeRuler) Unread() (size, widthPx int, err error){
-	if bs.lastSize == -1{
+func (bs *runeRuler) Unread() (size, widthPx int, err error) {
+	if bs.lastSize == -1 {
 		return 0, 0, ErrDoubleUnread
 	}
-	if bs.i - bs.lastSize < 0{
+	if bs.i-bs.lastSize < 0 {
 		return 0, 0, ErrZeroRead
 	}
 	lsz := bs.lastSize
@@ -137,16 +136,16 @@ func (bs *runeRuler) Unread() (size, widthPx int, err error){
 	return lsz, bs.lastWidth, nil
 }
 
-func (bs *byteRuler) Last() []byte{
-	return bs.b[bs.i-bs.lastSize:bs.i]
+func (bs *byteRuler) Last() []byte {
+	return bs.b[bs.i-bs.lastSize : bs.i]
 }
 
-func (bs *runeRuler) Last() []byte{
-//	log.Printf("called Last: bytes=%s\n\tbs.i=%d\n\tlastsize=%d\n\n",bs.b, bs.i, bs.lastSize)
-	return bs.b[bs.i-bs.lastSize:bs.i]
+func (bs *runeRuler) Last() []byte {
+	//	log.Printf("called Last: bytes=%s\n\tbs.i=%d\n\tlastsize=%d\n\n",bs.b, bs.i, bs.lastSize)
+	return bs.b[bs.i-bs.lastSize : bs.i]
 }
 
-func (bs *byteRuler) Len() int{return bs.i}
-func (bs *byteRuler) Width() int{return bs.w}
-func (bs *runeRuler) Len() int{return bs.i}
-func (bs *runeRuler) Width() int{return bs.w}
+func (bs *byteRuler) Len() int   { return bs.i }
+func (bs *byteRuler) Width() int { return bs.w }
+func (bs *runeRuler) Len() int   { return bs.i }
+func (bs *runeRuler) Width() int { return bs.w }

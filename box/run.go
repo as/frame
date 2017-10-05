@@ -10,13 +10,13 @@ var MaxBytes = 128 + 3
 
 func NewRun(minDx, maxDx int, ft *font.Font, newRulerFunc ...func([]byte, *font.Font) Ruler) Run {
 	fn := NewByteRuler
-	if len(newRulerFunc) > 0{
+	if len(newRulerFunc) > 0 {
 		fn = newRulerFunc[0]
 	}
 	return Run{
-		minDx:   minDx,
-		maxDx:   maxDx,
-		Font: ft,
+		minDx:        minDx,
+		maxDx:        maxDx,
+		Font:         ft,
 		newRulerFunc: fn,
 	}
 }
@@ -25,19 +25,18 @@ func NewRun(minDx, maxDx int, ft *font.Font, newRulerFunc ...func([]byte, *font.
 // into boxes with Bxscan().
 type Run struct {
 	*font.Font
-	Nchars  int64
-	Nlines  int
-	Nalloc  int
-	Nbox    int
-	Box     []Box
+	Nchars int64
+	Nlines int
+	Nalloc int
+	Nbox   int
+	Box    []Box
 
 	minDx, maxDx int
 	delta        int
-	
-	newRulerFunc func([]byte, *font.Font) Ruler
-	br Ruler
-}
 
+	newRulerFunc func([]byte, *font.Font) Ruler
+	br           Ruler
+}
 
 // Count recomputes and returns the number of bytes
 // stored between box nb and the last box
@@ -107,11 +106,11 @@ func (f *Run) Split(bn, n int) {
 	f.Chop(&f.Box[bn+1], n)
 }
 
-func (f *Run) MeasureBytes(p []byte) int{
+func (f *Run) MeasureBytes(p []byte) int {
 	br := f.newRulerFunc(p, f.Font)
 	for {
 		_, _, err := br.Next()
-		if err != nil{
+		if err != nil {
 			break
 		}
 	}

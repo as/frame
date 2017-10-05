@@ -34,9 +34,9 @@ import (
 //		that gives up and favors performance over elasticity. Elastic tabstops have little
 //		use in binary files anyway and we probably want to give users the opportunity to turn
 //		them off. The seek forth operation scans forward and locates the first newline, while
-//		counting the occurence of \t boxes and measuring their width. The maximum width column
+//		counting the occurance of \t boxes and measuring their width. The maximum width column
 //		is tracked as well. The seek forth operation terminates whenever a column-less line is
-//		located (formally defined as a run of boxes seperated by a newline containing no \t boxes
+//		located (formally defined as a run of boxes separated by a newline containing no \t boxes
 //
 //
 

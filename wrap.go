@@ -2,9 +2,8 @@ package frame
 
 import (
 	"fmt"
-	"image"
 	"github.com/as/frame/box"
-
+	"image"
 )
 
 // LineWrap checks whether the box would wrap across a line boundary
