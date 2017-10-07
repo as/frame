@@ -78,11 +78,14 @@ func (f *Run) Stretch(nb int) {
 	for c, bns := range cbox {
 		max := cmax[c]
 		for _, bn := range bns {
-			//dx := f.Box[bn].Width
-			if c == 0{
-				f.Box[bn].Width = max
-			} else {
-				f.Box[bn].Width = max - f.Box[bn-1].Width
+			b := &f.Box[bn]
+			b.Width = max 
+			if bn == 0{
+				continue
+			}
+			pb := f.Box[bn-1]
+			if pb.BC != '\n'{
+				b.Width -= f.Box[bn-1].Width
 			}
 		}
 	}

@@ -26,6 +26,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 
 	// find p0, it's box, and its point in the box its in
 	n0 = f.Find(0, 0, p0)
+	on0 := n0
 	cn0 = p0
 	nn0 = n0
 	pt0 = f.ptOfCharNBox(p0, n0)
@@ -200,7 +201,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 		// the boxes per insertion, although surprisingly faster than expected
 		// to the point of where its almost unnoticable without the print
 		// statements
-		f.Stretch(n0)
+		f.Stretch(on0)
 		f.Refresh() // must do this until line mapper is fixed
 	}
 	return wrote
