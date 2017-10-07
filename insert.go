@@ -200,7 +200,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 		// the boxes per insertion, although surprisingly faster than expected
 		// to the point of where its almost unnoticable without the print
 		// statements
-		f.Stretch(0)
+		f.Stretch(n0)
 		f.Refresh() // must do this until line mapper is fixed
 	}
 	return wrote

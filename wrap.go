@@ -40,7 +40,7 @@ func (f *Frame) canFitLeft(pt image.Point, b *box.Box) int {
 	return b.Len() - n
 }
 
-// CanFit returns the number of runes that can fit
+// canFit returns the number of runes that can fit
 // on the line at pt. A newline yields 1.
 func (f *Frame) canFit(pt image.Point, b *box.Box) (nr int) {
 	left := f.r.Max.X - pt.X
