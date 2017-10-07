@@ -7,7 +7,7 @@ import (
 func (f *Frame) ptOfCharPtBox(p int64, pt image.Point, bn int) (x image.Point) {
 	for ; bn < f.Nbox; bn++ {
 		b := &f.Box[bn]
-		pt = f.lineWrap(pt, b)
+		pt = f.wrapMax(pt, b)
 		l := b.Len()
 		if p < int64(l) {
 			if b.Nrune > 0 {
@@ -61,7 +61,7 @@ func (f *Frame) IndexOf(pt image.Point) int64 {
 	bn := 0
 	for ; bn < f.Nbox && qt.Y < pt.Y; bn++ {
 		b := &f.Box[bn]
-		qt = f.lineWrap(qt, b)
+		qt = f.wrapMax(qt, b)
 		if qt.Y >= pt.Y {
 			break
 		}
@@ -71,7 +71,7 @@ func (f *Frame) IndexOf(pt image.Point) int64 {
 
 	for ; bn < f.Nbox && qt.X <= pt.X; bn++ {
 		b := &f.Box[bn]
-		qt = f.lineWrap(qt, b)
+		qt = f.wrapMax(qt, b)
 		if qt.Y > pt.Y {
 			break
 		}

@@ -9,7 +9,7 @@ func (f *Frame) clean(pt image.Point, n0, n1 int) {
 	for ; n0 < n1-1; n0++ {
 		b0 := &f.Box[n0]
 		b1 := &f.Box[n0+1]
-		pt = f.lineWrap(pt, b0)
+		pt = f.wrapMax(pt, b0)
 		for b0.Nrune >= 0 && n0 < n1-1 && b1.Nrune >= 0 && pt.X+b0.Width+b1.Width < c {
 			f.Merge(n0)
 			n1--
@@ -20,7 +20,7 @@ func (f *Frame) clean(pt image.Point, n0, n1 int) {
 
 	for ; n0 < f.Nbox; n0++ {
 		b0 := &f.Box[n0]
-		pt = f.lineWrap(pt, b0)
+		pt = f.wrapMax(pt, b0)
 		pt = f.advance(pt, b0)
 	}
 

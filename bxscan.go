@@ -8,6 +8,6 @@ import (
 func (f *Frame) bxscan(s []byte, ppt image.Point) (image.Point, image.Point) {
 	f.ir.Reset(f.Font)
 	f.ir.Bxscan(s, f.maxlines)
-	ppt = f.lineWrap0(ppt, &f.ir.Box[0])
+	ppt = f.wrapMin(ppt, &f.ir.Box[0])
 	return ppt, f.drawRun(f.ir, ppt)
 }

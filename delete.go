@@ -99,13 +99,13 @@ func (f *Frame) delete(pt0, pt1 image.Point, n0, n1 int, cn1 int64) (image.Point
 	h := f.Font.Dy()
 	for pt1.X != pt0.X && n1 < f.Nbox {
 		b := &f.Box[n1]
-		pt0 = f.lineWrap0(pt0, b)
-		pt1 = f.lineWrap(pt1, b)
+		pt0 = f.wrapMin(pt0, b)
+		pt1 = f.wrapMax(pt1, b)
 		r := image.Rectangle{pt0, pt0}
 		r.Max.Y += h
 
 		if b.Nrune > 0 { // non-newline
-			n := f.canFit(pt0, b)
+			n := f.fits(pt0, b)
 			if n != b.Nrune {
 				f.Split(n1, n)
 				b = &f.Box[n1]
@@ -115,13 +115,13 @@ func (f *Frame) delete(pt0, pt1 image.Point, n0, n1 int, cn1 int64) (image.Point
 			//drawBorder(f.b, r.Inset(-4), Green, image.ZP, 8)
 			cn1 += int64(b.Nrune)
 		} else {
-			r.Max.X = min(r.Max.X+f.newWid0(pt0, b), f.r.Max.X)
+			r.Max.X = min(r.Max.X+f.project(pt0, b), f.r.Max.X)
 			_, col := f.pick(cn1, f.p0, f.p1)
 			f.Draw(f.b, r, col, pt0, f.op)
 			cn1++
 		}
 		pt1 = f.advance(pt1, b)
-		pt0.X += f.newWid(pt0, b)
+		pt0.X += f.plot(pt0, b)
 		f.Box[n0] = f.Box[n1]
 		n0++
 		n1++

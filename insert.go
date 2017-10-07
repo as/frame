@@ -39,8 +39,8 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	// Line wrap
 	if n0 < f.Nbox {
 		b := &f.Box[n0]
-		pt0 = f.lineWrap(pt0, b)
-		ppt1 = f.lineWrap0(ppt1, b)
+		pt0 = f.wrapMax(pt0, b)
+		ppt1 = f.wrapMin(ppt1, b)
 	}
 	f.modified = true
 
@@ -61,10 +61,10 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	f.pts = f.pts[:0]
 	for ; pt1.X != pt0.X && pt1.Y != f.r.Max.Y && n0 < f.Nbox; n0++ {
 		b := &f.Box[n0]
-		pt0 = f.lineWrap(pt0, b)
-		pt1 = f.lineWrap0(pt1, b)
+		pt0 = f.wrapMax(pt0, b)
+		pt1 = f.wrapMin(pt1, b)
 		if b.Nrune > 0 {
-			if n = f.canFit(pt1, b); n != b.Nrune {
+			if n = f.fits(pt1, b); n != b.Nrune {
 				f.Split(n0, n)
 				b = &f.Box[n0]
 			}
@@ -75,7 +75,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 		}
 		f.pts = append(f.pts, Pts{pt0, pt1})
 		pt0 = f.advance(pt0, b)
-		pt1.X += f.newWid(pt1, b)
+		pt1.X += f.plot(pt1, b)
 		cn0 += int64(b.Len())
 	}
 	if pt1.Y == f.r.Max.Y && n0 < f.Nbox {
@@ -94,7 +94,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 		qt1 := pt1.Y + h
 		f.Nlines += (qt1 - qt0) / h
 		if f.Nlines > f.maxlines {
-			f.chopFrame(ppt1, p0, nn0)
+			f.trim(ppt1, p0, nn0)
 		}
 		if pt1.Y < y {
 			r := f.r

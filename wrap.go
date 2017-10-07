@@ -9,40 +9,43 @@ import (
 // LineWrap checks whether the box would wrap across a line boundary
 // if it were inserted at pt. If it wraps, the line-wrapped point is
 // returned.
-func (f *Frame) lineWrap(pt image.Point, b *box.Box) image.Point {
+func (f *Frame) wrapMax(pt image.Point, b *box.Box) image.Point {
 	width := b.Width
 	if b.Nrune < 0 {
 		width = b.Minwidth
 	}
 	if width > f.r.Max.X-pt.X {
-		pt.X = f.r.Min.X
-		pt.Y += f.Font.Dy()
+		return f.wrap(pt)
 	}
 	return pt
 }
 
 // LineWrap0 returns the line-wrapped point if the box doesn't
 // fix on the line
-func (f *Frame) lineWrap0(pt image.Point, b *box.Box) image.Point {
-	if f.canFit(pt, b) == 0 {
-		pt.X = f.r.Min.X
-		pt.Y += f.Font.Dy()
+func (f *Frame) wrapMin(pt image.Point, b *box.Box) image.Point {
+	if f.fits(pt, b) == 0 {
+		return f.wrap(pt)
 	}
 	return pt
 }
 
-// NewLineTrim returns the number of characters that would
-// underflow on the left if b terminated at point pt.
-func (f *Frame) canFitLeft(pt image.Point, b *box.Box) int {
-	pt.X -= b.Width
-	pt.X = f.r.Max.X - pt.X
-	n := f.canFit(pt, b)
-	return b.Len() - n
+func (f *Frame) wrap(pt image.Point) image.Point{
+		pt.X = f.r.Min.X
+		pt.Y += f.Font.Dy()
+		return pt
 }
 
-// canFit returns the number of runes that can fit
-// on the line at pt. A newline yields 1.
-func (f *Frame) canFit(pt image.Point, b *box.Box) (nr int) {
+func (f *Frame) advance(pt image.Point, b *box.Box) (x image.Point) {
+	if b.Nrune < 0 && b.BC == '\n' {
+		pt = f.wrap(pt)
+	} else {
+		pt.X += b.Width
+	}
+	return pt
+}
+
+// fits returns the number of runes that can fit on the line at pt. A newline yields 1.
+func (f *Frame) fits(pt image.Point, b *box.Box) (nr int) {
 	left := f.r.Max.X - pt.X
 	if b.Nrune < 0 {
 		if b.Minwidth <= left {
@@ -65,25 +68,13 @@ func (f *Frame) canFit(pt image.Point, b *box.Box) (nr int) {
 		nr++
 	}
 	// The box was too short and didn't end on a line boundary
-	panic(fmt.Sprintf("CanFit: short box: len=%d left=%d box=%q\n", len(b.Ptr), left, b.Ptr))
+	panic(fmt.Sprintf("short box: len=%d left=%d box=%q\n", len(b.Ptr), left, b.Ptr))
 }
-
-func (f *Frame) advance(pt image.Point, b *box.Box) (x image.Point) {
-	if b.Nrune < 0 && b.BC == '\n' {
-		pt.X = f.r.Min.X
-		pt.Y += f.Font.Dy()
-	} else {
-		pt.X += b.Width
-	}
-	return pt
-}
-
-// TODO: Naming
-func (f *Frame) newWid(pt image.Point, b *box.Box) int {
-	b.Width = f.newWid0(pt, b)
+func (f *Frame) plot(pt image.Point, b *box.Box) int {
+	b.Width = f.project(pt, b)
 	return b.Width
 }
-func (f *Frame) newWid0(pt image.Point, b *box.Box) int {
+func (f *Frame) project(pt image.Point, b *box.Box) int {
 	c := f.r.Max.X
 	x := pt.X
 	if b.Nrune >= 0 || b.BC != '\t' {
