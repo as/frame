@@ -11,60 +11,15 @@ func (f *Frame) Mark() {
 	f.modified = true
 }
 
-func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
+func (f *Frame) alignX(cn0 int64, n0 int, pt0, pt1 image.Point) (int64, int, image.Point, image.Point){
 	type Pts [2]image.Point
-	var (
-		pt0, pt1, ppt0, ppt1, opt0 image.Point
-		n, n0, nn0, y              int
-		cn0                        int64
-		back, text                 image.Image
-	)
-	h := f.Font.Dy()
-	if p0 > f.Nchars || len(s) == 0 || f.b == nil {
-		return
-	}
-
-	// find p0, it's box, and its point in the box its in
-	n0 = f.Find(0, 0, p0)
-	on0 := n0
-	cn0 = p0
-	nn0 = n0
-	pt0 = f.ptOfCharNBox(p0, n0)
-	ppt0 = pt0
-	opt0 = pt0
-
-	// find p1
-	ppt0, pt1 = f.bxscan(s, ppt0)
-	ppt1 = pt1
-	// Line wrap
-	if n0 < f.Nbox {
-		b := &f.Box[n0]
-		pt0 = f.wrapMax(pt0, b)
-		ppt1 = f.wrapMin(ppt1, b)
-	}
-	f.modified = true
-
-	// pt0, pt1   - start and end of insertion (current; and without line wrap)
-	// ppt0, ppt1 - start and end of insertion when its complete
-
-	// Multiple ticks
-	if f.p0 == f.p1 {
-		f.tickat(f.PointOf(int64(f.p0)), false)
-	}
-
-	// Find the points where all the old x and new x line up
-	// Invariants:
-	//   pt[0] is where the next box (b, n0) is now
-	//   pt[1] is where it will be after insertion
-	// If pt[1] goes out of bounds, we're done
-
 	f.pts = f.pts[:0]
 	for ; pt1.X != pt0.X && pt1.Y != f.r.Max.Y && n0 < f.Nbox; n0++ {
 		b := &f.Box[n0]
 		pt0 = f.wrapMax(pt0, b)
 		pt1 = f.wrapMin(pt1, b)
 		if b.Nrune > 0 {
-			if n = f.fits(pt1, b); n != b.Nrune {
+			if n := f.fits(pt1, b); n != b.Nrune {
 				f.Split(n0, n)
 				b = &f.Box[n0]
 			}
@@ -78,6 +33,49 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 		pt1.X += f.plot(pt1, b)
 		cn0 += int64(b.Len())
 	}
+	return cn0, n0, pt0, pt1
+}
+
+func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
+	type Pts [2]image.Point
+	var (
+		y              int
+		back, text                 image.Image
+	)
+	h := f.Font.Dy()
+	if p0 > f.Nchars || len(s) == 0 || f.b == nil {
+		return
+	}
+
+	// find p0, it's box, and its point in the box its in
+	n0 := f.Find(0, 0, p0)
+	on0 := n0
+	cn0 := p0
+	nn0 := n0
+	pt0 := f.ptOfCharNBox(p0, n0)
+	opt0 := pt0
+
+	// find p1
+	ppt0, pt1 := f.bxscan(s, pt0)
+	ppt1 := pt1
+	// Line wrap
+	if n0 < f.Nbox {
+		b := &f.Box[n0]
+		pt0 = f.wrapMax(pt0, b)
+		ppt1 = f.wrapMin(ppt1, b)
+	}
+	f.modified = true
+	if f.p0 == f.p1 {
+		f.tickat(f.PointOf(int64(f.p0)), false)
+	}
+
+	// Find the points where all the old x and new x line up
+	// Invariants:
+	//   pt[0] is where the next box (b, n0) is now
+	//   pt[1] is where it will be after insertion
+	// If pt[1] goes out of bounds, we're done
+	cn0, n0, pt0, pt1 = f.alignX(cn0, n0, pt0, pt1)
+
 	if pt1.Y == f.r.Max.Y && n0 < f.Nbox {
 		f.Nchars -= f.Count(n0)
 		f.Run.Delete(n0, f.Nbox-1)
@@ -166,7 +164,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	f.Paint(ppt0, ppt1, back)
 	f.redrawRun0(fr, ppt0, text, back)
 	f.Add(nn0, fr.Nbox)
-	for n = 0; n < fr.Nbox; n++ {
+	for n := 0; n < fr.Nbox; n++ {
 		f.Box[nn0+n] = fr.Box[n]
 	}
 	if nn0 > 0 && f.Box[nn0-1].Nrune >= 0 && ppt0.X-f.Box[nn0-1].Width >= f.r.Min.X {
