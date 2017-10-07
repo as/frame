@@ -6,12 +6,11 @@ import (
 	"testing"
 )
 
+var fsize = 11
+
 func BenchmarkScanByte(b *testing.B) {
 	bb := []byte("a")
-	fn := func(bb byte) int {
-		return int(bb)
-	}
-	r := NewRun(5, 5000, fn)
+	r := NewRun(5, 5000, font.NewBasic(fsize))
 	b.StopTimer()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -24,7 +23,7 @@ func BenchmarkScanByte(b *testing.B) {
 func BenchmarkScanByteFont(b *testing.B) {
 	bb := []byte("a")
 	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft.MeasureByte)
+	r := NewRun(5, 5000, ft)
 	b.StopTimer()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -36,7 +35,7 @@ func BenchmarkScanByteFont(b *testing.B) {
 
 func BenchmarkScan16Bytes(b *testing.B) {
 	bb := []byte("The quick brown ")
-	fn := func(bb byte) int { return int(bb) }
+	fn := font.NewBasic(fsize)
 	r := NewRun(5, 5000, fn)
 	b.StopTimer()
 	b.ResetTimer()
@@ -50,7 +49,7 @@ func BenchmarkScan16Bytes(b *testing.B) {
 func BenchmarkScan16BytesFont(b *testing.B) {
 	bb := []byte("The quick brown ")
 	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft.MeasureByte)
+	r := NewRun(5, 5000, ft)
 	b.StopTimer()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -61,7 +60,7 @@ func BenchmarkScan16BytesFont(b *testing.B) {
 }
 func BenchmarkScanHelloWorld(b *testing.B) {
 	bb := []byte(`package main\nimport "fmt"\n\nfunc main(){\n\tfmt.Println("hello world")\n}\n\n`)
-	fn := func(bb byte) int { return int(bb) }
+	fn := font.NewBasic(fsize)
 	r := NewRun(5, 5000, fn)
 	b.StopTimer()
 	b.ResetTimer()
@@ -74,7 +73,7 @@ func BenchmarkScanHelloWorld(b *testing.B) {
 func BenchmarkScanHelloWorldFont(b *testing.B) {
 	bb := []byte(`package main\nimport "fmt"\n\nfunc main(){\n\tfmt.Println("hello world")\n}\n\n`)
 	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft.MeasureByte)
+	r := NewRun(5, 5000, ft)
 	b.StopTimer()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -94,7 +93,7 @@ func roll(size int) []byte {
 
 func BenchmarkScanBinary100(b *testing.B) {
 	bb := roll(100)
-	fn := func(bb byte) int { return int(bb) }
+	fn := font.NewBasic(fsize)
 	r := NewRun(5, 5000, fn)
 	b.StopTimer()
 	b.ResetTimer()
@@ -108,7 +107,7 @@ func BenchmarkScanBinary100(b *testing.B) {
 func BenchmarkScanBinary100Font(b *testing.B) {
 	bb := roll(100)
 	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft.MeasureByte)
+	r := NewRun(5, 5000, ft)
 	b.StopTimer()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -121,7 +120,8 @@ func BenchmarkScanBinary100Font(b *testing.B) {
 
 func BenchmarkScanBinary1000(b *testing.B) {
 	bb := roll(100)
-	fn := func(bb byte) int { return int(bb) }
+	fn := font.NewBasic(fsize)
+
 	r := NewRun(5, 5000, fn)
 	b.StopTimer()
 	b.ResetTimer()
@@ -135,7 +135,7 @@ func BenchmarkScanBinary1000(b *testing.B) {
 func BenchmarkScanBinary1000Font(b *testing.B) {
 	bb := roll(1000)
 	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft.MeasureByte)
+	r := NewRun(5, 5000, ft)
 
 	b.StopTimer()
 	b.ResetTimer()
@@ -148,7 +148,7 @@ func BenchmarkScanBinary1000Font(b *testing.B) {
 
 func BenchmarkScanBinary5000(b *testing.B) {
 	bb := roll(5000)
-	fn := func(bb byte) int { return int(bb) }
+	fn := font.NewBasic(fsize)
 	r := NewRun(5, 5000, fn)
 	b.StopTimer()
 	b.ResetTimer()
@@ -161,9 +161,8 @@ func BenchmarkScanBinary5000(b *testing.B) {
 }
 func BenchmarkScanBinary5000Font(b *testing.B) {
 	bb := roll(5000)
-	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft.MeasureByte)
-
+	fn := font.NewBasic(fsize)
+	r := NewRun(5, 5000, fn)
 	b.StopTimer()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -175,7 +174,7 @@ func BenchmarkScanBinary5000Font(b *testing.B) {
 
 func BenchmarkScanBinary100000(b *testing.B) {
 	bb := roll(100000)
-	fn := func(bb byte) int { return int(bb) }
+	fn := font.NewBasic(fsize)
 	r := NewRun(5, 5000, fn)
 	b.StopTimer()
 	b.ResetTimer()
@@ -188,8 +187,8 @@ func BenchmarkScanBinary100000(b *testing.B) {
 }
 func BenchmarkScanBinary100000Font(b *testing.B) {
 	bb := roll(100000)
-	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft.MeasureByte)
+	fn := font.NewGoRegular(9)
+	r := NewRun(5, 5000, fn)
 
 	b.StopTimer()
 	b.ResetTimer()
@@ -202,7 +201,7 @@ func BenchmarkScanBinary100000Font(b *testing.B) {
 
 func BenchmarkLongLine100000(b *testing.B) {
 	bb := bytes.Repeat([]byte{'a'}, 100000)
-	fn := func(bb byte) int { return int(bb) }
+	fn := font.NewGoRegular(8)
 	r := NewRun(5, 5000, fn)
 	b.StopTimer()
 	b.ResetTimer()
@@ -216,7 +215,7 @@ func BenchmarkLongLine100000(b *testing.B) {
 func BenchmarkLongLine100000Font(b *testing.B) {
 	bb := bytes.Repeat([]byte{'a'}, 100000)
 	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft.MeasureByte)
+	r := NewRun(5, 5000, ft)
 
 	b.StopTimer()
 	b.ResetTimer()
@@ -229,7 +228,7 @@ func BenchmarkLongLine100000Font(b *testing.B) {
 
 func Benchmark100000Lines(b *testing.B) {
 	bb := bytes.Repeat([]byte{'\n'}, 100000)
-	fn := func(bb byte) int { return int(bb) }
+	fn := font.NewGoRegular(8)
 	r := NewRun(5, 5000, fn)
 	b.StopTimer()
 	b.ResetTimer()
@@ -243,7 +242,7 @@ func Benchmark100000Lines(b *testing.B) {
 func Benchmark100000LinesFont(b *testing.B) {
 	bb := bytes.Repeat([]byte{'\n'}, 100000)
 	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft.MeasureByte)
+	r := NewRun(5, 5000, ft)
 
 	b.StopTimer()
 	b.ResetTimer()
@@ -256,7 +255,7 @@ func Benchmark100000LinesFont(b *testing.B) {
 
 func Benchmark100000Lines2Byte(b *testing.B) {
 	bb := bytes.Repeat([]byte{'a', '\n'}, 100000)
-	fn := func(bb byte) int { return int(bb) }
+	fn := font.NewGoRegular(16)
 	r := NewRun(5, 5000, fn)
 	b.StopTimer()
 	b.ResetTimer()
@@ -270,7 +269,7 @@ func Benchmark100000Lines2Byte(b *testing.B) {
 func Benchmark100000Lines2ByteFont(b *testing.B) {
 	bb := bytes.Repeat([]byte{'a', '\n'}, 100000)
 	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft.MeasureByte)
+	r := NewRun(5, 5000, ft)
 
 	b.StopTimer()
 	b.ResetTimer()
@@ -283,7 +282,7 @@ func Benchmark100000Lines2ByteFont(b *testing.B) {
 
 func Benchmark100000Lines4Byte(b *testing.B) {
 	bb := bytes.Repeat([]byte{'a', 'a', 'a', '\n'}, 100000)
-	fn := func(bb byte) int { return int(bb) }
+	fn := font.NewGoRegular(8)
 	r := NewRun(5, 5000, fn)
 	b.StopTimer()
 	b.ResetTimer()
@@ -297,7 +296,7 @@ func Benchmark100000Lines4Byte(b *testing.B) {
 func Benchmark100000Lines4ByteFont(b *testing.B) {
 	bb := bytes.Repeat([]byte{'a', 'a', 'a', '\n'}, 100000)
 	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft.MeasureByte)
+	r := NewRun(5, 5000, ft)
 
 	b.StopTimer()
 	b.ResetTimer()
@@ -310,7 +309,7 @@ func Benchmark100000Lines4ByteFont(b *testing.B) {
 
 func Benchmark100000Lines16Byte(b *testing.B) {
 	bb := bytes.Repeat([]byte{'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', '\n'}, 100000)
-	fn := func(bb byte) int { return int(bb) }
+	fn := font.NewGoRegular(8)
 	r := NewRun(5, 5000, fn)
 	b.StopTimer()
 	b.ResetTimer()
@@ -324,7 +323,7 @@ func Benchmark100000Lines16Byte(b *testing.B) {
 func Benchmark100000Lines16ByteFont(b *testing.B) {
 	bb := bytes.Repeat([]byte{'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', '\n'}, 100000)
 	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft.MeasureByte)
+	r := NewRun(5, 5000, ft)
 
 	b.StopTimer()
 	b.ResetTimer()

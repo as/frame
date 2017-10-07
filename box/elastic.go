@@ -38,7 +38,7 @@ import (
 //		is tracked as well. The seek forth operation terminates whenever a column-less line is
 //		located (formally defined as a run of boxes separated by a newline containing no \t boxes
 //
-//
+
 
 func (f *Run) Stretch(nb int) {
 	//	fmt.Println()
@@ -49,32 +49,41 @@ func (f *Run) Stretch(nb int) {
 
 	cmax := make(map[int]int)
 	cbox := make(map[int][]int)
-
+	
+	nb = f.FindCell(nb)
+	Loop:
 	for ; nb < f.Nbox; nb++ {
-		b := &f.Box[nb]
-		if b.BC == '\n' {
-			nl++
-			nc = 0
-			dx = 0
-			continue
-		}
-		dx += b.Width
-		if b.BC == '\t' {
+		switch b := &f.Box[nb]; b.BC{
+		case '\t':
+			dx += b.Width
 			cbox[nc] = append(cbox[nc], nb)
 			max := cmax[nc]
 			if dx > max {
 				cmax[nc] = dx
 			}
-			//			fmt.Printf("line %d col %d width %d\n", nl, nc, dx)
 			nc++
 			dx = 0
+		case '\n': 
+			nl++
+			dx = 0
+			if nc == 0 {
+				// A line with no tabs; end of cell
+				break Loop
+			}
+			nc = 0
+		default:
+			dx += b.Width
 		}
 	}
 	for c, bns := range cbox {
 		max := cmax[c]
 		for _, bn := range bns {
 			//dx := f.Box[bn].Width
-			f.Box[bn].Width = max - f.Box[bn-1].Width
+			if c == 0{
+				f.Box[bn].Width = max
+			} else {
+				f.Box[bn].Width = max - f.Box[bn-1].Width
+			}
 		}
 	}
 }
@@ -125,12 +134,63 @@ func (f *Run) Colof(bn int) (coln, xmax int) {
 	return coln, xmax
 }
 
+// FindCell returns the first box in the cell
+func (f *Run) FindCell(bn int) int{
+	if bn == 0{
+		return 0
+	}
+	ncols := 0
+	nrows := 0
+	oldbn := bn
+	bn = f.EndLine(bn)
+	b := &f.Box[bn]
+	for bn-1 != 0 {
+		b = &f.Box[bn-1]
+		switch ; b.BC{
+		case '\n':
+
+			if ncols == 0{
+						if nrows == 0{
+				return oldbn
+			}
+				return bn+1
+			}
+			nrows++
+			ncols=0
+		case '\t':
+			ncols++
+		default:
+		}
+		bn--
+	}
+	return bn
+}
+
 func (f *Run) StartLine(bn int) int {
 	for ; bn-1 >= 0; bn-- {
 		b := &f.Box[bn-1]
 		if b.BC == '\n' {
 			break
 		}
+	}
+	return bn
+}
+
+func (f *Run) EndLine(bn int) int{
+	for bn < f.Nbox {
+		b := &f.Box[bn]
+		if b.BC == '\n' {
+			break
+		}
+		bn++
+	}
+	return bn
+}
+
+func (f *Run) NextLine(bn int) int {
+	bn = f.EndLine(bn)
+	if bn < f.Nbox{
+		return bn+1
 	}
 	return bn
 }
@@ -151,17 +211,6 @@ func (f *Run) PrevLine(bn int) int {
 			break
 		}
 		bn--
-	}
-	return bn
-}
-
-func (f *Run) NextLine(bn int) int {
-	for ; bn < f.Nbox; bn++ {
-		b := &f.Box[bn]
-		if b.BC == '\n' {
-			return bn + 1
-		}
-		bn++
 	}
 	return bn
 }
