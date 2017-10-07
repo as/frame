@@ -4,7 +4,7 @@ import (
 	"image"
 )
 
-// trim destroys boxes that went off frame 
+// trim destroys boxes that went off frame
 func (f *Frame) trim(pt image.Point, p int64, bn int) {
 	for ; bn < f.Nbox; bn++ {
 		b := &f.Box[bn]

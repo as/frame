@@ -39,7 +39,6 @@ import (
 //		located (formally defined as a run of boxes separated by a newline containing no \t boxes
 //
 
-
 func (f *Run) Stretch(nb int) {
 	//	fmt.Println()
 	//	fmt.Printf("\n\ntrace bn=%d\n", nb)
@@ -49,11 +48,11 @@ func (f *Run) Stretch(nb int) {
 
 	cmax := make(map[int]int)
 	cbox := make(map[int][]int)
-	
+
 	nb = f.FindCell(nb)
-	Loop:
+Loop:
 	for ; nb < f.Nbox; nb++ {
-		switch b := &f.Box[nb]; b.BC{
+		switch b := &f.Box[nb]; b.BC {
 		case '\t':
 			dx += b.Width
 			cbox[nc] = append(cbox[nc], nb)
@@ -63,7 +62,7 @@ func (f *Run) Stretch(nb int) {
 			}
 			nc++
 			dx = 0
-		case '\n': 
+		case '\n':
 			nl++
 			dx = 0
 			if nc == 0 {
@@ -79,12 +78,12 @@ func (f *Run) Stretch(nb int) {
 		max := cmax[c]
 		for _, bn := range bns {
 			b := &f.Box[bn]
-			b.Width = max 
-			if bn == 0{
+			b.Width = max
+			if bn == 0 {
 				continue
 			}
 			pb := f.Box[bn-1]
-			if pb.BC != '\n'{
+			if pb.BC != '\n' {
 				b.Width -= f.Box[bn-1].Width
 			}
 		}
@@ -138,8 +137,8 @@ func (f *Run) Colof(bn int) (coln, xmax int) {
 }
 
 // FindCell returns the first box in the cell
-func (f *Run) FindCell(bn int) int{
-	if bn == 0{
+func (f *Run) FindCell(bn int) int {
+	if bn == 0 {
 		return 0
 	}
 	ncols := 0
@@ -149,17 +148,17 @@ func (f *Run) FindCell(bn int) int{
 	b := &f.Box[bn]
 	for bn-1 != 0 {
 		b = &f.Box[bn-1]
-		switch ; b.BC{
+		switch b.BC {
 		case '\n':
 
-			if ncols == 0{
-						if nrows == 0{
-				return oldbn
-			}
-				return bn+1
+			if ncols == 0 {
+				if nrows == 0 {
+					return oldbn
+				}
+				return bn + 1
 			}
 			nrows++
-			ncols=0
+			ncols = 0
 		case '\t':
 			ncols++
 		default:
@@ -179,7 +178,7 @@ func (f *Run) StartLine(bn int) int {
 	return bn
 }
 
-func (f *Run) EndLine(bn int) int{
+func (f *Run) EndLine(bn int) int {
 	for bn < f.Nbox {
 		b := &f.Box[bn]
 		if b.BC == '\n' {
@@ -192,8 +191,8 @@ func (f *Run) EndLine(bn int) int{
 
 func (f *Run) NextLine(bn int) int {
 	bn = f.EndLine(bn)
-	if bn < f.Nbox{
-		return bn+1
+	if bn < f.Nbox {
+		return bn + 1
 	}
 	return bn
 }

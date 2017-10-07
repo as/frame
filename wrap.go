@@ -29,10 +29,10 @@ func (f *Frame) wrapMin(pt image.Point, b *box.Box) image.Point {
 	return pt
 }
 
-func (f *Frame) wrap(pt image.Point) image.Point{
-		pt.X = f.r.Min.X
-		pt.Y += f.Font.Dy()
-		return pt
+func (f *Frame) wrap(pt image.Point) image.Point {
+	pt.X = f.r.Min.X
+	pt.Y += f.Font.Dy()
+	return pt
 }
 
 func (f *Frame) advance(pt image.Point, b *box.Box) (x image.Point) {

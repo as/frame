@@ -1,9 +1,6 @@
 package main
 
 import (
-	"sync"
-	"image"
-	"image/draw"
 	"github.com/as/frame"
 	"github.com/as/frame/font"
 	"golang.org/x/exp/shiny/driver"
@@ -13,6 +10,9 @@ import (
 	"golang.org/x/mobile/event/mouse"
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
+	"image"
+	"image/draw"
+	"sync"
 )
 
 var wg sync.WaitGroup
@@ -95,7 +95,7 @@ func main() {
 				if e.To == lifecycle.StageDead {
 					return
 				}
-			
+
 			}
 		}
 	})
