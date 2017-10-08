@@ -12,34 +12,10 @@ import (
 // by encapsulating them in measured boxes. A direct copy of the tabwriter code would
 // ignore the datastructures in the frame and their sublinear runtime cost.
 //
-// A few cases need to be handles for elastic tabstops:
-//
-// Insertion:
-// 	An insert always creates a new box, this box can take on the form '\n', '\t'
-//  or be part of the plain text character set which for this purpose is the set
-//  of characters not equal to '\t' or '\n'. A successful insert operation runs
-//  to completion and results in a net gain of runes (not taking into consideration
-//  the runes which run off the frame and are deleted). An insert never subtracts
-//  of boxes assuming that all characters stay on the frame. There are now a few
-//  cases:
-//
-//  1. The insert contains plain text characters
-//		This is already a non-trivial case. Plaintext characters can move a column of
-//		text far enough to extend the range of the column's tab stop. The procedure then
-//		is to seek forth and determine if a tab follows the insertion point. This can be
-//		completed in sub-linear time, as plain text boxes are merged into one before the
-//		start of a hard newline or soft wrap (when a box width exceeds frame.r.Max). The
-//		soft line wrap property of boxes may aggregate the runtime performance of this
-//		implementation by containing sparse newlines. In this case we consider an algorithm
-//		that gives up and favors performance over elasticity. Elastic tabstops have little
-//		use in binary files anyway and we probably want to give users the opportunity to turn
-//		them off. The seek forth operation scans forward and locates the first newline, while
-//		counting the occurrence of \t boxes and measuring their width. The maximum width column
-//		is tracked as well. The seek forth operation terminates whenever a column-less line is
-//		located (formally defined as a run of boxes separated by a newline containing no \t boxes
-//
-
-func (f *Run) Stretch(nb int) {
+func (f *Run) Stretch(nb int) (pb int){
+	if nb <= 0{
+		return 0
+	}
 	//	fmt.Println()
 	//	fmt.Printf("\n\ntrace bn=%d\n", nb)
 	nc := 0
@@ -49,7 +25,9 @@ func (f *Run) Stretch(nb int) {
 	cmax := make(map[int]int)
 	cbox := make(map[int][]int)
 
+
 	nb = f.FindCell(nb)
+	pb=nb-1
 Loop:
 	for ; nb < f.Nbox; nb++ {
 		switch b := &f.Box[nb]; b.BC {
@@ -88,6 +66,7 @@ Loop:
 			}
 		}
 	}
+	return pb
 }
 
 func (f *Run) Findcol(bn int, coln int) (cbn int, xmax int) {

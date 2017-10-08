@@ -70,7 +70,6 @@ func (f *Frame) redrawRun0(r *box.Run, pt image.Point, text, back image.Image) {
 	}
 }
 
-
 func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) image.Point {
 	{ // doubled
 		p0, p1 := int(p0), int(p1)
