@@ -6,9 +6,9 @@ import (
 	"image"
 )
 
-// LineWrap checks whether the box would wrap across a line boundary
-// if it were inserted at pt. If it wraps, the line-wrapped point is
-// returned.
+// wrapMax returns the point where b should go on a plane
+// if b doesn't fit entirely on the plane at pt, wrapMax
+// returns a pt on the next line
 func (f *Frame) wrapMax(pt image.Point, b *box.Box) image.Point {
 	width := b.Width
 	if b.Nrune < 0 {
@@ -20,8 +20,8 @@ func (f *Frame) wrapMax(pt image.Point, b *box.Box) image.Point {
 	return pt
 }
 
-// LineWrap0 returns the line-wrapped point if the box doesn't
-// fix on the line
+// wrapMin is like wrapMax, except it lazily wraps lines if
+// no chars in the box fit on the plane at pt.
 func (f *Frame) wrapMin(pt image.Point, b *box.Box) image.Point {
 	if f.fits(pt, b) == 0 {
 		return f.wrap(pt)

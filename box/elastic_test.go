@@ -7,7 +7,7 @@ import (
 
 func runwith(s string) *Run {
 	r := NewRun(5, 5000, font.NewBasic(fsize))
-	r.Bxscan([]byte(s), 1024)
+	r.Boxscan([]byte(s), 1024)
 	//	r.DumpBoxes()
 	return &r
 }
