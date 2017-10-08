@@ -11,7 +11,7 @@ import (
 // returns a pt on the next line
 func (f *Frame) wrapMax(pt image.Point, b *box.Box) image.Point {
 	width := b.Width
-	if  b.Nrune < 0 {
+	if b.Nrune < 0 {
 		width = b.Minwidth
 	}
 	if width > f.r.Max.X-pt.X {
@@ -21,7 +21,7 @@ func (f *Frame) wrapMax(pt image.Point, b *box.Box) image.Point {
 }
 
 // wrapMin is like wrapMax, except it lazily wraps lines if
-// no chars in the box fit on the plane at pt. 
+// no chars in the box fit on the plane at pt.
 func (f *Frame) wrapMin(pt image.Point, b *box.Box) image.Point {
 	if f.fits(pt, b) == 0 {
 		return f.wrap(pt)
@@ -77,7 +77,7 @@ func (f *Frame) plot(pt image.Point, b *box.Box) int {
 func (f *Frame) project(pt image.Point, b *box.Box) int {
 	c := f.r.Max.X
 	x := pt.X
-	if b.Nrune >= 0 || b.BC != '\t'   { //
+	if b.Nrune >= 0 || b.BC != '\t' { //
 		return b.Width
 	}
 	if x+b.Minwidth > c {
