@@ -11,7 +11,7 @@ func (r *Run) ensure(nb int) {
 	}
 }
 
-func (r *Run) Bxscan(s []byte, ymax int) {
+func (r *Run) Boxscan(s []byte, ymax int) {
 	var nl int
 	var err error
 	r.delta = 32

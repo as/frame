@@ -15,7 +15,7 @@ func BenchmarkScanByte(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 1)
+		r.Boxscan(bb, 1)
 		b.StopTimer()
 	}
 }
@@ -28,7 +28,7 @@ func BenchmarkScanByteFont(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 1)
+		r.Boxscan(bb, 1)
 		b.StopTimer()
 	}
 }
@@ -41,7 +41,7 @@ func BenchmarkScan16Bytes(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 1)
+		r.Boxscan(bb, 1)
 		b.StopTimer()
 	}
 }
@@ -54,7 +54,7 @@ func BenchmarkScan16BytesFont(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 1)
+		r.Boxscan(bb, 1)
 		b.StopTimer()
 	}
 }
@@ -66,7 +66,7 @@ func BenchmarkScanHelloWorld(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 10)
+		r.Boxscan(bb, 10)
 		b.StopTimer()
 	}
 }
@@ -78,7 +78,7 @@ func BenchmarkScanHelloWorldFont(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 10)
+		r.Boxscan(bb, 10)
 		b.StopTimer()
 	}
 }
@@ -99,7 +99,7 @@ func BenchmarkScanBinary100(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 100)
+		r.Boxscan(bb, 100)
 		b.StopTimer()
 	}
 
@@ -112,7 +112,7 @@ func BenchmarkScanBinary100Font(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 100)
+		r.Boxscan(bb, 100)
 		b.StopTimer()
 	}
 
@@ -127,7 +127,7 @@ func BenchmarkScanBinary1000(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 100)
+		r.Boxscan(bb, 100)
 		b.StopTimer()
 	}
 
@@ -141,7 +141,7 @@ func BenchmarkScanBinary1000Font(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 1000)
+		r.Boxscan(bb, 1000)
 		b.StopTimer()
 	}
 }
@@ -154,7 +154,7 @@ func BenchmarkScanBinary5000(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 100)
+		r.Boxscan(bb, 100)
 		b.StopTimer()
 	}
 
@@ -167,7 +167,7 @@ func BenchmarkScanBinary5000Font(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 1000)
+		r.Boxscan(bb, 1000)
 		b.StopTimer()
 	}
 }
@@ -180,7 +180,7 @@ func BenchmarkScanBinary100000(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 100000)
+		r.Boxscan(bb, 100000)
 		b.StopTimer()
 	}
 
@@ -194,7 +194,7 @@ func BenchmarkScanBinary100000Font(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 100000)
+		r.Boxscan(bb, 100000)
 		b.StopTimer()
 	}
 }
@@ -207,7 +207,7 @@ func BenchmarkLongLine100000(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 100000)
+		r.Boxscan(bb, 100000)
 		b.StopTimer()
 	}
 
@@ -221,7 +221,7 @@ func BenchmarkLongLine100000Font(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 100000)
+		r.Boxscan(bb, 100000)
 		b.StopTimer()
 	}
 }
@@ -234,7 +234,7 @@ func Benchmark100000Lines(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 100000)
+		r.Boxscan(bb, 100000)
 		b.StopTimer()
 	}
 
@@ -248,7 +248,7 @@ func Benchmark100000LinesFont(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 100000)
+		r.Boxscan(bb, 100000)
 		b.StopTimer()
 	}
 }
@@ -261,7 +261,7 @@ func Benchmark100000Lines2Byte(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 100000)
+		r.Boxscan(bb, 100000)
 		b.StopTimer()
 	}
 
@@ -275,7 +275,7 @@ func Benchmark100000Lines2ByteFont(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 100000)
+		r.Boxscan(bb, 100000)
 		b.StopTimer()
 	}
 }
@@ -288,7 +288,7 @@ func Benchmark100000Lines4Byte(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 100000)
+		r.Boxscan(bb, 100000)
 		b.StopTimer()
 	}
 
@@ -302,7 +302,7 @@ func Benchmark100000Lines4ByteFont(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 100000)
+		r.Boxscan(bb, 100000)
 		b.StopTimer()
 	}
 }
@@ -315,7 +315,7 @@ func Benchmark100000Lines16Byte(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 100000)
+		r.Boxscan(bb, 100000)
 		b.StopTimer()
 	}
 
@@ -329,7 +329,7 @@ func Benchmark100000Lines16ByteFont(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StartTimer()
-		r.Bxscan(bb, 100000)
+		r.Boxscan(bb, 100000)
 		b.StopTimer()
 	}
 }
