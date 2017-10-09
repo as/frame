@@ -24,8 +24,8 @@ func (f *Frame) clean(pt image.Point, n0, n1 int) {
 		pt = f.advance(pt, b0)
 	}
 
-	f.lastlinefull = 0
+	f.full = 0
 	if pt.Y >= f.r.Max.Y {
-		f.lastlinefull = 1
+		f.full = 1
 	}
 }

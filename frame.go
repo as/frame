@@ -19,11 +19,11 @@ var (
 type Frame struct {
 	box.Run
 	Color
-	Font         *font.Font
-	b            *image.RGBA
-	r, entire    image.Rectangle
-	maxtab       int
-	lastlinefull int
+	Font      *font.Font
+	b         *image.RGBA
+	r, entire image.Rectangle
+	maxtab    int
+	full      int
 
 	p0 int64
 	p1 int64
@@ -144,7 +144,7 @@ func (f *Frame) Bounds() image.Rectangle {
 
 // Full returns true if the last line in the frame is full
 func (f *Frame) Full() bool {
-	return f.lastlinefull == 1
+	return f.full == 1
 }
 
 // Maxline returns the max number of wrapped lines fitting on the frame
