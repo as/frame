@@ -153,19 +153,22 @@ Loop:
 	if bn <= oldbn {
 		return oldbn
 	}
+	if bn == f.Nbox{
+		return bn
+	}
 	return bn + 1
 }
 
 // StartCell returns the first box in the cell
 func (f *Run) StartCell(bn int) int {
-	if bn == 0 {
+	if bn == 0{
 		return 0
 	}
 	ncols := 0
 	nrows := 0
 	oldbn := bn
 	bn = f.EndLine(bn)
-	b := &f.Box[bn]
+	var b *Box
 	for bn-1 != 0 {
 		b = &f.Box[bn-1]
 		switch b.Break() {
