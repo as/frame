@@ -20,20 +20,20 @@ type Frame struct {
 	b *image.RGBA
 	r image.Rectangle
 	box.Run
-	ir      *box.Run
-	
+	ir *box.Run
+
 	p0 int64
 	p1 int64
-	
-	Font      *font.Font
+
+	Font *font.Font
 	Color
-	Ticked    bool
-	Scroll  func(int)
+	Ticked bool
+	Scroll func(int)
 	drawcache.Drawer
-	op        draw.Op
-	
-	maxtab    int
-	full      int
+	op draw.Op
+
+	maxtab int
+	full   int
 
 	tick      draw.Image
 	tickback  draw.Image
@@ -46,7 +46,7 @@ type Frame struct {
 	pts     [][2]image.Point
 	hexFont *font.Font
 	hex     []draw.Image
-	
+
 	// Points to the font subpackage's StringN?BG or RuneN?BG functions
 	stringBG     func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte, image.Image, image.Point) int
 	stringNBG    func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte) int
