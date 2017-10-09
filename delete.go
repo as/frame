@@ -18,6 +18,7 @@ func (f *Frame) Delete(p0, p1 int64) int {
 		f.tickat(f.PointOf(int64(f.p0)), false)
 	}
 	n0 := f.Find(0, 0, p0)
+	eb := f.StartCell(n0)
 	nn0 := n0
 	n1 := f.Find(n0, p0, p1)
 	pt0 := f.pointOfBox(p0, n0)
@@ -63,14 +64,7 @@ func (f *Frame) Delete(p0, p1 int64) int {
 	}
 	f.clean(ppt0, nn0, n0)
 
-	if ForceElasticTabstopExperiment {
-		// Just to see if the algorithm works not ideal to sift through all of
-		// the boxes per insertion, although surprisingly faster than expected
-		// to the point of where its almost unnoticable without the print
-		// statements
-		f.Stretch(n0)
-		f.Refresh() // must do this until line mapper is fixed
-	}
+
 	if f.p1 > p1 {
 		f.p1 -= p1 - p0
 	} else if f.p1 > p0 {
@@ -93,6 +87,12 @@ func (f *Frame) Delete(p0, p1 int64) int {
 	}
 	h := f.Font.Dy()
 	f.Nlines = (pt0.Y-f.r.Min.Y)/h + extra
+	if ForceElasticTabstopExperiment{
+		for b := f.Nbox; b > eb; b = f.Stretch(b){
+		}
+		f.Stretch(eb)
+		f.Refresh()
+	}
 	return int(p1 - p0) //n - f.Nlines
 }
 func (f *Frame) delete(pt0, pt1 image.Point, n0, n1 int, cn1 int64) (image.Point, image.Point, int, int) {
