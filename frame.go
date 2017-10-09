@@ -17,38 +17,40 @@ var (
 
 // Frame is a write-only container for editable text
 type Frame struct {
+	b *image.RGBA
+	r image.Rectangle
 	box.Run
-	Color
+	ir      *box.Run
+	
+	p0 int64
+	p1 int64
+	
 	Font      *font.Font
-	b         *image.RGBA
-	r, entire image.Rectangle
+	Color
+	Ticked    bool
+	Scroll  func(int)
+	drawcache.Drawer
+	op        draw.Op
+	
 	maxtab    int
 	full      int
 
-	p0 int64
-	p1 int64
-
 	tick      draw.Image
 	tickback  draw.Image
-	Ticked    bool
 	tickscale int
 	tickoff   bool
 	maxlines  int
 	modified  bool
 	noredraw  bool
-	op        draw.Op
 
+	pts     [][2]image.Point
+	hexFont *font.Font
+	hex     []draw.Image
+	
 	// Points to the font subpackage's StringN?BG or RuneN?BG functions
 	stringBG     func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte, image.Image, image.Point) int
 	stringNBG    func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte) int
 	newRulerFunc func(s []byte, ft *font.Font) box.Ruler
-
-	drawcache.Drawer
-	pts     [][2]image.Point
-	Scroll  func(int)
-	ir      *box.Run
-	hexFont *font.Font
-	hex     []draw.Image
 }
 
 func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, runes ...bool) *Frame {
