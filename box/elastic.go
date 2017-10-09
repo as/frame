@@ -1,7 +1,7 @@
 package box
 
 import (
-//	"fmt"
+	"fmt"
 )
 
 // Elastic tabstop experiment section. Not ready for general use by any means
@@ -27,10 +27,13 @@ func (f *Run) Stretch(nb int) (pb int){
 
 
 	nb = f.FindCell(nb)
+	fmt.Println("\n\ncell start at box", nb)
 	pb=nb-1
 Loop:
 	for ; nb < f.Nbox; nb++ {
-		switch b := &f.Box[nb]; b.BC {
+	b := &f.Box[nb]
+		fmt.Printf("switch box: %#v\n", b)
+		switch ; b.BC {
 		case '\t':
 			dx += b.Width
 			cbox[nc] = append(cbox[nc], nb)
@@ -39,17 +42,21 @@ Loop:
 				cmax[nc] = dx
 			}
 			nc++
+			fmt.Printf("	tab: dx=%d ncol=%d\n", dx, nc)
 			dx = 0
 		case '\n':
 			nl++
 			dx = 0
 			if nc == 0 {
 				// A line with no tabs; end of cell
+			fmt.Printf("	nl (no cols): dx=%d nl=%d\n", dx, nl-1)
 				break Loop
 			}
+			fmt.Printf("	nl : dx=%d nl=%d nc=%d\n", dx, nl-1, nc)
 			nc = 0
 		default:
 			dx += b.Width
+			fmt.Printf("	plain : dx=%d wid=%d nc=%d\n", dx, b.Width,nc)
 		}
 	}
 	for c, bns := range cbox {
@@ -63,6 +70,9 @@ Loop:
 			pb := f.Box[bn-1]
 			if pb.BC != '\n' {
 				b.Width -= f.Box[bn-1].Width
+			}
+			if b.Width < b.Minwidth{
+				b.Width = b.Minwidth
 			}
 		}
 	}
@@ -144,6 +154,12 @@ func (f *Run) FindCell(bn int) int {
 		}
 		bn--
 	}
+//	println("bn-1", bn-1)
+//	f.DumpBoxes()
+	if bn-1 == 0 && f.Box[bn-1].BC != '\n'{
+		return 0
+	}
+//	println("return", bn)
 	return bn
 }
 

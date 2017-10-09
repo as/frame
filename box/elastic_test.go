@@ -8,7 +8,6 @@ import (
 func runwith(s string) *Run {
 	r := NewRun(5, 5000, font.NewBasic(fsize))
 	r.Boxscan([]byte(s), 1024)
-	//	r.DumpBoxes()
 	return &r
 }
 func checkbox(t *testing.T, testname string, havebx, wantbx int) {
@@ -79,3 +78,36 @@ func TestFindCell(t *testing.T) {
 	checkbox(t, "TestFindCell", r.FindCell(23), 23)
 	checkbox(t, "TestFindCell", r.FindCell(27), 27)
 }
+
+func TestFindCell2(t *testing.T) {
+	checkbox(t, `\nAAA\tBBB\tCCC`, runwith("\nAAA\tBBB\tCCC").FindCell(3), 1)
+	checkbox(t, `AAA\tBBB\tCCC`,     runwith("AAA\tBBB\tCCC").FindCell(2), 0)
+}
+
+func TestStretch1(t *testing.T) {
+	r := runwith("AAA\tBBB\tCCC")
+	r.Stretch(4)
+	t.Fail()
+}
+
+func TestStretch2(t *testing.T) {
+	r := runwith("AAA\tBBB\tCCC\n")
+	r.Stretch(4)
+	t.Fail()
+}
+
+func TestStretch3(t *testing.T) {
+	r := runwith("AAA\tBBB\tCCC\nDDD\tEEE\tFFF")
+	r.Stretch(4)
+	t.Fail()
+}
+
+
+
+
+
+
+
+
+
+

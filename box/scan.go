@@ -50,6 +50,11 @@ func (r *Run) specialbox(nb int, min, max int) (nl int) {
 	b.Ptr = []byte{c}
 	b.Nrune = -1
 	b.Width = max
+	
+	if c == '\t' {
+		b.Width = min
+	}
+	
 	r.Nchars++
 	r.br.Advance()
 	return

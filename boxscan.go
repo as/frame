@@ -10,15 +10,18 @@ import (
 func (f *Frame) boxscan(s []byte, pt image.Point) (image.Point, image.Point) {
 	f.ir.Reset(f.Font)
 	f.ir.Boxscan(s, f.maxlines)
-	pt = f.wrapMin(pt, &f.ir.Box[0])
-
 	if ForceElasticTabstopExperiment {
+		// Just to see if the algorithm works not ideal to sift through all of
+		// the boxes per insertion, although surprisingly faster than expected
+		// to the point of where its almost unnoticable without the print
+		// statements
 		bn := f.ir.Nbox
-		for bn != 0 {
+		for bn > 0 {
 			bn = f.ir.Stretch(bn)
 		}
+		f.ir.Stretch(bn)
 	}
-
+	pt = f.wrapMin(pt, &f.ir.Box[0])
 	return pt, f.boxscan2D(f.ir, pt)
 }
 
