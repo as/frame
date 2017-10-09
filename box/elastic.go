@@ -51,8 +51,8 @@ Loop:
 			nl++
 			dx = 0
 			if nc == 0 {
-						// A line with no tabs; end of cell
-						//fmt.Printf("	nl (no cols): dx=%d nl=%d\n", dx, nl-1)
+				// A line with no tabs; end of cell
+				//fmt.Printf("	nl (no cols): dx=%d nl=%d\n", dx, nl-1)
 				break Loop
 			}
 			//fmt.Printf("	nl : dx=%d nl=%d nc=%d\n", dx, nl-1, nc)
@@ -68,12 +68,12 @@ Loop:
 			b := &f.Box[bn]
 			b.Width = max
 			if bn == 0 {
-				
+
 			} else {
-			pb := f.Box[bn-1]
-			if pb.Break() != '\n' {
-				b.Width -= f.Box[bn-1].Width
-			}
+				pb := f.Box[bn-1]
+				if pb.Break() != '\n' {
+					b.Width -= f.Box[bn-1].Width
+				}
 			}
 			if b.Width < b.Minwidth {
 				b.Width = b.Minwidth
