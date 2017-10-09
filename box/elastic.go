@@ -1,7 +1,7 @@
 package box
 
 import (
-	"fmt"
+//	"fmt"
 )
 
 func (f *Run) Stretch2(nb int, bx []Box) (pb int) {
@@ -30,12 +30,12 @@ func (f *Run) Stretch(nb int) (pb int) {
 	cbox := make(map[int][]int)
 
 	nb = f.StartCell(nb)
-	fmt.Println("\n\ncell start at box", nb)
+//	fmt.Println("\n\ncell start at box", nb)
 	pb = nb - 1
 Loop:
 	for ; nb < f.Nbox; nb++ {
 		b := &f.Box[nb]
-		fmt.Printf("switch box: %#v\n", b)
+//		fmt.Printf("switch box: %#v\n", b)
 		switch b.Break() {
 		case '\t':
 			dx += b.Width
@@ -45,21 +45,21 @@ Loop:
 				cmax[nc] = dx
 			}
 			nc++
-			fmt.Printf("	tab: dx=%d ncol=%d\n", dx, nc)
+//			fmt.Printf("	tab: dx=%d ncol=%d\n", dx, nc)
 			dx = 0
 		case '\n':
 			nl++
 			dx = 0
 			if nc == 0 {
 				// A line with no tabs; end of cell
-				fmt.Printf("	nl (no cols): dx=%d nl=%d\n", dx, nl-1)
+				//fmt.Printf("	nl (no cols): dx=%d nl=%d\n", dx, nl-1)
 				break Loop
 			}
-			fmt.Printf("	nl : dx=%d nl=%d nc=%d\n", dx, nl-1, nc)
+			//fmt.Printf("	nl : dx=%d nl=%d nc=%d\n", dx, nl-1, nc)
 			nc = 0
 		default:
 			dx += b.Width
-			fmt.Printf("	plain : dx=%d wid=%d nc=%d\n", dx, b.Width, nc)
+			//fmt.Printf("	plain : dx=%d wid=%d nc=%d\n", dx, b.Width, nc)
 		}
 	}
 	for c, bns := range cbox {
