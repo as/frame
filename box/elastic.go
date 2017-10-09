@@ -4,6 +4,10 @@ import (
 	"fmt"
 )
 
+func (f *Run) Stretch2(nb int, bx []Box) (pb int){
+	panic("unimplemented")
+}
+
 // Elastic tabstop experiment section. Not ready for general use by any means
 // the text/tabwriter package implements elastic tabstops, but that package
 // assumes that all chars are the same width and that text needs to be rescanned.
