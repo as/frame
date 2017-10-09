@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func (f *Run) Stretch2(nb int, bx []Box) (pb int){
+func (f *Run) Stretch2(nb int, bx []Box) (pb int) {
 	panic("unimplemented")
 }
 
@@ -130,30 +130,30 @@ func (f *Run) Colof(bn int) (coln, xmax int) {
 
 // EndCell returns the first box beyond the end of the
 // current cell under bn
-func (f *Run) EndCell(bn int) int{
+func (f *Run) EndCell(bn int) int {
 	oldbn := bn
 	bn = f.StartLine(bn)
 	ltb := 0
 	ncol := 0
-	Loop:
-	for ;bn != f.Nbox; bn++{
+Loop:
+	for ; bn != f.Nbox; bn++ {
 		b := &f.Box[bn]
-		switch b.Break(){
+		switch b.Break() {
 		case '\n':
-			if ncol==0{
-				bn=ltb
+			if ncol == 0 {
+				bn = ltb
 				break Loop
 			}
-			ncol=0
+			ncol = 0
 		case '\t':
 			ncol++
-			ltb=bn
+			ltb = bn
 		}
 	}
-	if bn <= oldbn{
+	if bn <= oldbn {
 		return oldbn
 	}
-	return bn+1
+	return bn + 1
 }
 
 // StartCell returns the first box in the cell
@@ -198,17 +198,17 @@ func (f *Run) StartCell(bn int) int {
 // is part of a cell. It skips past the current cell under
 // bn and any non-cellular boxes afterward, returning the
 // starting box of the next cell or f.Nbox
-func (f *Run) NextCell(bn int) int{
+func (f *Run) NextCell(bn int) int {
 	bn = f.EndCell(bn)
 	oldbn := bn
-	for ;bn != f.Nbox; bn++{
+	for ; bn != f.Nbox; bn++ {
 		b := &f.Box[bn]
-		if b.Break() == '\t'{
+		if b.Break() == '\t' {
 			bn = f.StartCell(bn)
 			break
 		}
 	}
-	if bn <= oldbn{
+	if bn <= oldbn {
 		return oldbn
 	}
 	return bn
