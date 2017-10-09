@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	TickWidth = 3
+	tickWidth = 3
 	tickOff   = 0
 	tickOn    = 1
 )
@@ -27,16 +27,16 @@ func (f *Frame) SetTick(style int) {
 }
 func (f *Frame) inittick() {
 	h := f.Font.Dy()
-	r := image.Rect(0, 0, TickWidth, h).Inset(-1)
+	r := image.Rect(0, 0, tickWidth, h).Inset(-1)
 	f.tickscale = 1 // TODO implement scalesize
 	f.tick = image.NewRGBA(r)
 	f.tickback = image.NewRGBA(r)
 	drawtick := func(x0, y0, x1, y1 int) {
 		draw.Draw(f.tick, image.Rect(x0+1, y0+1, x1+1, y1+1), f.Color.Text, image.ZP, draw.Src)
 	}
-	drawtick(TickWidth/2, 0, TickWidth/2+1, h)
-	drawtick(0, 0, TickWidth, h/5)
-	drawtick(0, h-h/5, TickWidth, h)
+	drawtick(tickWidth/2, 0, tickWidth/2+1, h)
+	drawtick(0, 0, tickWidth, h/5)
+	drawtick(0, h-h/5, tickWidth, h)
 }
 
 // Put
