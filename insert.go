@@ -169,15 +169,15 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	//ob0 := b0
 	cb0 := p0
 	b1 := b0
-//	ebn := f.StartCell(b0)
-//	ept := f.pointOfBox(p0, ebn)
+	//	ebn := f.StartCell(b0)
+	//	ept := f.pointOfBox(p0, ebn)
 	pt0 := f.pointOfBox(p0, b0)
 	opt0 := pt0
 
 	// find p1
 	ppt0, pt1 := f.boxscan(s, pt0)
 	ppt1 := pt1
-	
+
 	if ForceElasticTabstopExperiment {
 		// With elastic tabstops, the scanned boxes need to be
 		// connected to the frame's run to determine whether
@@ -192,17 +192,17 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 		//  ... now the elastic part
 		//	4.) Realize the scanned boxes may affect the boxes above and below
 		//  5.) Redraw the entire frame
-		
-//		f.ir.Box = append(f.Box[ebn:b0], f.ir.Box)
-//		f.ir.Nbox += len(f.Box[ebn:b0])
-		
+
+		//		f.ir.Box = append(f.Box[ebn:b0], f.ir.Box)
+		//		f.ir.Nbox += len(f.Box[ebn:b0])
+
 		bn := f.Nbox
 		for bn > 0 {
 			bn = f.Stretch(bn)
 		}
 		f.Stretch(bn)
 	}
-	
+
 	// Line wrap
 	if b0 < f.Nbox {
 		b := &f.Box[b0]
@@ -211,11 +211,9 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	}
 	f.modified = true
 
-
 	if f.p0 == f.p1 {
 		f.tickat(f.PointOf(int64(f.p0)), false)
 	}
-	
 
 	cb0, b0, pt0, pt1 = f.boxalign(cb0, b0, pt0, pt1)
 	f.boxpush(p0, b0, b1, pt0, pt1, ppt1)
@@ -234,8 +232,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	}
 	f.clean(ppt0, b1, b0)
 	f.Nchars += f.ir.Nchars
-	
-	
+
 	f.p0, f.p1 = coInsert(p0, p0+f.Nchars, f.p0, f.p1)
 	if f.p0 == f.p1 {
 		f.tickat(f.PointOf(f.p0), true)
