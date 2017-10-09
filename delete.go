@@ -20,7 +20,7 @@ func (f *Frame) Delete(p0, p1 int64) int {
 	n0 := f.Find(0, 0, p0)
 	nn0 := n0
 	n1 := f.Find(n0, p0, p1)
-	pt0 := f.ptOfCharNBox(p0, n0)
+	pt0 := f.pointOfBox(p0, n0)
 	ppt0 := pt0
 	pt1 := f.PointOf(p1)
 	f.Free(n0, n1-1)
@@ -133,7 +133,7 @@ func (f *Frame) fixTrailer(pt0, pt1 image.Point, n1 int) (image.Point, image.Poi
 		f.Paint(pt0, pt1, f.Color.Back)
 	}
 	h := f.Font.Dy()
-	pt2 := f.ptOfCharPtBox(32768, pt1, n1)
+	pt2 := f.pointOf(65536, pt1, n1)
 	if pt2.Y > f.r.Max.Y {
 		pt2.Y = f.r.Max.Y - h
 	}

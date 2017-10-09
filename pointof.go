@@ -4,7 +4,7 @@ import (
 	"image"
 )
 
-func (f *Frame) ptOfCharPtBox(p int64, pt image.Point, bn int) (x image.Point) {
+func (f *Frame) pointOf(p int64, pt image.Point, bn int) (x image.Point) {
 	for ; bn < f.Nbox; bn++ {
 		b := &f.Box[bn]
 		pt = f.wrapMax(pt, b)
@@ -31,16 +31,16 @@ func (f *Frame) ptOfCharPtBox(p int64, pt image.Point, bn int) (x image.Point) {
 	}
 	return pt
 }
-func (f *Frame) ptOfCharNBox(p int64, nb int) (pt image.Point) {
+func (f *Frame) pointOfBox(p int64, nb int) (pt image.Point) {
 	Nbox := f.Nbox
 	f.Nbox = nb
-	pt = f.ptOfCharPtBox(p, f.r.Min, 0)
+	pt = f.pointOf(p, f.r.Min, 0)
 	f.Nbox = Nbox
 	return pt
 }
 
 func (f *Frame) PointOf(p int64) image.Point {
-	return f.ptOfCharPtBox(p, f.r.Min, 0)
+	return f.pointOf(p, f.r.Min, 0)
 }
 func (f *Frame) Grid(pt image.Point) image.Point {
 	return f.grid(pt)

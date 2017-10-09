@@ -63,27 +63,61 @@ func TestStartMultiLineCol(t *testing.T) {
 	}
 }
 
-func TestFindCell(t *testing.T) {
+func TestStartCell(t *testing.T) {
 	r := runwith("\n\n\n\n\n\n\n\n\n\n10\t12\t14\t15\t\nabcdefg\n\nzzzzzzzzzzzzzzzzz")
 	for i := 0; i < 10; i++ {
-		checkbox(t, "TestFindCell", r.FindCell(i), i)
+		checkbox(t, "TestStartCell", r.StartCell(i), i)
 	}
-	checkbox(t, "TestFindCell", r.FindCell(10), 10)
-	checkbox(t, "TestFindCell", r.FindCell(11), 10)
+	checkbox(t, "TestStartCell", r.StartCell(10), 10)
+	checkbox(t, "TestStartCell", r.StartCell(11), 10)
 
-	checkbox(t, "TestFindCell", r.FindCell(12), 10)
-	checkbox(t, "TestFindCell", r.FindCell(13), 10)
+	checkbox(t, "TestStartCell", r.StartCell(12), 10)
+	checkbox(t, "TestStartCell", r.StartCell(13), 10)
 
-	checkbox(t, "TestFindCell", r.FindCell(16), 10)
-	checkbox(t, "TestFindCell", r.FindCell(23), 23)
-	checkbox(t, "TestFindCell", r.FindCell(27), 27)
+	checkbox(t, "TestStartCell", r.StartCell(16), 10)
+	checkbox(t, "TestStartCell", r.StartCell(23), 23)
+	checkbox(t, "TestStartCell", r.StartCell(27), 27)
 }
 
-func TestFindCell2(t *testing.T) {
-	checkbox(t, `\nAAA\tBBB\tCCC`, runwith("\nAAA\tBBB\tCCC").FindCell(3), 1)
-	checkbox(t, `AAA\tBBB\tCCC`, runwith("AAA\tBBB\tCCC").FindCell(2), 0)
+func TestStartCell2(t *testing.T) {
+	checkbox(t, `\nAAA\tBBB\tCCC`, runwith("\nAAA\tBBB\tCCC").StartCell(3), 1)
+	checkbox(t, `AAA\tBBB\tCCC`, runwith("AAA\tBBB\tCCC").StartCell(2), 0)
 }
 
+func TestEndCell(t *testing.T) {
+	r := runwith("\n\n\n\n\n\n\n\n\n\n10\t12\t14\t15\t\nabcdefg\n\nzzzzzzzzzzzzzzzzz")
+	r.DumpBoxes()
+	for i := 0; i < 10; i++ {
+		checkbox(t, "TestEndCell", r.EndCell(i), i)
+	}
+	checkbox(t, "TestEndCell", r.EndCell(10), 18)
+	checkbox(t, "TestEndCell", r.EndCell(11), 18)
+
+	checkbox(t, "TestEndCell", r.EndCell(12), 18)
+	checkbox(t, "TestEndCell", r.EndCell(13), 18)
+
+	checkbox(t, "TestEndCell", r.EndCell(16), 18)
+	checkbox(t, "TestEndCell", r.EndCell(23), 23)
+	checkbox(t, "TestEndCell", r.EndCell(27), 27)
+}
+
+func TestNextCell(t *testing.T) {
+	r := runwith("\n\n\n\n\n\n\n\n\n\n10\t12\t14\t15\t\nabcdefg\n\nzzzzzzzzzzzzzzzzz")
+	r.DumpBoxes()
+	for i := 0; i < 10; i++ {
+		checkbox(t, "TestNextCell", r.NextCell(i), 10)
+	}
+	checkbox(t, "TestNextCell", r.NextCell(10), 23)
+	checkbox(t, "TestNextCell", r.NextCell(11), 23)
+
+	checkbox(t, "TestNextCell", r.NextCell(12), 23)
+	checkbox(t, "TestNextCell", r.NextCell(13), 23)
+
+	checkbox(t, "TestNextCell", r.NextCell(16), 23)
+	checkbox(t, "TestNextCell", r.NextCell(23), 23)
+}
+
+/*
 func TestStretch1(t *testing.T) {
 	r := runwith("AAA\tBBB\tCCC")
 	r.Stretch(4)
@@ -101,3 +135,4 @@ func TestStretch3(t *testing.T) {
 	r.Stretch(4)
 	t.Fail()
 }
+*/

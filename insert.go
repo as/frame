@@ -166,10 +166,10 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 
 	// find p0, it's box, and its point in the box its in
 	b0 := f.Find(0, 0, p0)
-	ob0 := b0
+	//ob0 := b0
 	cb0 := p0
 	b1 := b0
-	pt0 := f.ptOfCharNBox(p0, b0)
+	pt0 := f.pointOfBox(p0, b0)
 	opt0 := pt0
 
 	// find p1
@@ -186,27 +186,42 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	if f.p0 == f.p1 {
 		f.tickat(f.PointOf(int64(f.p0)), false)
 	}
+	
 
+	if ForceElasticTabstopExperiment {
+		// With elastic tabstops, the scanned boxes need to be
+		// connected to the frame's run to determine whether
+		// anything above the scan point was affected by the
+		// insertion
+//		eb := f.Find(0, 0, 
+		bn := f.Nbox
+		for bn > 0 {
+			bn = f.Stretch(bn)
+		}
+		f.Stretch(bn)
+		f.Refresh() // must do this until line mapper is fixed
+	}
 	cb0, b0, pt0, pt1 = f.boxalign(cb0, b0, pt0, pt1)
 	f.boxpush(p0, b0, b1, pt0, pt1, ppt1)
 	f.boxmove(cb0, b0, pt0, pt1, opt0)
-
 	text, back := f.pick(p0, f.p0+1, f.p1+1)
 	f.Paint(ppt0, ppt1, back)
 	f.redrawRun0(f.ir, ppt0, text, back)
+	
 	f.Add(b1, f.ir.Nbox)
 	copy(f.Box[b1:], f.ir.Box[:f.ir.Nbox])
 	if b1 > 0 && f.Box[b1-1].Nrune >= 0 && ppt0.X-f.Box[b1-1].Width >= f.r.Min.X {
 		b1--
 		ppt0.X -= f.Box[b1].Width
 	}
-
 	b0 += f.ir.Nbox
 	if b0 < f.Nbox-1 {
 		b0++
 	}
 	f.clean(ppt0, b1, b0)
 	f.Nchars += f.ir.Nchars
+	
+	
 	f.p0, f.p1 = coInsert(p0, p0+f.Nchars, f.p0, f.p1)
 	if f.p0 == f.p1 {
 		f.tickat(f.PointOf(f.p0), true)
@@ -217,7 +232,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 		// to the point of where its almost unnoticable without the print
 		// statements
 		bn := f.Nbox
-		for bn > ob0 {
+		for bn > 0 {
 			bn = f.Stretch(bn)
 		}
 		f.Stretch(bn)
