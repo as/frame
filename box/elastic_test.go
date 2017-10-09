@@ -81,7 +81,7 @@ func TestFindCell(t *testing.T) {
 
 func TestFindCell2(t *testing.T) {
 	checkbox(t, `\nAAA\tBBB\tCCC`, runwith("\nAAA\tBBB\tCCC").FindCell(3), 1)
-	checkbox(t, `AAA\tBBB\tCCC`,     runwith("AAA\tBBB\tCCC").FindCell(2), 0)
+	checkbox(t, `AAA\tBBB\tCCC`, runwith("AAA\tBBB\tCCC").FindCell(2), 0)
 }
 
 func TestStretch1(t *testing.T) {
@@ -101,13 +101,3 @@ func TestStretch3(t *testing.T) {
 	r.Stretch(4)
 	t.Fail()
 }
-
-
-
-
-
-
-
-
-
-

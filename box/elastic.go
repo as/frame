@@ -12,8 +12,8 @@ import (
 // by encapsulating them in measured boxes. A direct copy of the tabwriter code would
 // ignore the datastructures in the frame and their sublinear runtime cost.
 //
-func (f *Run) Stretch(nb int) (pb int){
-	if nb <= 0{
+func (f *Run) Stretch(nb int) (pb int) {
+	if nb <= 0 {
 		return 0
 	}
 	//	fmt.Println()
@@ -25,15 +25,14 @@ func (f *Run) Stretch(nb int) (pb int){
 	cmax := make(map[int]int)
 	cbox := make(map[int][]int)
 
-
 	nb = f.FindCell(nb)
 	fmt.Println("\n\ncell start at box", nb)
-	pb=nb-1
+	pb = nb - 1
 Loop:
 	for ; nb < f.Nbox; nb++ {
-	b := &f.Box[nb]
+		b := &f.Box[nb]
 		fmt.Printf("switch box: %#v\n", b)
-		switch ; b.BC {
+		switch b.BC {
 		case '\t':
 			dx += b.Width
 			cbox[nc] = append(cbox[nc], nb)
@@ -49,14 +48,14 @@ Loop:
 			dx = 0
 			if nc == 0 {
 				// A line with no tabs; end of cell
-			fmt.Printf("	nl (no cols): dx=%d nl=%d\n", dx, nl-1)
+				fmt.Printf("	nl (no cols): dx=%d nl=%d\n", dx, nl-1)
 				break Loop
 			}
 			fmt.Printf("	nl : dx=%d nl=%d nc=%d\n", dx, nl-1, nc)
 			nc = 0
 		default:
 			dx += b.Width
-			fmt.Printf("	plain : dx=%d wid=%d nc=%d\n", dx, b.Width,nc)
+			fmt.Printf("	plain : dx=%d wid=%d nc=%d\n", dx, b.Width, nc)
 		}
 	}
 	for c, bns := range cbox {
@@ -71,7 +70,7 @@ Loop:
 			if pb.BC != '\n' {
 				b.Width -= f.Box[bn-1].Width
 			}
-			if b.Width < b.Minwidth{
+			if b.Width < b.Minwidth {
 				b.Width = b.Minwidth
 			}
 		}
@@ -154,12 +153,12 @@ func (f *Run) FindCell(bn int) int {
 		}
 		bn--
 	}
-//	println("bn-1", bn-1)
-//	f.DumpBoxes()
-	if bn-1 == 0 && f.Box[bn-1].BC != '\n'{
+	//	println("bn-1", bn-1)
+	//	f.DumpBoxes()
+	if bn-1 == 0 && f.Box[bn-1].BC != '\n' {
 		return 0
 	}
-//	println("return", bn)
+	//	println("return", bn)
 	return bn
 }
 
