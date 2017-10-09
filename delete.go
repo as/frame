@@ -64,7 +64,6 @@ func (f *Frame) Delete(p0, p1 int64) int {
 	}
 	f.clean(ppt0, nn0, n0)
 
-
 	if f.p1 > p1 {
 		f.p1 -= p1 - p0
 	} else if f.p1 > p0 {
@@ -87,8 +86,8 @@ func (f *Frame) Delete(p0, p1 int64) int {
 	}
 	h := f.Font.Dy()
 	f.Nlines = (pt0.Y-f.r.Min.Y)/h + extra
-	if ForceElasticTabstopExperiment{
-		for b := f.Nbox; b > eb; b = f.Stretch(b){
+	if ForceElasticTabstopExperiment {
+		for b := f.Nbox; b > eb; b = f.Stretch(b) {
 		}
 		f.Stretch(eb)
 		f.Refresh()
