@@ -8,6 +8,11 @@ import (
 	"image/draw"
 )
 
+const (
+	FrElastic = 1 << iota
+	FrUTF8
+)
+
 var (
 	// Enables the UTF-8 experiment
 	ForceUTF8Experiment = false
@@ -24,6 +29,8 @@ type Frame struct {
 
 	p0 int64
 	p1 int64
+
+	flags int
 
 	Font *font.Font
 	Color
@@ -51,6 +58,10 @@ type Frame struct {
 	stringBG     func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte, image.Image, image.Point) int
 	stringNBG    func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte) int
 	newRulerFunc func(s []byte, ft *font.Font) box.Ruler
+}
+
+func (f *Frame) SetFlags(flat int) {
+	//TODO(as)
 }
 
 func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, runes ...bool) *Frame {
@@ -171,7 +182,6 @@ func (f *Frame) Dot() (p0, p1 int64) {
 
 func (f *Frame) setrects(r image.Rectangle, b *image.RGBA) {
 	f.b = b
-	f.entire = r
 	f.r = r
 	f.r.Max.Y -= f.r.Dy() % f.Font.Dy()
 	f.maxlines = f.r.Dy() / f.Font.Dy()
