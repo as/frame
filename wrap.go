@@ -1,9 +1,9 @@
 package frame
 
 import (
-	"fmt"
-	"github.com/as/frame/box"
 	"image"
+
+	"github.com/as/frame/box"
 )
 
 // wrapMax returns the point where b should go on a plane
@@ -59,7 +59,7 @@ func (f *Frame) fits(pt image.Point, b *box.Box) (nr int) {
 	for bx := f.newRulerFunc(b.Ptr, f.Font); ; {
 		_, px, err := bx.Next()
 		if err != nil {
-			break
+			panic(err)
 		}
 		left -= px
 		if left < 0 {
@@ -67,8 +67,7 @@ func (f *Frame) fits(pt image.Point, b *box.Box) (nr int) {
 		}
 		nr++
 	}
-	// The box was too short and didn't end on a line boundary
-	panic(fmt.Sprintf("short box: len=%d left=%d box=%q\n", len(b.Ptr), left, b.Ptr))
+	return
 }
 func (f *Frame) plot(pt image.Point, b *box.Box) int {
 	b.Width = f.project(pt, b)
