@@ -38,6 +38,12 @@ type Run struct {
 	br           Ruler
 }
 
+func (f *Run) Combine(g *Run, n int) {
+	b := g.Box[:g.Nbox]
+	f.Add(n, len(b))
+	copy(f.Box[n:], b)
+}
+
 // Count recomputes and returns the number of bytes
 // stored between box nb and the last box
 func (f *Run) Count(nb int) int64 {
