@@ -5,7 +5,7 @@ import (
 	"image/draw"
 )
 
-func (f *Frame) Mark() {
+func (f *Frame) Mark() {	
 	f.modified = true
 }
 
@@ -97,7 +97,7 @@ func (f *Frame) boxpush(p0 int64, b0, b1 int, pt0, pt1, ppt1 image.Point) {
 	}
 }
 
-func (f *Frame) boxmove(cb0 int64, b0 int, pt0, pt1, opt0 image.Point) {
+func (f *Frame) bitblt(cb0 int64, b0 int, pt0, pt1, opt0 image.Point) {
 	h := f.Font.Dy()
 	y := 0
 	if pt1.Y == f.r.Max.Y {
@@ -115,20 +115,26 @@ func (f *Frame) boxmove(cb0 int64, b0 int, pt0, pt1, opt0 image.Point) {
 			f.Draw(f.b, br.Add(pt[1]), f.b, pt[0], f.op)
 			// clear bit hanging off right
 			if x == 0 && pt[1].Y > pt0.Y {
+			
+				// new char was wider than the old
+				// one so the line wrapped anyway
+				
 				_, back = f.pick(cb0, f.p0, f.p1)
-				// line wrap - new char bigger than first char displaced
 				r := br.Add(opt0)
 				r.Max.X = f.r.Max.X
 				f.Draw(f.b, r, back, r.Min, f.op)
+				
 			} else if pt[1].Y < y {
-				// copy from left to right
+			
+				// copy from left to right, bottom to top
+				
 				_, back = f.pick(cb0, f.p0, f.p1)
-
 				r := image.ZR.Add(pt[1])
 				r.Min.X += b.Width
 				r.Max.X += f.r.Max.X
 				r.Max.Y += h
 				f.Draw(f.b, r, back, r.Min, f.op)
+				
 			}
 			y = pt[1].Y
 			cb0 -= int64(b.Nrune)
@@ -148,16 +154,6 @@ func (f *Frame) boxmove(cb0 int64, b0 int, pt0, pt1, opt0 image.Point) {
 	}
 }
 
-type offset struct {
-	p0   int64
-	b0   int
-	cb0  int64
-	b1   int64
-	pt0  image.Point
-	pt1  image.Point
-	opt0 image.Point
-}
-
 func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	type Pts [2]image.Point
 	if p0 > f.Nchars || len(s) == 0 || f.b == nil {
@@ -166,43 +162,16 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 
 	// find p0, it's box, and its point in the box its in
 	b0 := f.Find(0, 0, p0)
+	eb := f.StartCell(b0)
 	//ob0 := b0
 	cb0 := p0
 	b1 := b0
-	//	ebn := f.StartCell(b0)
-	//	ept := f.pointOfBox(p0, ebn)
 	pt0 := f.pointOfBox(p0, b0)
-	opt0 := pt0
 
 	// find p1
 	ppt0, pt1 := f.boxscan(s, pt0)
+	opt0 := pt0
 	ppt1 := pt1
-
-	if ForceElasticTabstopExperiment {
-		// With elastic tabstops, the scanned boxes need to be
-		// connected to the frame's run to determine whether
-		// anything above the scan point was affected by the
-		// insertion.
-		//
-		// The old method is simple:
-		//	1.) Scan text to be inserted, into boxes
-		//	2.) Align the scanned boxes on the frame without drawing them
-		//	2.) Push existing boxes down the bitmap
-		//	3.) Bitblt the new boxes onto the bitmap
-		//  ... now the elastic part
-		//	4.) Realize the scanned boxes may affect the boxes above and below
-		//  5.) Redraw the entire frame
-
-		//		f.ir.Box = append(f.Box[ebn:b0], f.ir.Box)
-		//		f.ir.Nbox += len(f.Box[ebn:b0])
-
-		bn := f.Nbox
-		for bn > 0 {
-			bn = f.Stretch(bn)
-		}
-		f.Stretch(bn)
-	}
-
 	// Line wrap
 	if b0 < f.Nbox {
 		b := &f.Box[b0]
@@ -211,13 +180,14 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	}
 	f.modified = true
 
+
 	if f.p0 == f.p1 {
 		f.tickat(f.PointOf(int64(f.p0)), false)
 	}
 
 	cb0, b0, pt0, pt1 = f.boxalign(cb0, b0, pt0, pt1)
 	f.boxpush(p0, b0, b1, pt0, pt1, ppt1)
-	f.boxmove(cb0, b0, pt0, pt1, opt0)
+	f.bitblt(cb0, b0, pt0, pt1, opt0)
 	text, back := f.pick(p0, f.p0+1, f.p1+1)
 	f.Paint(ppt0, ppt1, back)
 	f.redrawRun0(f.ir, ppt0, text, back)
@@ -232,22 +202,15 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	}
 	f.clean(ppt0, b1, b0)
 	f.Nchars += f.ir.Nchars
-
+	if ForceElasticTabstopExperiment{
+		for b := f.Nbox; b > eb; b = f.Stretch(b){
+		}
+		f.Stretch(eb)
+		f.Refresh()
+	}
 	f.p0, f.p1 = coInsert(p0, p0+f.Nchars, f.p0, f.p1)
 	if f.p0 == f.p1 {
 		f.tickat(f.PointOf(f.p0), true)
-	}
-	if ForceElasticTabstopExperiment {
-		// Just to see if the algorithm works not ideal to sift through all of
-		// the boxes per insertion, although surprisingly faster than expected
-		// to the point of where its almost unnoticable without the print
-		// statements
-		bn := f.Nbox
-		for bn > 0 {
-			bn = f.Stretch(bn)
-		}
-		f.Stretch(bn)
-		f.Refresh() // must do this until line mapper is fixed
 	}
 	return int(f.ir.Nchars)
 }
@@ -267,6 +230,86 @@ func region(c, p0, p1 int64) int {
 		return 1
 	}
 	return 0
+}
+
+
+type offset struct {
+	p0   int64
+	b0   int
+	cb0  int64
+	b1   int64
+	pt0  image.Point
+	pt1  image.Point
+	opt0 image.Point
+}
+
+func (f *Frame) zInsertElastic(s []byte, p0 int64) (wrote int){
+	type Pts [2]image.Point
+	if p0 > f.Nchars || len(s) == 0 || f.b == nil {
+		return
+	}
+
+	// find p0, it's box, and its point in the box its in
+	b0 := f.Find(0, 0, p0)
+	cb0 := p0
+	
+	eb0 := f.StartCell(b0)
+	pt0 := f.pointOfBox(p0, b0)
+	ppt0, pt1 := f.boxscan(s, pt0)
+//	ept0 := f.pointOfBox(p0, eb0)
+	f.Box = append(f.Box[:b0], append(f.ir.Box[:f.ir.Nbox], f.Box[b0:]...)...)
+	f.Nbox += f.ir.Nbox
+	
+	b1 := b0
+	
+	for bn := f.NextCell(b1+f.ir.Nbox); bn > eb0 ; bn = f.Stretch(bn){
+	}
+	f.Stretch(eb0)
+	
+	
+//		pt0 = f.pointOfBox(p0, b0)
+//		pt1 = f.pointOfBox(65535, b1)
+	
+	opt0 := pt0
+	ppt1 := pt1
+	// Line wrap
+	if b0 < f.Nbox {
+		b := &f.Box[b0]
+		pt0 = f.wrapMax(pt0, b)
+		ppt1 = f.wrapMin(ppt1, b)
+	}
+	f.modified = true
+
+	if f.p0 == f.p1 {
+		f.tickat(f.PointOf(int64(f.p0)), false)
+	}
+	
+	cb0, b0, pt0, pt1 = f.boxalign(cb0, b0+f.ir.Nbox, pt0, pt1)
+	f.boxpush(p0, b0+f.ir.Nbox, b1+f.ir.Nbox, pt0, pt1, ppt1)
+	f.bitblt(cb0, b0, pt0, pt1, opt0)
+	text, back := f.pick(p0, f.p0+1, f.p1+1)
+	f.Paint(ppt0, ppt1, back)
+	f.redrawRun0(f.ir, ppt0, text, back)
+	
+	b1=b0
+	if b1 > 0 && f.Box[b1-1].Nrune >= 0 && ppt0.X-f.Box[b1-1].Width >= f.r.Min.X {
+		b1--
+		ppt0.X -= f.Box[b1].Width
+	}
+	
+	b0 += f.ir.Nbox
+	if b0 < f.Nbox-1 {
+		b0++
+	}
+	f.clean(f.pointOfBox(p0, b1),b0,b1)
+	f.Nchars += f.ir.Nchars
+	
+	f.p0, f.p1 = coInsert(p0, p0+f.Nchars, f.p0, f.p1)
+	if f.p0 == f.p1 {
+		f.tickat(f.PointOf(f.p0), true)
+	}
+	return int(f.ir.Nchars)
+
 }
 
 func drawBorder(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, thick int) {
