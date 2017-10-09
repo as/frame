@@ -85,7 +85,7 @@ func (f *Run) DumpBoxes() {
 	fmt.Printf("nalloc: %d\n", f.Nalloc)
 	for i, b := range f.Box {
 		fmt.Printf("[%d] (%p) (nrune=%d l=%d w=%d mw=%d bc=%x): %q\n",
-			i, &f.Box[i], b.Nrune, (&b).Len(), b.Width, b.Minwidth, b.BC, b.Ptr)
+			i, &f.Box[i], b.Nrune, (&b).Len(), b.Width, b.Minwidth, b.Break(), b.Ptr)
 	}
 }
 

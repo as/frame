@@ -45,7 +45,7 @@ func (f *Frame) boxscan2D(r *box.Run, pt image.Point) image.Point {
 			}
 			pt.X += b.Width
 		} else {
-			if b.BC == '\n' {
+			if b.Break() == '\n' {
 				pt = f.wrap(pt)
 			} else {
 				pt.X += f.plot(pt, b)

@@ -36,7 +36,7 @@ func (f *Frame) wrap(pt image.Point) image.Point {
 }
 
 func (f *Frame) advance(pt image.Point, b *box.Box) (x image.Point) {
-	if b.Nrune < 0 && b.BC == '\n' {
+	if b.Nrune < 0 && b.Break() == '\n' {
 		pt = f.wrap(pt)
 	} else {
 		pt.X += b.Width
@@ -77,7 +77,7 @@ func (f *Frame) plot(pt image.Point, b *box.Box) int {
 func (f *Frame) project(pt image.Point, b *box.Box) int {
 	c := f.r.Max.X
 	x := pt.X
-	if b.Nrune >= 0 || b.BC != '\t' { //
+	if b.Nrune >= 0 || b.Break() != '\t' { //
 		return b.Width
 	}
 	if x+b.Minwidth > c {

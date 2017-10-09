@@ -46,7 +46,6 @@ func (r *Run) specialbox(nb int, min, max int) (nl int) {
 	} else {
 		b.Minwidth = min
 	}
-	b.BC = c
 	b.Ptr = []byte{c}
 	b.Nrune = -1
 	b.Width = max

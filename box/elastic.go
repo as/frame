@@ -32,7 +32,7 @@ Loop:
 	for ; nb < f.Nbox; nb++ {
 		b := &f.Box[nb]
 		fmt.Printf("switch box: %#v\n", b)
-		switch b.BC {
+		switch b.Break() {
 		case '\t':
 			dx += b.Width
 			cbox[nc] = append(cbox[nc], nb)
@@ -67,7 +67,7 @@ Loop:
 				continue
 			}
 			pb := f.Box[bn-1]
-			if pb.BC != '\n' {
+			if pb.Break() != '\n' {
 				b.Width -= f.Box[bn-1].Width
 			}
 			if b.Width < b.Minwidth {
@@ -82,10 +82,10 @@ func (f *Run) Findcol(bn int, coln int) (cbn int, xmax int) {
 	c := 0
 	for ; bn < f.Nbox; bn++ {
 		b := &f.Box[bn]
-		if b.BC == '\t' {
+		if b.Break() == '\t' {
 			c++
 		}
-		if b.BC != '\n' {
+		if b.Break() != '\n' {
 			xmax += b.Width
 		}
 		if c == coln {
@@ -107,10 +107,10 @@ func (f *Run) Colof(bn int) (coln, xmax int) {
 	bs := f.StartLine(bn)
 	for {
 		b := &f.Box[bs]
-		if b.BC == '\t' {
+		if b.Break() == '\t' {
 			coln++
 		}
-		if b.BC != '\n' {
+		if b.Break() != '\n' {
 			xmax += b.Width
 		}
 		if bn == bs {
@@ -136,7 +136,7 @@ func (f *Run) FindCell(bn int) int {
 	b := &f.Box[bn]
 	for bn-1 != 0 {
 		b = &f.Box[bn-1]
-		switch b.BC {
+		switch b.Break() {
 		case '\n':
 
 			if ncols == 0 {
@@ -155,7 +155,7 @@ func (f *Run) FindCell(bn int) int {
 	}
 	//	println("bn-1", bn-1)
 	//	f.DumpBoxes()
-	if bn-1 == 0 && f.Box[bn-1].BC != '\n' {
+	if bn-1 == 0 && f.Box[bn-1].Break() != '\n' {
 		return 0
 	}
 	//	println("return", bn)
@@ -165,7 +165,7 @@ func (f *Run) FindCell(bn int) int {
 func (f *Run) StartLine(bn int) int {
 	for ; bn-1 >= 0; bn-- {
 		b := &f.Box[bn-1]
-		if b.BC == '\n' {
+		if b.Break() == '\n' {
 			break
 		}
 	}
@@ -175,7 +175,7 @@ func (f *Run) StartLine(bn int) int {
 func (f *Run) EndLine(bn int) int {
 	for bn < f.Nbox {
 		b := &f.Box[bn]
-		if b.BC == '\n' {
+		if b.Break() == '\n' {
 			break
 		}
 		bn++
@@ -194,16 +194,16 @@ func (f *Run) NextLine(bn int) int {
 func (f *Run) PrevLine(bn int) int {
 	for ; bn >= 0; bn-- {
 		b := &f.Box[bn]
-		if b.BC == '\n' {
+		if b.Break() == '\n' {
 			break
 		}
 	}
-	if bn == -1 && f.Box[0].BC == '\n' {
+	if bn == -1 && f.Box[0].Break() == '\n' {
 		return 0
 	}
 	for bn-1 >= 0 {
 		b := &f.Box[bn-1]
-		if b.BC == '\n' {
+		if b.Break() == '\n' {
 			break
 		}
 		bn--
