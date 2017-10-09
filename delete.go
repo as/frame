@@ -5,6 +5,8 @@ import (
 	"image"
 )
 
+// Delete deletes the range [p0:p1) and
+// returns the number of characters deleted
 func (f *Frame) Delete(p0, p1 int64) int {
 
 	if p0 >= f.Nchars || p0 == p1 || f.b == nil {
