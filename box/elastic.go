@@ -30,12 +30,12 @@ func (f *Run) Stretch(nb int) (pb int) {
 	cbox := make(map[int][]int)
 
 	nb = f.StartCell(nb)
-//	fmt.Println("\n\ncell start at box", nb)
+	//	fmt.Println("\n\ncell start at box", nb)
 	pb = nb - 1
 Loop:
 	for ; nb < f.Nbox; nb++ {
 		b := &f.Box[nb]
-//		fmt.Printf("switch box: %#v\n", b)
+		//		fmt.Printf("switch box: %#v\n", b)
 		switch b.Break() {
 		case '\t':
 			dx += b.Width
@@ -45,7 +45,7 @@ Loop:
 				cmax[nc] = dx
 			}
 			nc++
-//			fmt.Printf("	tab: dx=%d ncol=%d\n", dx, nc)
+			//			fmt.Printf("	tab: dx=%d ncol=%d\n", dx, nc)
 			dx = 0
 		case '\n':
 			nl++
@@ -153,7 +153,7 @@ Loop:
 	if bn <= oldbn {
 		return oldbn
 	}
-	if bn == f.Nbox{
+	if bn == f.Nbox {
 		return bn
 	}
 	return bn + 1
@@ -161,7 +161,7 @@ Loop:
 
 // StartCell returns the first box in the cell
 func (f *Run) StartCell(bn int) int {
-	if bn == 0{
+	if bn == 0 {
 		return 0
 	}
 	ncols := 0
