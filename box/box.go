@@ -10,7 +10,7 @@ type Box struct {
 	Ptr      []byte
 }
 
-func (b *Box) Break() byte{
+func (b *Box) Break() byte {
 	n := b.Len()
 	if n == 0 {
 		return 0
