@@ -96,7 +96,6 @@ func makefont(data []byte, size int) *Font {
 }
 
 func (f *Font) NewSize(dy int) *Font {
-	println(dy)
 	if dy == f.Dy() {
 		return f
 	}
