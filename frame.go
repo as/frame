@@ -13,13 +13,6 @@ const (
 	FrUTF8
 )
 
-var (
-	// Enables the UTF-8 experiment
-	ForceUTF8Experiment = false
-	// Enables the Elastic Tabstop experiement
-	ForceElasticTabstopExperiment = false
-)
-
 // Frame is a write-only container for editable text
 type Frame struct {
 	b *image.RGBA
@@ -66,10 +59,11 @@ func (f *Frame) SetFlags(flat int) {
 	//TODO(as)
 }
 
-func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, runes ...bool) *Frame {
+func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, flag ...int) *Frame {
+	fl := getflag(flag)
 	mintab := ft.Measure(' ')
 	maxtab := mintab * 4
-	elastic := ForceElasticTabstopExperiment
+	elastic := fl & FrElastic != 0
 	if elastic {
 		mintab = maxtab
 	}
@@ -91,15 +85,23 @@ func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, r
 	return f
 }
 
+func getflag(flag []int) int{
+	if len(flag) == 0{
+		return 0
+	}
+	return flag[0]
+}
+
 // New creates a new frame on b with bounds r. The image b is used
 // as the frame's internal bitmap cache.
-func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, runes ...bool) *Frame {
-	if (len(runes) > 0 && runes[0]) || ForceUTF8Experiment {
-		return newRuneFrame(r, ft, b, cols)
+func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, flag ...int) *Frame {
+	fl := getflag(flag)
+	if fl & FrUTF8 != 0 {
+		return newRuneFrame(r, ft, b, cols, flag...)
 	}
 	mintab := ft.Measure(' ')
 	maxtab := mintab * 4
-	elastic := ForceElasticTabstopExperiment
+	elastic := fl & FrElastic != 0
 	if elastic {
 		mintab = maxtab
 	}

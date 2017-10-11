@@ -64,16 +64,14 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 }
 
 func (f *Frame) badElasticAlg() {
-	if ForceElasticTabstopExperiment {
+	if f.elastic {
 		if f.Nbox <= 1 {
 			return
 		}
 		b := 0
 		b1 := 0
 		for b != f.Nbox {
-			println(11)
 			b1 = b
-			//f.Stretch(b)
 			b = f.NextCell(b)
 			if b == 0 || b == b1 {
 				break
@@ -82,7 +80,6 @@ func (f *Frame) badElasticAlg() {
 		f.Stretch(f.Nbox)
 		b = b1
 		for ; b1 > 1; b1 = f.Stretch(b1) {
-			println(22)
 			if b == b1 {
 				break
 			}
