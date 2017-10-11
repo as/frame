@@ -8,6 +8,11 @@ import (
 	"image/draw"
 )
 
+var(
+	ForceElastic bool
+	ForceUTF8 bool
+)
+
 const (
 	FrElastic = 1 << iota
 	FrUTF8
@@ -85,11 +90,17 @@ func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, f
 	return f
 }
 
-func getflag(flag []int) int {
-	if len(flag) == 0 {
-		return 0
+func getflag(flag []int) (fl int) {
+	if len(flag) != 0 {
+		fl = flag[0]
 	}
-	return flag[0]
+	if ForceElastic{
+		fl |= FrElastic
+	}
+	if ForceUTF8{
+		fl |= FrUTF8
+	}
+	return fl
 }
 
 // New creates a new frame on b with bounds r. The image b is used
