@@ -1,7 +1,6 @@
 package box
 
 import (
-	"fmt"
 )
 
 func (f *Run) Stretch2(nb int, bx []Box) (pb int) {
@@ -15,6 +14,8 @@ func (f *Run) Stretch2(nb int, bx []Box) (pb int) {
 // The frame already distinguishes between tabs, newlines, and plain text characters
 // by encapsulating them in measured boxes. A direct copy of the tabwriter code would
 // ignore the datastructures in the frame and their sublinear runtime cost.
+//
+// The current elastic algorithm has suboptimal runtime performance
 //
 func (f *Run) Stretch(nb int) (pb int) {
 	if nb <= 0 {
@@ -30,7 +31,6 @@ func (f *Run) Stretch(nb int) (pb int) {
 	cbox := make(map[int][]int)
 
 	nb = f.StartCell(nb)
-		fmt.Println("\n\ncell start at box", nb)
 	pb = nb - 1
 	if nb == f.Nbox{
 		return 0
