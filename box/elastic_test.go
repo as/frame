@@ -80,13 +80,21 @@ func TestStartCell(t *testing.T) {
 }
 
 func TestStartCell2(t *testing.T) {
-	checkbox(t, `\nAAA\tBBB\tCCC`, runwith("\nAAA\tBBB\tCCC").StartCell(3), 1)
-	checkbox(t, `AAA\tBBB\tCCC`, runwith("AAA\tBBB\tCCC").StartCell(2), 0)
+	r := runwith("\nAAA\tBBB\tCCC")
+	r.DumpBoxes()
+	checkbox(t, "10", r.EndCell(3), 6)
+	checkbox(t, "20", r.EndLine(3), 6)
+	checkbox(t, `\nAAA\tBBB\tCCC`, r.StartCell(3), 1)
+	r = runwith("AAA\tBBB\tCCC")
+	r.DumpBoxes()
+	checkbox(t, "10", r.EndCell(3), 5)
+	checkbox(t, "20", r.EndLine(3), 5)
+	checkbox(t, `AAA\tBBB\tCCC`, r.StartCell(2), 0)
 }
 
 func TestEndCell(t *testing.T) {
 	r := runwith("\n\n\n\n\n\n\n\n\n\n10\t12\t14\t15\t\nabcdefg\n\nzzzzzzzzzzzzzzzzz")
-	r.DumpBoxes()
+
 	for i := 0; i < 10; i++ {
 		checkbox(t, "TestEndCell", r.EndCell(i), i)
 	}
@@ -103,7 +111,7 @@ func TestEndCell(t *testing.T) {
 
 func TestNextCell(t *testing.T) {
 	r := runwith("\n\n\n\n\n\n\n\n\n\n10\t12\t14\t15\t\nabcdefg\n\nzzzzzzzzzzzzzzzzz")
-	r.DumpBoxes()
+
 	for i := 0; i < 10; i++ {
 		checkbox(t, "TestNextCell", r.NextCell(i), 10)
 	}
@@ -115,6 +123,16 @@ func TestNextCell(t *testing.T) {
 
 	checkbox(t, "TestNextCell", r.NextCell(16), 23)
 	checkbox(t, "TestNextCell", r.NextCell(23), 23)
+}
+
+func TestNextCell2(t *testing.T) {
+	r := runwith("\tfmt.Println(\"hello world\")\n}\none\ttwo\three")
+	checkbox(t, "10", r.EndCell(1), 1)
+	checkbox(t, "20", r.StartCell(6), 5)
+	checkbox(t, "30", r.EndLine(6), 10)
+	checkbox(t, "40", r.EndCell(6), 10)
+	checkbox(t, "50", r.StartCell(6), 5)
+	checkbox(t, "60", r.NextCell(1), 5)
 }
 
 /*

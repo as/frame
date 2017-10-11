@@ -1,7 +1,7 @@
 package box
 
 import (
-//	"fmt"
+	"fmt"
 )
 
 func (f *Run) Stretch2(nb int, bx []Box) (pb int) {
@@ -30,8 +30,11 @@ func (f *Run) Stretch(nb int) (pb int) {
 	cbox := make(map[int][]int)
 
 	nb = f.StartCell(nb)
-	//	fmt.Println("\n\ncell start at box", nb)
+		fmt.Println("\n\ncell start at box", nb)
 	pb = nb - 1
+	if nb == f.Nbox{
+		return 0
+	}
 Loop:
 	for ; nb < f.Nbox; nb++ {
 		b := &f.Box[nb]
@@ -71,7 +74,7 @@ Loop:
 
 			} else {
 				pb := f.Box[bn-1]
-				if pb.Break() != '\n' {
+				if pb.Break() != '\n' && pb.Break() != '\t' {
 					b.Width -= f.Box[bn-1].Width
 				}
 			}
@@ -151,36 +154,45 @@ Loop:
 			ltb = bn
 		}
 	}
-	if bn <= oldbn {
+	if oldbn > f.Nbox{
 		return oldbn
 	}
-	if bn == f.Nbox {
-		return bn
+	if bn >= f.Nbox {
+		return f.Nbox
+	}
+	if bn <= oldbn {
+		return oldbn
 	}
 	return bn + 1
 }
 
 // StartCell returns the first box in the cell
 func (f *Run) StartCell(bn int) int {
+	println(bn)
 	if bn == 0 {
 		return 0
 	}
 	ncols := 0
 	nrows := 0
-	oldbn := bn
+//	oldbn := bn
 	bn = f.EndLine(bn)
+	lsb := bn
+	if bn == f.Nbox{
+		//nrows++
+	}
 	var b *Box
+	Loop:
 	for bn-1 != 0 {
 		b = &f.Box[bn-1]
 		switch b.Break() {
 		case '\n':
-
 			if ncols == 0 {
 				if nrows == 0 {
-					return oldbn
+					return 0
 				}
-				return bn + 1
+				break Loop
 			}
+			lsb=bn
 			nrows++
 			ncols = 0
 		case '\t':
@@ -189,10 +201,23 @@ func (f *Run) StartCell(bn int) int {
 		}
 		bn--
 	}
+	if ncols == 0{
+		return lsb
+	}
+	if bn-1 == 0{
+		if f.Box[bn-1].Break() == '\n'{
+			return bn
+		}
+		return bn-1
+	}
+	return lsb
 	//	println("bn-1", bn-1)
 	//	f.DumpBoxes()
 	if bn-1 == 0 && f.Box[bn-1].Break() != '\n' {
-		return 0
+		//return 0
+	}
+	if f.Box[bn].Break() == '\t' && f.Box[bn-1].Break() != '\n'{
+		return bn
 	}
 	//	println("return", bn)
 	return bn
