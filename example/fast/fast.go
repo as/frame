@@ -16,6 +16,7 @@ import (
 	"sync"
 )
 
+
 var (
 	workc chan image.Rectangle
 	gwind screen.Window
@@ -28,7 +29,7 @@ var (
 func main() {
 	driver.Main(func(src screen.Screen) {
 		// This is exp/shiny specific
-		wind, _ := src.NewWindow(&screen.NewWindowOptions{winSize.X, winSize.Y, "basic"})
+		wind, _ := src.NewWindow(&screen.NewWindowOptions{Width: winSize.X, Height: winSize.Y, Name: "basic"})
 		b, _ := src.NewBuffer(winSize)
 
 		// Assign
