@@ -20,7 +20,7 @@ func (f *Frame) Delete(p0, p1 int64) int {
 		f.tickat(f.PointOf(int64(f.p0)), false)
 	}
 	n0 := f.Find(0, 0, p0)
-	eb := f.StartCell(n0)
+	eb := f.StartCell(n0);	eb=eb
 	nn0 := n0
 	n1 := f.Find(n0, p0, p1)
 	pt0 := f.pointOfBox(p0, n0)
@@ -88,12 +88,7 @@ func (f *Frame) Delete(p0, p1 int64) int {
 	}
 	h := f.Font.Dy()
 	f.Nlines = (pt0.Y-f.r.Min.Y)/h + extra
-	if ForceElasticTabstopExperiment {
-		for b := f.Nbox; b > eb; b = f.Stretch(b) {
-		}
-		f.Stretch(eb)
-		f.Refresh()
-	}
+	f.badElasticAlg()
 	return int(p1 - p0) //n - f.Nlines
 }
 func (f *Frame) delete(pt0, pt1 image.Point, n0, n1 int, cn1 int64) (image.Point, image.Point, int, int) {
