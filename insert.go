@@ -74,9 +74,7 @@ func (f *Frame) badElasticAlg() {
 			println(11)
 			b1 = b
 			//f.Stretch(b)
-			println("nextcell")
 			b = f.NextCell(b)
-			println("xxxxxxxxxxnextcell")
 			if b == 0 || b == b1 {
 				break
 			}
