@@ -8,9 +8,9 @@ import (
 	"image/draw"
 )
 
-var(
+var (
 	ForceElastic bool
-	ForceUTF8 bool
+	ForceUTF8    bool
 )
 
 const (
@@ -95,10 +95,10 @@ func getflag(flag []int) (fl int) {
 	if len(flag) != 0 {
 		fl = flag[0]
 	}
-	if ForceElastic{
+	if ForceElastic {
 		fl |= FrElastic
 	}
-	if ForceUTF8{
+	if ForceUTF8 {
 		fl |= FrUTF8
 	}
 	return fl
