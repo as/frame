@@ -29,7 +29,7 @@ var (
 func main() {
 	driver.Main(func(src screen.Screen) {
 		// This is exp/shiny specific
-		wind, _ := src.NewWindow(&screen.NewWindowOptions{Width: winSize.X, Height: winSize.Y, Name: "basic"})
+		wind, _ := src.NewWindow(&screen.NewWindowOptions{Width: winSize.X, Height: winSize.Y, Title: "fast"})
 		b, _ := src.NewBuffer(winSize)
 
 		// Assign
