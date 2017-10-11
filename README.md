@@ -14,9 +14,19 @@ Package frame provides plan9-like editable text images. The package is similar t
 - Elastic tabstop support
 
 
-## Basic Example
+## Examples
 
+- Basic
 https://github.com/as/frame/blob/master/example/basic/basic.go
+
+- UTF-8
+https://github.com/as/frame/blob/master/example/utf8/utf8.go
+
+- Elastic
+https://github.com/as/frame/blob/master/example/elastic/elastic.go
+
+- Fast (use if you need better performance or have graphical lag)
+https://github.com/as/frame/blob/master/example/fast/fast.go
 
 ## Init
 
