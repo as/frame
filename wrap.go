@@ -79,7 +79,7 @@ func (f *Frame) project(pt image.Point, b *box.Box) int {
 	if b.Nrune >= 0 || b.Break() != '\t' { //
 		return b.Width
 	}
-	if f.elastic && b.Break() == '\t'{
+	if f.elastic && b.Break() == '\t' {
 		return b.Minwidth
 	}
 	if x+b.Minwidth > c {

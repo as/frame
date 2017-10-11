@@ -16,7 +16,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 
 	// find p0, it's box, and its point in the box its in
 	b0 := f.Find(0, 0, p0)
-//	eb := f.StartCell(b0)
+	//	eb := f.StartCell(b0)
 	//ob0 := b0
 	cb0 := p0
 	b1 := b0
@@ -63,16 +63,16 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	return int(f.ir.Nchars)
 }
 
-func (f *Frame) badElasticAlg(){
+func (f *Frame) badElasticAlg() {
 	if ForceElasticTabstopExperiment {
-		if f.Nbox <=1{
+		if f.Nbox <= 1 {
 			return
 		}
 		b := 0
-		b1:=0
-		for b != f.Nbox{
-		println(11)
-			b1=b
+		b1 := 0
+		for b != f.Nbox {
+			println(11)
+			b1 = b
 			//f.Stretch(b)
 			println("nextcell")
 			b = f.NextCell(b)
@@ -82,19 +82,18 @@ func (f *Frame) badElasticAlg(){
 			}
 		}
 		f.Stretch(f.Nbox)
-		b=b1
+		b = b1
 		for ; b1 > 1; b1 = f.Stretch(b1) {
-		println(22)
-			if b==b1{
+			println(22)
+			if b == b1 {
 				break
 			}
-			b=b1
+			b = b1
 		}
 		f.Stretch(b1)
 		f.Refresh()
-	}	
+	}
 }
-
 
 // Mark marks the frame as dirty
 func (f *Frame) Mark() {

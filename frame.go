@@ -58,7 +58,7 @@ type Frame struct {
 	stringBG     func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte, image.Image, image.Point) int
 	stringNBG    func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte) int
 	newRulerFunc func(s []byte, ft *font.Font) box.Ruler
-	
+
 	elastic bool
 }
 
@@ -68,10 +68,10 @@ func (f *Frame) SetFlags(flat int) {
 
 func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, runes ...bool) *Frame {
 	mintab := ft.Measure(' ')
-	maxtab := mintab*4
+	maxtab := mintab * 4
 	elastic := ForceElasticTabstopExperiment
-	if elastic{
-		mintab=maxtab
+	if elastic {
+		mintab = maxtab
 	}
 	f := &Frame{
 		Font:         ft,
@@ -98,10 +98,10 @@ func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, runes ...b
 		return newRuneFrame(r, ft, b, cols)
 	}
 	mintab := ft.Measure(' ')
-	maxtab := mintab*4
+	maxtab := mintab * 4
 	elastic := ForceElasticTabstopExperiment
-	if elastic{
-		mintab=maxtab
+	if elastic {
+		mintab = maxtab
 	}
 	f := &Frame{
 		Font:         ft,
@@ -112,7 +112,7 @@ func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, runes ...b
 		stringNBG:    font.StringNBG,
 		newRulerFunc: box.NewByteRuler,
 		op:           draw.Src,
-		elastic: elastic,
+		elastic:      elastic,
 	}
 	f.setrects(r, b)
 	f.inittick()

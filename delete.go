@@ -20,7 +20,8 @@ func (f *Frame) Delete(p0, p1 int64) int {
 		f.tickat(f.PointOf(int64(f.p0)), false)
 	}
 	n0 := f.Find(0, 0, p0)
-	eb := f.StartCell(n0);	eb=eb
+	eb := f.StartCell(n0)
+	eb = eb
 	nn0 := n0
 	n1 := f.Find(n0, p0, p1)
 	pt0 := f.pointOfBox(p0, n0)
