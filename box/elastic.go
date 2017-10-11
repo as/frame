@@ -168,7 +168,7 @@ Loop:
 
 // StartCell returns the first box in the cell
 func (f *Run) StartCell(bn int) int {
-	println(bn)
+//	println(bn)
 	if bn == 0 {
 		return 0
 	}
