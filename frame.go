@@ -81,6 +81,7 @@ func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, f
 		stringNBG:    font.RuneNBG,
 		newRulerFunc: box.NewRuneRuler,
 		op:           draw.Src,
+		elastic:      elastic,
 	}
 	f.setrects(r, b)
 	f.inittick()
