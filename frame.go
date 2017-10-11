@@ -63,7 +63,7 @@ func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, f
 	fl := getflag(flag)
 	mintab := ft.Measure(' ')
 	maxtab := mintab * 4
-	elastic := fl & FrElastic != 0
+	elastic := fl&FrElastic != 0
 	if elastic {
 		mintab = maxtab
 	}
@@ -85,8 +85,8 @@ func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, f
 	return f
 }
 
-func getflag(flag []int) int{
-	if len(flag) == 0{
+func getflag(flag []int) int {
+	if len(flag) == 0 {
 		return 0
 	}
 	return flag[0]
@@ -96,12 +96,12 @@ func getflag(flag []int) int{
 // as the frame's internal bitmap cache.
 func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, flag ...int) *Frame {
 	fl := getflag(flag)
-	if fl & FrUTF8 != 0 {
+	if fl&FrUTF8 != 0 {
 		return newRuneFrame(r, ft, b, cols, flag...)
 	}
 	mintab := ft.Measure(' ')
 	maxtab := mintab * 4
-	elastic := fl & FrElastic != 0
+	elastic := fl&FrElastic != 0
 	if elastic {
 		mintab = maxtab
 	}

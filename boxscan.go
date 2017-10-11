@@ -12,7 +12,7 @@ func (f *Frame) boxscan(s []byte, pt image.Point) (image.Point, image.Point) {
 	f.ir.Boxscan(s, f.maxlines)
 	if f.elastic {
 		// TODO(as): remove this after adding tests since its redundant
-		// 
+		//
 		// Just to see if the algorithm works not ideal to sift through all of
 		// the boxes per insertion, although surprisingly faster than expected
 		// to the point of where its almost unnoticable without the print
