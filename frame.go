@@ -58,6 +58,8 @@ type Frame struct {
 	stringBG     func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte, image.Image, image.Point) int
 	stringNBG    func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte) int
 	newRulerFunc func(s []byte, ft *font.Font) box.Ruler
+	
+	elastic bool
 }
 
 func (f *Frame) SetFlags(flat int) {
@@ -65,12 +67,17 @@ func (f *Frame) SetFlags(flat int) {
 }
 
 func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, runes ...bool) *Frame {
-	spaceDx := ft.Measure(' ')
+	mintab := ft.Measure(' ')
+	maxtab := mintab*4
+	elastic := ForceElasticTabstopExperiment
+	if elastic{
+		mintab=maxtab
+	}
 	f := &Frame{
 		Font:         ft,
-		maxtab:       4 * spaceDx,
+		maxtab:       maxtab,
 		Color:        cols,
-		Run:          box.NewRun(spaceDx, 5000, ft, box.NewRuneRuler),
+		Run:          box.NewRun(mintab, 5000, ft, box.NewRuneRuler),
 		stringBG:     font.RuneBG,
 		stringNBG:    font.RuneNBG,
 		newRulerFunc: box.NewRuneRuler,
@@ -78,7 +85,7 @@ func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, r
 	}
 	f.setrects(r, b)
 	f.inittick()
-	run := box.NewRun(spaceDx, 5000, ft, box.NewRuneRuler)
+	run := box.NewRun(mintab, 5000, ft, box.NewRuneRuler)
 	f.ir = &run
 	f.Drawer = drawcache.New()
 	return f
@@ -90,20 +97,26 @@ func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, runes ...b
 	if (len(runes) > 0 && runes[0]) || ForceUTF8Experiment {
 		return newRuneFrame(r, ft, b, cols)
 	}
-	spaceDx := ft.Measure(' ')
+	mintab := ft.Measure(' ')
+	maxtab := mintab*4
+	elastic := ForceElasticTabstopExperiment
+	if elastic{
+		mintab=maxtab
+	}
 	f := &Frame{
 		Font:         ft,
-		maxtab:       4 * spaceDx,
+		maxtab:       maxtab,
 		Color:        cols,
-		Run:          box.NewRun(spaceDx, 5000, ft),
+		Run:          box.NewRun(mintab, 5000, ft),
 		stringBG:     font.StringBG,
 		stringNBG:    font.StringNBG,
 		newRulerFunc: box.NewByteRuler,
 		op:           draw.Src,
+		elastic: elastic,
 	}
 	f.setrects(r, b)
 	f.inittick()
-	run := box.NewRun(spaceDx, 5000, ft)
+	run := box.NewRun(mintab, 5000, ft)
 	f.ir = &run
 	f.Drawer = drawcache.New()
 	return f
