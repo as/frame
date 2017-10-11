@@ -3,10 +3,15 @@
 
 Package frame provides plan9-like editable text images. The package is similar to plan9's libframe, except:
 
+![paint](elastic.png)
+
+## Features
+
 - `NUL` bytes are preserved
-- Semantic replacement characters are used for unrenderable text
-- Experimental UTF8 Support (see `frame.ForceUTF8Experiment`)
-- In-work elastic tabstop support (see `frame.ForceElasticTabstopExperiment`)
+- Semantic replacement characters
+- Plain ASCII support
+- UTF8 support 
+- Elastic tabstop support
 
 
 ## Basic Example
