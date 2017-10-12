@@ -182,3 +182,9 @@ This rendering pipeline is bottlenecked, so an optimization is located between t
 ```
 insert | frame | shiny buffer |*| shiny window
 ```
+
+## References
+
+http://doc.cat-v.org/plan_9/4th_edition/papers/sam/
+
+Specifically, the section `Data structures in the terminal` served as a guide
