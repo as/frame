@@ -144,6 +144,10 @@ RedrawAt(pt image.Point, text, back image.Image)
 Refresh()
   Refresh recomputes the state of the frame from scratch. This is an expensive operation compared
   to redraw
+
+Paint(pt0, pt1 image.Point, col image.Image)
+  Paint paints the color col on the frame at points pt0-pt1. The result is a Z shaped fill
+  consisting of at-most 3 rectangles. No text is redrawn.
 ```
 
 ## Examples
@@ -163,7 +167,7 @@ https://github.com/as/frame/blob/master/example/fast/fast.go
 # Note
 
 A frame's text is not addressable. Once the characters are written to the frame, there is no
-mechanism to retrieve their position from within the frame. Use a buffer to store text for reading
+mechanism to retrieve value from within the frame. Use a buffer to store text for reading
 and the range addresses of the frame to access bytes from that buffer.
 
 See `github.com/as/ui/win` for an example.
