@@ -28,7 +28,11 @@ A `frame` is created using the New function
   fr := frame.New(img, img.Bounds(), frame.NewGoMono(), frame.Mono)
 ```
 
-It supports these common operations
+A frame implements efficient `Rendering`, `Projection`, and `Selection` of text. A selection can also be `Indexed`
+
+### Rendering
+
+Text is rendered with Insert and Delete
 
 ```
 func (f *Frame) Insert(s []byte, p0 int64) (wrote int)
@@ -36,21 +40,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int)
 
 func (f *Frame) Delete(p0, p1 int64) int
     Delete deletes the range [p0:p1)
-
-func (f *Frame) IndexOf(pt image.Point) int64
-    IndexOf returns the index of pt.
-
-func (f *Frame) PointOf(p int64) image.Point
-    PointOf returns the 2D point for index p.
-
-func (f *Frame) Select(p0, p1 int64)
-    Select selects the region [p0:p1)
-
-func (f *Frame) Dot() (p0, p1 int64)
-    Dot returns the selected region [p0:p1)
 ```
-
-## Insert and Delete
 
 The two operations are inverses of each other.
 
@@ -59,9 +49,9 @@ The two operations are inverses of each other.
   fr.Delete(0, 11)
 ```
 
-`Insert` and `delete` return the number of characters inserted or deleted.
+`Insert` and `Delete` return the number of characters inserted or deleted.
 
-To `delete` the last insertion:
+To `Delete` the last insertion:
 ```
   p0 := 0
   n := fr.Insert([]byte("123"), p0)
@@ -77,44 +67,54 @@ To execute a traditional "write" operation:
 
 ## Projection
 
-Frames can translate between coordinates of the mouse and character offsets in the `frame` using `IndexOf` and `PointOf`.
+Frames translate between 2D points (of say a mouse cursor) to a 1D index (array index) with `IndexOf` and `PointOf`
+```
+func (f *Frame) IndexOf(pt image.Point) int64
+    IndexOf returns the index of pt.
+
+func (f *Frame) PointOf(p int64) image.Point
+    PointOf returns the 2D point for index p.
+```
+
+They are also inverse operations.
 
 ```
-  p0  := fr.IndexOf(image.Pt(0, 0)) Returns the index under the 2D point (0,0)
-  pt0 := fr.PointOf(5) Returns the 2D point over the index
+  fr.IndexOf(fr.PointOf(5)) // 5
+  fr.PointOf(fr.IndexOf(image.Pt(25,25))) // (25, 25)
 ```
 
+Note that there is no way to extract textual data from the frame with the index. Frame data structures are designed for write-only operation.
 
 ## Selection
 
-Frames support selecting ranges of text along with returning those selected ranges.
+
+Frames select a continuous range of text with `Select`. The currently-selected range is queried with `Dot`.
+
 
 ```
-  fr.Select(p0, p1)
-  fr.Dot()
+func (f *Frame) Select(p0, p1 int64)
+    Select selects the region [p0:p1)
+
+func (f *Frame) Dot() (p0, p1 int64)
+    Dot returns the selected region [p0:p1)
 ```
 
-A more complicated facility exists for making a live selection. `Sweep`. See example/basic for an example of
-how to use it.
+Live selections are done by passing the mouse event pipe into `Sweep`. 
+The `flush` func executes the callers upload/publish procedure for the display.
+See the examples for more detail.
 
 ```
- fr.Sweep(...)
+func (fr *Frame) Sweep(ep EventPipe, flush func())
+
+type EventPipe interface {
+        Send(e interface{})
+        SendFirst(e interface{})
+        NextEvent() interface{}
+}
+
 ```
 
-
-## Examples
-
-- Basic
-https://github.com/as/frame/blob/master/example/basic/basic.go
-
-- UTF-8
-https://github.com/as/frame/blob/master/example/utf8/utf8.go
-
-- Elastic
-https://github.com/as/frame/blob/master/example/elastic/elastic.go
-
-- Fast (use if you need better performance or have graphical lag)
-https://github.com/as/frame/blob/master/example/fast/fast.go
+Sweep is the only method that requires an event pump to cross API boundaries. All other methods can operate on a static `*image.RGBA` without additional consideration.
 
 
 ## Drawing
@@ -145,6 +145,20 @@ Refresh()
   Refresh recomputes the state of the frame from scratch. This is an expensive operation compared
   to redraw
 ```
+
+## Examples
+
+- Basic
+https://github.com/as/frame/blob/master/example/basic/basic.go
+
+- UTF-8
+https://github.com/as/frame/blob/master/example/utf8/utf8.go
+
+- Elastic
+https://github.com/as/frame/blob/master/example/elastic/elastic.go
+
+- Fast (use if you need better performance or have graphical lag)
+https://github.com/as/frame/blob/master/example/fast/fast.go
 
 # Note
 
