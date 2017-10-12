@@ -28,7 +28,7 @@ func main() {
 		wind, _ := src.NewWindow(&screen.NewWindowOptions{winSize.X, winSize.Y, "basic"})
 		b, _ := src.NewBuffer(winSize)
 		draw.Draw(b.RGBA(), b.Bounds(), frame.A.Back, image.ZP, draw.Src)
-		fr := frame.New(image.Rectangle{image.ZP, winSize}, font.NewGoMono(14), b.RGBA(), frame.A, frame.FrUTF8|frame.FrElastic)
+		fr := frame.New(image.Rectangle{image.ZP, winSize}, font.NewGoRegular(14), b.RGBA(), frame.A, frame.FrUTF8|frame.FrElastic)
 		fr.Refresh()
 		wind.Send(paint.Event{})
 		ck := func() {
