@@ -1,60 +1,56 @@
 ## Frame 
 [![Go Report Card](https://goreportcard.com/badge/github.com/as/frame)](https://goreportcard.com/report/github.com/as/frame)
 
-Package frame provides plan9-like editable text images. The package is similar to plan9's libframe, except:
+## Synopsis
+
+Package frame provides Plan9-like editable text images. Its API should be familiar to user's of Plan9's libframe, in a manner consistent with Go. 
 
 ![paint](elastic.png)
 
 ## Features
 
+- Plain ASCII support
 - `NUL` bytes are preserved
 - Semantic replacement characters
-- Plain ASCII support
 - UTF8 support 
 - Elastic tabstop support
 
 
-## Examples
+## Description
 
-- Basic
-https://github.com/as/frame/blob/master/example/basic/basic.go
-
-- UTF-8
-https://github.com/as/frame/blob/master/example/utf8/utf8.go
-
-- Elastic
-https://github.com/as/frame/blob/master/example/elastic/elastic.go
-
-- Fast (use if you need better performance or have graphical lag)
-https://github.com/as/frame/blob/master/example/fast/fast.go
-
-## Init
+A Frame draws text onto a given bitmap. It supports efficient rendering of non-linear editing operations and selection tracking.
 
 A `frame` is created using the New function
+
 
 ```
   img := image.NewRGBA(image.Rect(0,0,100,100))
   fr := frame.New(img, img.Bounds(), frame.NewGoMono(), frame.Mono)
 ```
 
-## Common Operations
-
-A `frame` supports these common operations
+It supports these common operations
 
 ```
-  Insert: Insert text
-  Delete: Delete text
-  IndexOf: Index for point
-  PointOf: Point for index
-  Select: Select range
-  Dot: Return selected range
+func (f *Frame) Insert(s []byte, p0 int64) (wrote int)
+    Insert renders the slice s at index p0
+
+func (f *Frame) Delete(p0, p1 int64) int
+    Delete deletes the range [p0:p1)
+
+func (f *Frame) IndexOf(pt image.Point) int64
+    IndexOf returns the index of pt.
+
+func (f *Frame) PointOf(p int64) image.Point
+    PointOf returns the 2D point for index p.
+
+func (f *Frame) Select(p0, p1 int64)
+    Select selects the region [p0:p1)
+
+func (f *Frame) Dot() (p0, p1 int64)
+    Dot returns the selected region [p0:p1)
 ```
 
 ## Insert and Delete
-
-Frames supports two operations for rendering text: `Insert` and `Delete`. 
-- `Insert` inserts text at the given index and moves existing characters after the index to the right. 
-- `Delete` deletes text in the given range (pair of indices) and moves existing character after the index to the left.
 
 The two operations are inverses of each other.
 
@@ -88,6 +84,7 @@ Frames can translate between coordinates of the mouse and character offsets in t
   pt0 := fr.PointOf(5) Returns the 2D point over the index
 ```
 
+
 ## Selection
 
 Frames support selecting ranges of text along with returning those selected ranges.
@@ -104,10 +101,34 @@ how to use it.
  fr.Sweep(...)
 ```
 
+
+## Examples
+
+- Basic
+https://github.com/as/frame/blob/master/example/basic/basic.go
+
+- UTF-8
+https://github.com/as/frame/blob/master/example/utf8/utf8.go
+
+- Elastic
+https://github.com/as/frame/blob/master/example/elastic/elastic.go
+
+- Fast (use if you need better performance or have graphical lag)
+https://github.com/as/frame/blob/master/example/fast/fast.go
+
+
 ## Drawing
 
-No special operations are needed after a call to `Insert`, `Delete`, or `Select`. The frame's bitmap
-is updated. However, there are four functions that will redraw the frame on the bitmap if necessary.
+
+With a few trivial exceptions (Sweep), this package does not have a runtime
+dependency on any rendering libraries. A Frame can use a plain `*image.RGBA`
+and write a copy of the updated bitmap to a png file. Most of the graphical
+tests in this package are executed in this manner.
+
+Because the bitmap is an arbitrary image and also a living cache of glyphs, drawing
+on the bitmap between rendering operations persists on the underlying glyphs. There
+are a few ways to re-render the bitmap or a region of it.
+
 
 ```
 Recolor(pt image.Point, p0, p1 int64, cols Palette)
@@ -125,7 +146,16 @@ Refresh()
   to redraw
 ```
 
-## Display Sync
+# Note
+
+A frame's text is not addressable. Once the characters are written to the frame, there is no
+mechanism to retrieve their position from within the frame. Use a buffer to store text for reading
+and the range addresses of the frame to access bytes from that buffer.
+
+See `github.com/as/ui/win` for an example.
+
+
+## Shiny-specific information
 
 After any frame altering operation, one can be sure that the changes can be written to
 the frame's bitmap. However, the same can not be said for the exp/shiny window. There currently
@@ -138,11 +168,3 @@ This rendering pipeline is bottlenecked, so an optimization is located between t
 ```
 insert | frame | shiny buffer |*| shiny window
 ```
-
-# Note
-
-A frame's text is not addressable. Once the characters are written to the frame, there is no
-mechanism to retrieve their position from within the frame. Use a buffer to store text for reading
-and the range addresses of the frame to access bytes from that buffer.
-
-See `github.com/as/ui/win` for an example.
