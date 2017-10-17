@@ -22,6 +22,7 @@ type Font struct {
 	ascent  int
 	descent int
 	stride  int
+	letting int
 	dy      int
 
 	cache    Cache
@@ -46,6 +47,7 @@ func NewBasic(size int) *Font {
 		size:    size,
 		ascent:  2,
 		descent: 1,
+		letting: 0,
 		stride:  0,
 	}
 	ft.dy = ft.ascent + ft.descent + ft.size
@@ -116,6 +118,9 @@ func (f *Font) SetDescent(px int) {
 func (f *Font) SetStride(px int) {
 	f.stride = px
 }
+func (f *Font) SetLetting(px int){
+	f.letting=px
+}
 
 func (f *Font) genChar(b byte) *Glyph {
 	dr, mask, maskp, adv, _ := f.Face.Glyph(fixed.P(0, f.size), rune(b))
@@ -152,7 +157,7 @@ func (f *Font) Dx(s string) int {
 	return f.MeasureBytes([]byte(s))
 }
 func (f *Font) Dy() int {
-	return f.dy
+	return f.dy+f.letting
 }
 func (f *Font) Size() int {
 	return f.size
