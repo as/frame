@@ -10,6 +10,7 @@ import (
 	gofont "golang.org/x/image/font"
 	"golang.org/x/image/font/basicfont"
 	"golang.org/x/image/font/gofont/gomono"
+	"golang.org/x/image/font/gofont/gomedium"
 	"golang.org/x/image/font/gofont/goregular"
 	"golang.org/x/image/math/fixed"
 )
@@ -31,6 +32,10 @@ type Font struct {
 
 func NewGoRegular(size int) *Font {
 	return NewTTF(goregular.TTF, size)
+}
+
+func NewGoMedium(size int) *Font {
+	return NewTTF(gomedium.TTF, size)
 }
 
 func NewGoMono(size int) *Font {
