@@ -70,6 +70,8 @@ func (f *Frame) SetFlags(flags int) {
 	fl := getflag(flags)
 	f.flags = fl
 	f.mintab, f.maxtab = tabMinMax(f.Font, f.elastic())
+	//	f.Reset( f.r, f.RGBA(),f.Font)
+	//	f.mintab, f.maxtab = tabMinMax(f.Font, f.elastic())
 }
 
 func (f *Frame) elastic() bool {
@@ -145,7 +147,7 @@ func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, flag ...in
 	}
 	f.setrects(r, b)
 	f.inittick()
-	run := box.NewRun(mintab, 5000, ft)
+	run := box.NewRun(f.mintab, 5000, ft)
 	f.ir = &run
 	f.Drawer = drawcache.New()
 	return f
