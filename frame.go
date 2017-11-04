@@ -57,11 +57,10 @@ type Frame struct {
 	stringBG     func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte, image.Image, image.Point) int
 	stringNBG    func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte) int
 	newRulerFunc func(s []byte, ft *font.Font) box.Ruler
-
 }
 
 // Flags returns the flags currently set for the frame
-func (f *Frame) Flags() int{
+func (f *Frame) Flags() int {
 	return f.flags
 }
 
@@ -73,11 +72,11 @@ func (f *Frame) SetFlags(flags int) {
 	f.mintab, f.maxtab = tabMinMax(f.Font, f.elastic())
 }
 
-func (f *Frame) elastic() bool{
+func (f *Frame) elastic() bool {
 	return f.flags&FrElastic != 0
 }
 
-func tabMinMax(ft *font.Font, elastic bool) (min, max int){
+func tabMinMax(ft *font.Font, elastic bool) (min, max int) {
 	mintab := ft.Measure(' ')
 	maxtab := mintab * 4
 	if elastic {
@@ -89,10 +88,10 @@ func tabMinMax(ft *font.Font, elastic bool) (min, max int){
 func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, flag ...int) *Frame {
 	fl := getflag(flag...)
 	mintab, maxtab := tabMinMax(ft, fl&FrElastic != 0)
-	
+
 	f := &Frame{
 		Font:         ft,
-		mintab: mintab,
+		mintab:       mintab,
 		maxtab:       maxtab,
 		Color:        cols,
 		Run:          box.NewRun(mintab, 5000, ft, box.NewRuneRuler),
@@ -100,7 +99,7 @@ func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, f
 		stringNBG:    font.RuneNBG,
 		newRulerFunc: box.NewRuneRuler,
 		op:           draw.Src,
-		flags: fl,
+		flags:        fl,
 	}
 	f.setrects(r, b)
 	f.inittick()
@@ -131,10 +130,10 @@ func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, flag ...in
 		return newRuneFrame(r, ft, b, cols, flag...)
 	}
 	mintab, maxtab := tabMinMax(ft, fl&FrElastic != 0)
-	
+
 	f := &Frame{
 		Font:         ft,
-		mintab: mintab,
+		mintab:       mintab,
 		maxtab:       maxtab,
 		Color:        cols,
 		Run:          box.NewRun(mintab, 5000, ft),
@@ -142,7 +141,7 @@ func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, flag ...in
 		stringNBG:    font.StringNBG,
 		newRulerFunc: box.NewByteRuler,
 		op:           draw.Src,
-		flags: fl,
+		flags:        fl,
 	}
 	f.setrects(r, b)
 	f.inittick()

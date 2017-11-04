@@ -123,4 +123,3 @@ func max64(a, b int64) int64 {
 
 type ScrollEvent struct {
 }
-
