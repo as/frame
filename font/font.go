@@ -9,8 +9,8 @@ import (
 	"github.com/golang/freetype/truetype"
 	gofont "golang.org/x/image/font"
 	"golang.org/x/image/font/basicfont"
-	"golang.org/x/image/font/gofont/gomedium"
 	"golang.org/x/image/font/gofont/gomono"
+	"golang.org/x/image/font/gofont/gomedium"
 	"golang.org/x/image/font/gofont/goregular"
 	"golang.org/x/image/math/fixed"
 )
@@ -102,14 +102,19 @@ func fromTTF(data []byte, size int) *Font {
 	return ft
 }
 
-func (f *Font) NewSize(dy int) *Font {
-	if dy == f.Dy() {
-		return f
-	}
+// Clone returns a copy of the font
+func Clone(f *Font, dy int) *Font{
 	if f.data == nil {
 		return NewBasic(dy)
 	}
 	return NewTTF(f.data, dy)
+}
+
+func (f *Font) NewSize(dy int) *Font {
+	if dy == f.Dy() {
+		return f
+	}
+	return Clone(f, dy)
 }
 
 func (f *Font) SetAscent(px int) {
@@ -123,8 +128,8 @@ func (f *Font) SetDescent(px int) {
 func (f *Font) SetStride(px int) {
 	f.stride = px
 }
-func (f *Font) SetLetting(px int) {
-	f.letting = px
+func (f *Font) SetLetting(px int){
+	f.letting=px
 }
 
 func (f *Font) genChar(b byte) *Glyph {
@@ -162,7 +167,7 @@ func (f *Font) Dx(s string) int {
 	return f.MeasureBytes([]byte(s))
 }
 func (f *Font) Dy() int {
-	return f.dy + f.letting
+	return f.dy+f.letting
 }
 func (f *Font) Size() int {
 	return f.size
