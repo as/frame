@@ -64,7 +64,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 }
 
 func (f *Frame) badElasticAlg() {
-	if f.elastic {
+	if f.elastic() {
 		if f.Nbox <= 1 {
 			return
 		}

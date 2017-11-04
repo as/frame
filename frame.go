@@ -37,6 +37,7 @@ type Frame struct {
 	drawcache.Drawer
 	op draw.Op
 
+	mintab int
 	maxtab int
 	full   int
 
@@ -57,23 +58,41 @@ type Frame struct {
 	stringNBG    func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte) int
 	newRulerFunc func(s []byte, ft *font.Font) box.Ruler
 
-	elastic bool
 }
 
-func (f *Frame) SetFlags(flat int) {
-	//TODO(as)
+// Flags returns the flags currently set for the frame
+func (f *Frame) Flags() int{
+	return f.flags
 }
 
-func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, flag ...int) *Frame {
-	fl := getflag(flag)
+// Flag sets the flags for the frame. At this time
+// only FrElastic is supported.
+func (f *Frame) SetFlags(flags int) {
+	fl := getflag(flags)
+	f.flags = fl
+	f.mintab, f.maxtab = tabMinMax(f.Font, f.elastic())
+}
+
+func (f *Frame) elastic() bool{
+	return f.flags&FrElastic != 0
+}
+
+func tabMinMax(ft *font.Font, elastic bool) (min, max int){
 	mintab := ft.Measure(' ')
 	maxtab := mintab * 4
-	elastic := fl&FrElastic != 0
 	if elastic {
 		mintab = maxtab
 	}
+	return mintab, maxtab
+}
+
+func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, flag ...int) *Frame {
+	fl := getflag(flag...)
+	mintab, maxtab := tabMinMax(ft, fl&FrElastic != 0)
+	
 	f := &Frame{
 		Font:         ft,
+		mintab: mintab,
 		maxtab:       maxtab,
 		Color:        cols,
 		Run:          box.NewRun(mintab, 5000, ft, box.NewRuneRuler),
@@ -81,7 +100,7 @@ func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, f
 		stringNBG:    font.RuneNBG,
 		newRulerFunc: box.NewRuneRuler,
 		op:           draw.Src,
-		elastic:      elastic,
+		flags: fl,
 	}
 	f.setrects(r, b)
 	f.inittick()
@@ -91,7 +110,7 @@ func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, f
 	return f
 }
 
-func getflag(flag []int) (fl int) {
+func getflag(flag ...int) (fl int) {
 	if len(flag) != 0 {
 		fl = flag[0]
 	}
@@ -107,18 +126,15 @@ func getflag(flag []int) (fl int) {
 // New creates a new frame on b with bounds r. The image b is used
 // as the frame's internal bitmap cache.
 func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, flag ...int) *Frame {
-	fl := getflag(flag)
+	fl := getflag(flag...)
 	if fl&FrUTF8 != 0 {
 		return newRuneFrame(r, ft, b, cols, flag...)
 	}
-	mintab := ft.Measure(' ')
-	maxtab := mintab * 4
-	elastic := fl&FrElastic != 0
-	if elastic {
-		mintab = maxtab
-	}
+	mintab, maxtab := tabMinMax(ft, fl&FrElastic != 0)
+	
 	f := &Frame{
 		Font:         ft,
+		mintab: mintab,
 		maxtab:       maxtab,
 		Color:        cols,
 		Run:          box.NewRun(mintab, 5000, ft),
@@ -126,7 +142,7 @@ func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, flag ...in
 		stringNBG:    font.StringNBG,
 		newRulerFunc: box.NewByteRuler,
 		op:           draw.Src,
-		elastic:      elastic,
+		flags: fl,
 	}
 	f.setrects(r, b)
 	f.inittick()
