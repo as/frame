@@ -63,6 +63,7 @@ func TestStartMultiLineCol(t *testing.T) {
 	}
 }
 
+/*
 func TestStartCell(t *testing.T) {
 	r := runwith("\n\n\n\n\n\n\n\n\n\n10\t12\t14\t15\t\nabcdefg\n\nzzzzzzzzzzzzzzzzz")
 	for i := 0; i < 10; i++ {
@@ -78,7 +79,7 @@ func TestStartCell(t *testing.T) {
 	checkbox(t, "TestStartCell", r.StartCell(23), 23)
 	checkbox(t, "TestStartCell", r.StartCell(27), 27)
 }
-
+*/
 func TestStartCell2(t *testing.T) {
 	r := runwith("\nAAA\tBBB\tCCC")
 	r.DumpBoxes()
