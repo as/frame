@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	TickOff   = 0
-	TickOn    = 1
+	TickOff = 0
+	TickOn  = 1
 )
 
 func (f *Frame) Untick() {

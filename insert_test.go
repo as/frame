@@ -9,7 +9,7 @@ func TestInsertOneChar(t *testing.T) {
 	h.Insert([]byte("1"), 0)
 	h.Untick()
 	//etch.WriteFile(t, `testdata/TestInsertOneChar.expected.png`, have)
-	check(t, have, "TestInsertOneChar", modeCheckResult)
+	check(t, have, "TestInsertOneChar", testMode)
 }
 
 func TestInsert10Chars(t *testing.T) {
@@ -17,7 +17,7 @@ func TestInsert10Chars(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		h.Insert([]byte("1"), 0)
 	}
-	check(t, have, "TestInsert10Chars", modeCheckResult)
+	check(t, have, "TestInsert10Chars", testMode)
 }
 
 func TestInsert22Chars2Lines(t *testing.T) {
@@ -28,7 +28,7 @@ func TestInsert22Chars2Lines(t *testing.T) {
 		}
 		h.Insert([]byte("\n"), h.Len())
 	}
-	check(t, have, "TestInsert22Chars2Lines", modeCheckResult)
+	check(t, have, "TestInsert22Chars2Lines", testMode)
 }
 
 func TestInsert1000(t *testing.T) {
@@ -36,7 +36,7 @@ func TestInsert1000(t *testing.T) {
 	for j := 0; j < 1000; j++ {
 		h.Insert([]byte{byte(j)}, int64(j))
 	}
-	check(t, have, "TestInsert1000", modeCheckResult)
+	check(t, have, "TestInsert1000", testMode)
 }
 
 func TestInsertTabSpaceNewline(t *testing.T) {
@@ -44,5 +44,5 @@ func TestInsertTabSpaceNewline(t *testing.T) {
 	for j := 0; j < 5; j++ {
 		h.Insert([]byte("abc\t \n\n\t $\n"), int64(j))
 	}
-	check(t, have, "TestInsertTabSpaceNewline", modeSaveResult)
+	check(t, have, "TestInsertTabSpaceNewline", testMode)
 }

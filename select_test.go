@@ -1,64 +1,48 @@
 package frame
 
 import (
-	"fmt"
-	"github.com/as/etch"
-	"image"
 	"testing"
 )
-
-const (
-	modeSaveResult = iota
-	modeCheckResult
-)
-
-func check(t *testing.T, have image.Image, name string, mode int) {
-	wantfile := fmt.Sprintf("testdata/%s.expected.png", name)
-	if mode == modeSaveResult {
-		etch.WriteFile(t, wantfile, have)
-	}
-	etch.AssertFile(t, have, wantfile, fmt.Sprintf("%s.png", name))
-}
 
 func TestSelect0to0(t *testing.T) {
 	h, _, have, _ := abtestbg(R)
 	h.Insert(testSelectData, 0)
 	h.Select(0, 0)
-	check(t, have, "TestSelect0to0", modeCheckResult)
+	check(t, have, "TestSelect0to0", testMode)
 }
 
 func TestSelect0to1(t *testing.T) {
 	h, _, have, _ := abtestbg(R)
 	h.Insert(testSelectData, 0)
 	h.Select(0, 1)
-	check(t, have, "TestSelect0to1", modeCheckResult)
+	check(t, have, "TestSelect0to1", testMode)
 }
 func TestSelectLine(t *testing.T) {
 	h, _, have, _ := abtestbg(R)
 	h.Insert(testSelectData, 0)
 	h.Select(0, 12)
-	check(t, have, "TestSelectLine", modeCheckResult)
+	check(t, have, "TestSelectLine", testMode)
 }
 
 func TestSelectLinePlus(t *testing.T) {
 	h, _, have, _ := abtestbg(R)
 	h.Insert(testSelectData, 0)
 	h.Select(0, 13)
-	check(t, have, "TestSelectLinePlus", modeCheckResult)
+	check(t, have, "TestSelectLinePlus", testMode)
 }
 
 func TestSelectLinePlus1(t *testing.T) {
 	h, _, have, _ := abtestbg(R)
 	h.Insert(testSelectData, 0)
 	h.Select(0, 13+1)
-	check(t, have, "TestSelectLinePlus1", modeCheckResult)
+	check(t, have, "TestSelectLinePlus1", testMode)
 }
 
 func TestSelectAll(t *testing.T) {
 	h, _, have, _ := abtestbg(R)
 	h.Insert(testSelectData, 0)
 	h.Select(0, 9999)
-	check(t, have, "TestSelectAll", modeCheckResult)
+	check(t, have, "TestSelectAll", testMode)
 }
 
 func TestSelectAllSub1(t *testing.T) {
@@ -68,7 +52,7 @@ func TestSelectAllSub1(t *testing.T) {
 	p0, p1 := h.Dot()
 	p1--
 	h.Select(p0, p1)
-	check(t, have, "TestSelectAllSub1", modeCheckResult)
+	check(t, have, "TestSelectAllSub1", testMode)
 }
 
 func TestSelectAllSubAll(t *testing.T) {
@@ -76,21 +60,21 @@ func TestSelectAllSubAll(t *testing.T) {
 	h.Insert(testSelectData, 0)
 	h.Select(0, h.Len())
 	h.Select(0, 0)
-	check(t, have, "TestSelectAllSubAll", modeCheckResult)
+	check(t, have, "TestSelectAllSubAll", testMode)
 }
 
 func TestMidToEnd(t *testing.T) {
 	h, _, have, _ := abtestbg(R)
 	h.Insert(testSelectData, 0)
 	h.Select(h.Len()/2, h.Len())
-	check(t, have, "TestMidToEnd", modeCheckResult)
+	check(t, have, "TestMidToEnd", testMode)
 }
 func TestMidToEndThenStartToMid(t *testing.T) {
 	h, _, have, _ := abtestbg(R)
 	h.Insert(testSelectData, 0)
 	h.Select(h.Len()/2, h.Len())
 	h.Select(0, h.Len()/2)
-	check(t, have, "TestMidToEndThenStartToMid", modeCheckResult)
+	check(t, have, "TestMidToEndThenStartToMid", testMode)
 }
 
 func TestSelectTabSpaceNewline(t *testing.T) {
@@ -99,7 +83,7 @@ func TestSelectTabSpaceNewline(t *testing.T) {
 		h.Insert([]byte("abc\t \n\n\t $\n"), int64(j))
 	}
 	h.Select(h.Len()/2, h.Len()-5)
-	check(t, have, "TestSelectTabSpaceNewline", modeCheckResult)
+	check(t, have, "TestSelectTabSpaceNewline", testMode)
 }
 func TestSelectTabSpaceNewlineSub1(t *testing.T) {
 	h, _, have, _ := abtestbg(R)
@@ -107,13 +91,13 @@ func TestSelectTabSpaceNewlineSub1(t *testing.T) {
 		h.Insert([]byte("abc\t \n\n\t $\n"), int64(j))
 	}
 	h.Select(h.Len()/2, h.Len()-5-1)
-	check(t, have, "TestSelectTabSpaceNewlineSub1", modeCheckResult)
+	check(t, have, "TestSelectTabSpaceNewlineSub1", testMode)
 }
 func TestSelectEndLineAndDec(t *testing.T) {
 	h, _, have, _ := abtestbg(R)
 	h.Insert(testSelectData, 0)
 	h.Select(167+9, 168+9)
-	check(t, have, "TestSelectEndLineAndDec", modeCheckResult)
+	check(t, have, "TestSelectEndLineAndDec", testMode)
 }
 
 var testSelectData = []byte(`Hello world.
@@ -140,12 +124,12 @@ Type C-h for help; C-x u to undo changes.  ('C-' means use CTRL key.) GNU Emacs 
 func TestSelectNone(t *testing.T) {
 	h, _, have, _ := abtestbg(R)
 	h.Insert(testSelectData, 0)
-	check(t, have, "TestSelectNone", modeCheckResult)
+	check(t, have, "TestSelectNone", testMode)
 }
 
 // TODO(as): regenerate without trailing broken tickmark and rerun this test
 func TestSelectNoneUntick(t *testing.T) {
 	h, _, have, _ := abtestbg(R)
 	h.Insert(testSelectData, 0)
-	check(t, have, "TestSelectNoneUntick", modeCheckResult)
+	check(t, have, "TestSelectNoneUntick", testMode)
 }

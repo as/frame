@@ -1,9 +1,10 @@
 package frame
 
 import (
-	"golang.org/x/mobile/event/mouse"
 	"image"
 	"image/draw"
+
+	"golang.org/x/mobile/event/mouse"
 )
 
 // Paint paints the color col on the frame at points pt0-pt1. The result is a Z shaped fill
