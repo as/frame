@@ -117,6 +117,11 @@ func (f *Font) NewSize(dy int) *Font {
 	return Clone(f, dy)
 }
 
+func (f *Font) Ascent() int{ return f.ascent }
+func (f *Font) Descent() int{ return f.descent }
+func (f *Font) Stride() int{ return f.stride }
+func (f *Font) Letting()int{ return f.letting }
+
 func (f *Font) SetAscent(px int) {
 	f.ascent = px
 	f.dy = f.ascent + f.descent + f.size
@@ -157,10 +162,6 @@ func (f *Font) genHexChar(dy int, b byte) *Glyph {
 
 func (f *Font) Char(b byte) (mask *image.Alpha) {
 	return f.cache[b].mask
-}
-
-func (f *Font) Descent() int {
-	return f.descent
 }
 
 func (f *Font) Dx(s string) int {

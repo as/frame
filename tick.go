@@ -45,7 +45,7 @@ func mktick(fontY int) (boxw int, linew int) {
 }
 
 func (f *Frame) tickbg() image.Image {
-	return f.Color.Hi.Back
+	return image.Black
 	/*
 		r, g, b, a := f.Color.Hi.Back.At(0,0).RGBA()
 		a=a
@@ -90,6 +90,7 @@ func (f *Frame) tickat(pt image.Point, ticked bool) {
 		return
 	}
 	pt.X -= 1
+	pt.Y -= f.Font.Letting() / 2
 	r := f.tick.Bounds().Add(pt)
 	if r.Max.X > f.r.Max.X {
 		r.Max.X = f.r.Max.X
