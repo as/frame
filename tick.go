@@ -45,7 +45,7 @@ func mktick(fontY int) (boxw int, linew int) {
 }
 
 func (f *Frame) tickbg() image.Image {
-	return f.Color.Hi.Back
+	return f.Color.Text
 	/*
 		r, g, b, a := f.Color.Hi.Back.At(0,0).RGBA()
 		a=a
@@ -70,7 +70,7 @@ func (f *Frame) inittick() {
 	f.tick = image.NewRGBA(r)
 	f.tickback = image.NewRGBA(r)
 	draw.Draw(f.tick, f.tick.Bounds().Inset(1), f.Color.Hi.Back, image.ZP, draw.Src)
-	tbg := image.Image(image.Black)
+	tbg := f.tickbg()
 	drawtick := func(x0, y0, x1, y1 int) {
 		draw.Draw(f.tick, image.Rect(x0, y0, x1, y1), tbg, image.ZP, draw.Src)
 	}
@@ -81,7 +81,7 @@ func (f *Frame) inittick() {
 	} else {
 		drawtick(-linew2, 0, linew2, h)
 	}
-	
+
 }
 
 // Put
