@@ -1,7 +1,5 @@
 package box
 
-import ()
-
 func (f *Run) Stretch2(nb int, bx []Box) (pb int) {
 	panic("unimplemented")
 }

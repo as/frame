@@ -16,7 +16,6 @@ import (
 	"sync"
 )
 
-
 var (
 	workc chan image.Rectangle
 	gwind screen.Window

@@ -14,12 +14,12 @@ func NewRun(minDx, maxDx int, ft *font.Font, newRulerFunc ...func([]byte, *font.
 		fn = newRulerFunc[0]
 	}
 	return Run{
-		delta: 32,
+		delta:        32,
 		minDx:        minDx,
 		maxDx:        maxDx,
 		Font:         ft,
 		newRulerFunc: fn,
-		br: fn(make([]byte, MaxBytes), ft),
+		br:           fn(make([]byte, MaxBytes), ft),
 	}
 }
 

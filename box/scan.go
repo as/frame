@@ -14,12 +14,12 @@ func (r *Run) ensure(nb int) {
 func (r *Run) Boxscan(s []byte, ymax int) {
 	//r.delta = 32
 	r.br.Reset(s)
-	
+
 	for nb, nl := 0, 0; nl <= ymax; nb++ {
 		if _, _, err := r.br.Next(); err != nil {
 			break
 		}
-	r.ensure(nb)
+		r.ensure(nb)
 		if special(r.br.Last()[0]) {
 			nl += r.specialbox(nb, r.minDx, r.maxDx)
 		} else {

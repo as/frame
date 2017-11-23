@@ -28,7 +28,7 @@ func main() {
 		wind, _ := src.NewWindow(&screen.NewWindowOptions{winSize.X, winSize.Y, "fonts"})
 		b, _ := src.NewBuffer(winSize)
 		draw.Draw(b.RGBA(), b.Bounds(), frame.A.Back, image.ZP, draw.Src)
-		
+
 		ft := font.NewGoMono(25)
 		ft.SetLetting(14)
 		ft.SetStride(3)
