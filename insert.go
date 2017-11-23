@@ -8,7 +8,7 @@ import (
 // Insert inserts the contents of s at index p0 in
 // the frame and returns the number of characters
 // written.
-func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
+func (f *Frame) Insert(s string, p0 int64) (wrote int) {
 	type Pts [2]image.Point
 	if p0 > f.Nchars || len(s) == 0 || f.b == nil {
 		return
@@ -270,7 +270,7 @@ type offset struct {
 	opt0 image.Point
 }
 
-func (f *Frame) zInsertElastic(s []byte, p0 int64) (wrote int) {
+func (f *Frame) zInsertElastic(s string, p0 int64) (wrote int) {
 	type Pts [2]image.Point
 	if p0 > f.Nchars || len(s) == 0 || f.b == nil {
 		return

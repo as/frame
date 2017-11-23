@@ -54,9 +54,9 @@ type Frame struct {
 	hex     []draw.Image
 
 	// Points to the font subpackage's StringN?BG or RuneN?BG functions
-	stringBG     func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte, image.Image, image.Point) int
-	stringNBG    func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte) int
-	newRulerFunc func(s []byte, ft *font.Font) box.Ruler
+	stringBG     func(draw.Image, image.Point, image.Image, image.Point, *font.Font, string, image.Image, image.Point) int
+	stringNBG    func(draw.Image, image.Point, image.Image, image.Point, *font.Font, string) int
+	newRulerFunc func(s string, ft *font.Font) box.Ruler
 }
 
 // Flags returns the flags currently set for the frame

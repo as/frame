@@ -18,7 +18,7 @@ func TestFuzz(t *testing.T) {
 	// to create a graphical fuzz test.
 	var err error
 	var n int
-	buf := make([]byte, 320*240)
+	buf := make(string, 320*240)
 	N := 100 // number of rounds
 	sr := spaz.NewReader(bufio.NewReader(reader{}))
 	fr, fr2, a, b := abtestbg(image.Rect(0, 0, 320, 240))
@@ -58,7 +58,7 @@ func TestFuzz(t *testing.T) {
 			info += fmt.Sprintf("nins = %d\n", ni)
 			info += fmt.Sprintf("delete = %d:%d\n", p0, p0+ni)
 			info += fmt.Sprintf("ndel = %d\n", nd)
-			ioutil.WriteFile(name+".info", []byte(info), 0666)
+			ioutil.WriteFile(name+".info", string(info), 0666)
 			t.Logf("see %s.png and %s.buf\n", name, name)
 			etch.WriteFile(t, name+".png", result)
 			t.FailNow()
@@ -83,6 +83,6 @@ type reader struct {
 	ur io.Reader
 }
 
-func (reader) Read(p []byte) (n int, err error) {
+func (reader) Read(p string) (n int, err error) {
 	return rand.Read(p)
 }

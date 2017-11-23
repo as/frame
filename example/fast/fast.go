@@ -52,11 +52,11 @@ func main() {
 
 		// Insert text into the frame
 
-		fr.Insert([]byte("This is the fast example. It's harder to understand but it uses 4 worker\n"), fr.Len())
-		fr.Insert([]byte("goroutines to update the shiny window. You can change the flags to frame.New\n"), fr.Len())
-		fr.Insert([]byte("to re-create the utf8 and elastic tabstop examples\n"), fr.Len())
+		fr.Insert(string("This is the fast example. It's harder to understand but it uses 4 worker\n"), fr.Len())
+		fr.Insert(string("goroutines to update the shiny window. You can change the flags to frame.New\n"), fr.Len())
+		fr.Insert(string("to re-create the utf8 and elastic tabstop examples\n"), fr.Len())
 
-		fr.Insert([]byte(`
+		fr.Insert(string(`
 	fr := frame.New(image.Rectangle{image.ZP, winSize}, font.NewGoMono(14), b.RGBA(), frame.A) // <- you are here
 		
 // As you can see there are two new package scoped variables, gwind and gbuf
@@ -137,7 +137,7 @@ func init(){
 					}
 					fr.Delete(p0, p1)
 				} else {
-					fr.Insert([]byte{byte(e.Rune)}, p0)
+					fr.Insert(string{byte(e.Rune)}, p0)
 					p0++
 				}
 				fr.Select(p0, p0)

@@ -11,7 +11,7 @@ func (r *Run) ensure(nb int) {
 	}
 }
 
-func (r *Run) Boxscan(s []byte, ymax int) {
+func (r *Run) Boxscan(s string, ymax int) {
 	//r.delta = 32
 	r.br.Reset(s)
 
@@ -42,7 +42,7 @@ func (r *Run) specialbox(nb int, min, max int) (nl int) {
 	} else {
 		b.Minwidth = min
 	}
-	b.Ptr = []byte{c}
+	b.Ptr = string(c)
 	b.Nrune = -1
 	b.Width = max
 

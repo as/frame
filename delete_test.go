@@ -31,7 +31,7 @@ func abtestbg(r image.Rectangle) (fa, fb *Frame, a, b *image.RGBA) {
 
 func TestDeleteOneChar(t *testing.T) {
 	h, w, have, want := abtestbg(R)
-	h.Insert([]byte("1"), 0)
+	h.Insert(string("1"), 0)
 	h.Delete(0, h.Len())
 	h.Untick()
 	w.Untick()
@@ -42,8 +42,8 @@ func TestDeleteLastLineNoNL(t *testing.T) {
 	w, h, want, have := abtestbg(R)
 	draw.Draw(want, want.Bounds(), w.Color.Back, image.ZP, draw.Src)
 	draw.Draw(have, have.Bounds(), h.Color.Back, image.ZP, draw.Src)
-	w.Insert([]byte("1234\ncccc\ndddd\n"), 0)
-	h.Insert([]byte("1234\ncccc\ndddd"), 0)
+	w.Insert(string("1234\ncccc\ndddd\n"), 0)
+	h.Insert(string("1234\ncccc\ndddd"), 0)
 	h.Delete(5, 10)
 	w.Delete(5, 10)
 	// We can untick because have has an extra newline

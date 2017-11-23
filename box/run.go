@@ -8,7 +8,7 @@ import (
 // MaxBytes is the largest capacity of bytes in a box
 var MaxBytes = 512 + 3
 
-func NewRun(minDx, maxDx int, ft *font.Font, newRulerFunc ...func([]byte, *font.Font) Ruler) Run {
+func NewRun(minDx, maxDx int, ft *font.Font, newRulerFunc ...func(string, *font.Font) Ruler) Run {
 	fn := NewByteRuler
 	if len(newRulerFunc) > 0 {
 		fn = newRulerFunc[0]
@@ -19,7 +19,7 @@ func NewRun(minDx, maxDx int, ft *font.Font, newRulerFunc ...func([]byte, *font.
 		maxDx:        maxDx,
 		Font:         ft,
 		newRulerFunc: fn,
-		br:           fn(make([]byte, MaxBytes), ft),
+		br:           fn("", ft),
 	}
 }
 
@@ -36,7 +36,7 @@ type Run struct {
 	minDx, maxDx int
 	delta        int
 
-	newRulerFunc func([]byte, *font.Font) Ruler
+	newRulerFunc func(string, *font.Font) Ruler
 	br           Ruler
 }
 
@@ -102,7 +102,7 @@ func (f *Run) DumpBoxes() {
 func (f *Run) Merge(bn int) {
 	b0 := &f.Box[bn]
 	b1 := &f.Box[bn+1]
-	b0.Ptr = append(b0.Ptr, b1.Ptr...)
+	b0.Ptr += b1.Ptr
 	b0.Width += b1.Width
 	b0.Nrune += b1.Nrune
 	f.Delete(bn+1, bn+1)
@@ -115,7 +115,7 @@ func (f *Run) Split(bn, n int) {
 	f.Chop(&f.Box[bn+1], n)
 }
 
-func (f *Run) MeasureBytes(p []byte) int {
+func (f *Run) MeasureBytes(p string) int {
 	f.br.Reset(p)
 	for {
 		_, _, err := f.br.Next()
@@ -131,9 +131,8 @@ func (f *Run) Chop(b *Box, n int) {
 	if b.Nrune < 0 || b.Nrune < n {
 		panic("Chop")
 	}
-	copy(b.Ptr, b.Ptr[n:])
+	b.Ptr = b.Ptr[n:]
 	b.Nrune -= n
-	b.Ptr = b.Ptr[:b.Nrune]
 	b.Width = f.MeasureBytes(b.Ptr)
 }
 
@@ -179,7 +178,7 @@ func (f *Run) Free(n0, n1 int) {
 	}
 	for i := n0; i < n1; i++ {
 		if f.Box[i].Nrune >= 0 {
-			f.Box[i].Ptr = nil
+			f.Box[i].Ptr = ""
 		}
 	}
 }
@@ -197,7 +196,7 @@ func (f *Run) Dup(bn int) {
 	}
 	f.Add(bn, 1)
 	if f.Box[bn].Nrune >= 0 {
-		f.Box[bn+1].Ptr = append([]byte{}, f.Box[bn].Ptr...)
+		f.Box[bn+1].Ptr =  f.Box[bn].Ptr
 	}
 }
 

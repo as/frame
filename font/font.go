@@ -172,7 +172,7 @@ func (f *Font) Char(b byte) (mask *image.Alpha) {
 }
 
 func (f *Font) Dx(s string) int {
-	return f.MeasureBytes([]byte(s))
+	return f.MeasureBytes(string(s))
 }
 func (f *Font) Dy() int {
 	return f.dy + f.letting
@@ -183,7 +183,7 @@ func (f *Font) Size() int {
 func Fix(i fixed.Int26_6) int {
 	return i.Round()
 }
-func (f *Font) MeasureBytes(p []byte) (w int) {
+func (f *Font) MeasureBytes(p string) (w int) {
 	for i := range p {
 		w += f.Measure(rune(byte(p[i])))
 	}

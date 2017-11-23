@@ -80,7 +80,7 @@ func TestMidToEndThenStartToMid(t *testing.T) {
 func TestSelectTabSpaceNewline(t *testing.T) {
 	h, _, have, _ := abtestbg(R)
 	for j := 0; j < 5; j++ {
-		h.Insert([]byte("abc\t \n\n\t $\n"), int64(j))
+		h.Insert(string("abc\t \n\n\t $\n"), int64(j))
 	}
 	h.Select(h.Len()/2, h.Len()-5)
 	check(t, have, "TestSelectTabSpaceNewline", testMode)
@@ -88,7 +88,7 @@ func TestSelectTabSpaceNewline(t *testing.T) {
 func TestSelectTabSpaceNewlineSub1(t *testing.T) {
 	h, _, have, _ := abtestbg(R)
 	for j := 0; j < 5; j++ {
-		h.Insert([]byte("abc\t \n\n\t $\n"), int64(j))
+		h.Insert(string("abc\t \n\n\t $\n"), int64(j))
 	}
 	h.Select(h.Len()/2, h.Len()-5-1)
 	check(t, have, "TestSelectTabSpaceNewlineSub1", testMode)
@@ -100,7 +100,7 @@ func TestSelectEndLineAndDec(t *testing.T) {
 	check(t, have, "TestSelectEndLineAndDec", testMode)
 }
 
-var testSelectData = []byte(`Hello world.
+var testSelectData = string(`Hello world.
 Your editor doesn't always know best.
 	Your empty file directory has been deleted.
 func main(){

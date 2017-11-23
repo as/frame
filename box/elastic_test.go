@@ -7,7 +7,7 @@ import (
 
 func runwith(s string) *Run {
 	r := NewRun(5, 5000, font.NewBasic(fsize))
-	r.Boxscan([]byte(s), 1024)
+	r.Boxscan(string(s), 1024)
 	return &r
 }
 func checkbox(t *testing.T, testname string, havebx, wantbx int) {

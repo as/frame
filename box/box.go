@@ -6,7 +6,7 @@ type Box struct {
 	Width    int
 	Minwidth int
 	Nrune    int
-	Ptr      []byte
+	Ptr      string
 }
 
 func (b *Box) Break() byte {
@@ -24,10 +24,10 @@ func (b *Box) Len() int {
 	return b.Nrune
 }
 
-func (b *Box) Bytes() []byte {
+func (b *Box) Bytes() string {
 	n := b.Len()
 	if n <= 0 {
-		return nil
+		return ""
 	}
 	return b.Ptr[:n]
 }

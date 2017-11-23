@@ -7,8 +7,9 @@ import (
 	"unicode/utf8"
 )
 
-func StringBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *Font, s []byte, bg image.Image, bgp image.Point) int {
-	for _, b := range s {
+func StringBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *Font, s string, bg image.Image, bgp image.Point) int {
+	for i := range s {
+		b := s[i]
 		mask := ft.Char(b)
 		if mask == nil {
 			panic("StringBG")
@@ -21,8 +22,9 @@ func StringBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft
 	return p.X
 }
 
-func StringNBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *Font, s []byte) int {
-	for _, b := range s {
+func StringNBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *Font, s string) int {
+	for i := range s {
+		b := s[i]
 		mask := ft.Char(b)
 		if mask == nil {
 			panic("StringBG")
@@ -34,10 +36,10 @@ func StringNBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, f
 	return p.X
 }
 
-func RuneBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *Font, s []byte, bg image.Image, bgp image.Point) int {
+func RuneBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *Font, s string, bg image.Image, bgp image.Point) int {
 	p.Y += ft.Size()
 	for {
-		b, size := utf8.DecodeRune(s)
+		b, size := utf8.DecodeRuneInString(s)
 		dr, mask, maskp, advance, ok := ft.Glyph(fixed.P(p.X, p.Y), b)
 		if !ok {
 			panic("RuneBG")
@@ -53,10 +55,10 @@ func RuneBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *
 	return p.X
 }
 
-func RuneNBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *Font, s []byte) int {
+func RuneNBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *Font, s string) int {
 	p.Y += ft.Size()
 	for {
-		b, size := utf8.DecodeRune(s)
+		b, size := utf8.DecodeRuneInString(s)
 		dr, mask, maskp, advance, ok := ft.Glyph(fixed.P(p.X, p.Y), b)
 		if !ok {
 			panic("RuneBG")

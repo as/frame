@@ -38,9 +38,9 @@ func main() {
 			dirty = false
 		}
 		utf := `Π Ρ ΢ Σ Τ Υ Φ Χ Ψ Ω Ϊ Ϋ ά έ ή ί ΰ α β γ δ ε ζ η θ ι κ λ μ ν ξ οπ ρ ς σ τ υ φ χ ψ ω ϊ ϋ ό ύ ώ Ϗ ϐ ϑ ϒ ϓ ϔ ϕ ϖ ϗ Ϙ ϙ Ϛ ϛ Ϝ ϝ Ϟ ϟϠ ϡ Ϣ ϣ Ϥ ϥ Ϧ ϧ Ϩ ϩ Ϫ ϫ Ϭ ϭ Ϯ ϯ ϰ ϱ ϲ ϳ ϴ ϵ ϶ Ϸ ϸ Ϲ Ϻ ϻ ϼ Ͻ Ͼ Ͽ`
-		fr.Insert([]byte("utf8 test"), fr.Len())
-		fr.Insert([]byte(utf), fr.Len())
-		fr.Insert([]byte("end"), fr.Len())
+		fr.Insert(string("utf8 test"), fr.Len())
+		fr.Insert(string(utf), fr.Len())
+		fr.Insert(string("end"), fr.Len())
 		for {
 			switch e := wind.NextEvent().(type) {
 			case mouse.Event:
@@ -75,7 +75,7 @@ func main() {
 					}
 					fr.Delete(p0, p1)
 				} else {
-					fr.Insert([]byte{byte(e.Rune)}, p0)
+					fr.Insert(string{byte(e.Rune)}, p0)
 					p0++
 				}
 				fr.Select(p0, p0)

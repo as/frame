@@ -15,18 +15,18 @@ var (
 
 type Ruler interface {
 	Advance() error
-	Bytes() []byte
+	Bytes() string
 	Next() (size, width int, err error)
-	Last() []byte
+	Last() string
 	Len() int
 	Unread() (size, width int, err error)
 	Width() int
-	Reset(p []byte)
+	Reset(p string)
 }
 
 type byteRuler struct {
 	*font.Font
-	b                   []byte
+	b                   string
 	i                   int
 	w                   int
 	lastSize, lastWidth int
@@ -34,22 +34,22 @@ type byteRuler struct {
 
 type runeRuler struct {
 	*font.Font
-	b                   []byte
+	b                   string
 	i                   int
 	w                   int
 	lastSize, lastWidth int
 }
 
-func NewByteRuler(b []byte, ft *font.Font) Ruler {
+func NewByteRuler(b string, ft *font.Font) Ruler {
 	return &byteRuler{Font: ft, b: b}
 }
 
-func NewRuneRuler(b []byte, ft *font.Font) Ruler {
+func NewRuneRuler(b string, ft *font.Font) Ruler {
 	return &runeRuler{Font: ft, b: b}
 }
 
-func (bs *byteRuler) Bytes() []byte { return bs.b[:bs.i] }
-func (bs *runeRuler) Bytes() []byte { return bs.b[:bs.i] }
+func (bs *byteRuler) Bytes() string { return bs.b[:bs.i] }
+func (bs *runeRuler) Bytes() string { return bs.b[:bs.i] }
 
 func (bs *byteRuler) Advance() (err error) {
 	if bs.i == len(bs.b) {
@@ -94,7 +94,7 @@ func (bs *runeRuler) Next() (size, widthPx int, err error) {
 	if bs.i == len(bs.b) {
 		return 0, 0, io.EOF
 	}
-	r, size := utf8.DecodeRune(bs.b[bs.i:])
+	r, size := utf8.DecodeRuneInString(bs.b[bs.i:])
 	if r == utf8.RuneError {
 	}
 	if size == 0 {
@@ -137,23 +137,23 @@ func (bs *runeRuler) Unread() (size, widthPx int, err error) {
 	return lsz, bs.lastWidth, nil
 }
 
-func (bs *byteRuler) Last() []byte {
+func (bs *byteRuler) Last() string {
 	return bs.b[bs.i-bs.lastSize : bs.i]
 }
 
-func (bs *runeRuler) Last() []byte {
+func (bs *runeRuler) Last() string {
 	//	log.Printf("called Last: bytes=%s\n\tbs.i=%d\n\tlastsize=%d\n\n",bs.b, bs.i, bs.lastSize)
 	return bs.b[bs.i-bs.lastSize : bs.i]
 }
 
-func (bs *byteRuler) Reset(p []byte) {
+func (bs *byteRuler) Reset(p string) {
 	bs.b = p
 	bs.i = 0
 	bs.w = 0
 	bs.lastSize = 0
 	bs.lastWidth = 0
 }
-func (bs *runeRuler) Reset(p []byte) {
+func (bs *runeRuler) Reset(p string) {
 	bs.b = p
 	bs.i = 0
 	bs.w = 0

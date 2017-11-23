@@ -46,9 +46,9 @@ Erlang	6	2
 Python	6	2	
 The C++ Programming Language by Bjarne Stroustrup	49	42
 `
-		fr.Insert([]byte("utf8 test"), fr.Len())
-		fr.Insert([]byte(utf), fr.Len())
-		fr.Insert([]byte("end"), fr.Len())
+		fr.Insert(string("utf8 test"), fr.Len())
+		fr.Insert(string(utf), fr.Len())
+		fr.Insert(string("end"), fr.Len())
 		for {
 			switch e := wind.NextEvent().(type) {
 			case mouse.Event:
@@ -83,7 +83,7 @@ The C++ Programming Language by Bjarne Stroustrup	49	42
 					}
 					fr.Delete(p0, p1)
 				} else {
-					fr.Insert([]byte{byte(e.Rune)}, p0)
+					fr.Insert(string{byte(e.Rune)}, p0)
 					p0++
 				}
 				fr.Select(p0, p0)

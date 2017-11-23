@@ -42,9 +42,9 @@ func main() {
 			dirty = false
 		}
 
-		fr.Insert([]byte("This is basic example of an editable text frame.\n"), fr.Len())
-		fr.Insert([]byte("You can edit this text with the mouse.\n"), fr.Len())
-		fr.Insert([]byte("Or keyboard.\n"), fr.Len())
+		fr.Insert(string("This is basic example of an editable text frame.\n"), fr.Len())
+		fr.Insert(string("You can edit this text with the mouse.\n"), fr.Len())
+		fr.Insert(string("Or keyboard.\n"), fr.Len())
 
 		for {
 			switch e := wind.NextEvent().(type) {
@@ -80,7 +80,7 @@ func main() {
 					}
 					fr.Delete(p0, p1)
 				} else {
-					fr.Insert([]byte{byte(e.Rune)}, p0)
+					fr.Insert(string{byte(e.Rune)}, p0)
 					p0++
 				}
 				fr.Select(p0, p0)
