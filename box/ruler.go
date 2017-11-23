@@ -21,6 +21,7 @@ type Ruler interface {
 	Len() int
 	Unread() (size, width int, err error)
 	Width() int
+	Reset(p []byte)
 }
 
 type byteRuler struct {
@@ -145,6 +146,20 @@ func (bs *runeRuler) Last() []byte {
 	return bs.b[bs.i-bs.lastSize : bs.i]
 }
 
+func (bs *byteRuler) Reset(p []byte)   {
+bs.b = p 
+bs.i=0
+bs.w=0
+bs.lastSize=0
+bs.lastWidth=0
+}
+func (bs *runeRuler) Reset(p []byte)  { 
+bs.b = p 
+bs.i=0
+bs.w=0
+bs.lastSize=0
+bs.lastWidth=0 
+}
 func (bs *byteRuler) Len() int   { return bs.i }
 func (bs *byteRuler) Width() int { return bs.w }
 func (bs *runeRuler) Len() int   { return bs.i }

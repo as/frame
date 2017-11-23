@@ -6,7 +6,7 @@ import (
 )
 
 // MaxBytes is the largest capacity of bytes in a box
-var MaxBytes = 128 + 3
+var MaxBytes = 512 + 3
 
 func NewRun(minDx, maxDx int, ft *font.Font, newRulerFunc ...func([]byte, *font.Font) Ruler) Run {
 	fn := NewByteRuler
@@ -14,10 +14,12 @@ func NewRun(minDx, maxDx int, ft *font.Font, newRulerFunc ...func([]byte, *font.
 		fn = newRulerFunc[0]
 	}
 	return Run{
+		delta: 32,
 		minDx:        minDx,
 		maxDx:        maxDx,
 		Font:         ft,
 		newRulerFunc: fn,
+		br: fn(make([]byte, MaxBytes), ft),
 	}
 }
 
@@ -49,7 +51,7 @@ func (f *Run) Combine(g *Run, n int) {
 func (f *Run) Count(nb int) int64 {
 	n := int64(0)
 	for ; nb < f.Nbox; nb++ {
-		n += int64((&f.Box[nb]).Len())
+		n += int64((f.Box[nb]).Len())
 	}
 	return n
 }
@@ -86,6 +88,7 @@ func (f *Run) Find(bn int, p, q int64) int {
 }
 
 func (f *Run) DumpBoxes() {
+	return
 	fmt.Println("dumping boxes")
 	fmt.Printf("nboxes: %d\n", f.Nbox)
 	fmt.Printf("nalloc: %d\n", f.Nalloc)
@@ -113,19 +116,18 @@ func (f *Run) Split(bn, n int) {
 }
 
 func (f *Run) MeasureBytes(p []byte) int {
-	br := f.newRulerFunc(p, f.Font)
+	f.br.Reset(p)
 	for {
-		_, _, err := br.Next()
+		_, _, err := f.br.Next()
 		if err != nil {
 			break
 		}
 	}
-	return br.Width()
+	return f.br.Width()
 }
 
 // Chop drops the first n chars in box b
 func (f *Run) Chop(b *Box, n int) {
-	//	fmt.Printf("Chop %q at %d\n", b.ptr, n)
 	if b.Nrune < 0 || b.Nrune < n {
 		panic("Chop")
 	}
@@ -185,15 +187,6 @@ func (f *Run) Free(n0, n1 int) {
 // Grow allocates memory for delta more boxes
 func (f *Run) Grow(delta int) {
 	f.Nalloc += delta
-	//// New changes start here
-	//x := make([]Box, delta)
-	//for i := range x{
-	//	x[i].Ptr = make([]byte, 0, MaxBytes)
-	//}
-	//f.Box = append(f.Box, x...)
-	// And end above
-
-	// To change things back uncomment below
 	f.Box = append(f.Box, make([]Box, delta)...)
 }
 

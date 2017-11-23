@@ -3,7 +3,6 @@ package box
 const SLOP = 25
 
 type Box struct {
-	BC       byte
 	Width    int
 	Minwidth int
 	Nrune    int

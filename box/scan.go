@@ -12,18 +12,14 @@ func (r *Run) ensure(nb int) {
 }
 
 func (r *Run) Boxscan(s []byte, ymax int) {
-	var nl int
-	var err error
-	r.delta = 32
-	r.br = r.newRulerFunc(s, r.Font)
-	//		log.Printf("s: %#v\n", s)
-	for nb := 0; err == nil && nl <= ymax; nb++ {
-		r.ensure(nb)
-		_, _, err = r.br.Next()
-		if err != nil {
+	//r.delta = 32
+	r.br.Reset(s)
+	
+	for nb, nl := 0, 0; nl <= ymax; nb++ {
+		if _, _, err := r.br.Next(); err != nil {
 			break
 		}
-		//		log.Printf("r.br.Last: %#v\n", r.br.Last())
+	r.ensure(nb)
 		if special(r.br.Last()[0]) {
 			nl += r.specialbox(nb, r.minDx, r.maxDx)
 		} else {
@@ -71,7 +67,7 @@ func (r *Run) plainbox(nb int) (nl int) {
 		}
 	}
 	b := &r.Box[nb]
-	b.Ptr = append([]byte{}, r.br.Bytes()...)
+	b.Ptr = r.br.Bytes()
 	b.Width = r.br.Width()
 	b.Nrune = r.br.Len()
 	r.Nchars += int64(r.br.Len())
