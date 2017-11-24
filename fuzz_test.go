@@ -18,7 +18,7 @@ func TestFuzz(t *testing.T) {
 	// to create a graphical fuzz test.
 	var err error
 	var n int
-	var B [327*777]byte
+	var B [327 * 777]byte
 	buf := B[:]
 	N := 128 // number of rounds
 	sr := spaz.NewReader(bufio.NewReader(reader{}))
