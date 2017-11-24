@@ -48,6 +48,9 @@ func TestFuzz(t *testing.T) {
 		in = buf[:n]
 		p0 = clamp(rand.Int63(), 0, fr.Len())
 		ni := int64(fr.Insert(in, p0))
+		for i := 0; i < 1000; i++ {
+			fr.Select(clamp(rand.Int63(), 0, fr.Len()), clamp(rand.Int63(), 0, fr.Len()))
+		}
 		nd := fr.Delete(p0, p0+ni)
 		delta, ok := etch.Delta(a, b)
 		if !ok {

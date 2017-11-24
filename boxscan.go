@@ -8,7 +8,6 @@ import (
 
 // bxscan resets the measuring function and calls Bxscan in the embedded run
 func (f *Frame) boxscan(s []byte, pt image.Point) (image.Point, image.Point) {
-	s = append([]byte{}, s...)
 	f.ir.Reset(f.Font)
 	f.ir.Boxscan(s, f.maxlines)
 	if f.elastic() {
