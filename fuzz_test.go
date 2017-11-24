@@ -18,10 +18,11 @@ func TestFuzz(t *testing.T) {
 	// to create a graphical fuzz test.
 	var err error
 	var n int
-	buf := make([]byte, 320*240)
-	N := 100 // number of rounds
+	var B [327*777]byte
+	buf := B[:]
+	N := 128 // number of rounds
 	sr := spaz.NewReader(bufio.NewReader(reader{}))
-	fr, fr2, a, b := abtestbg(image.Rect(0, 0, 320, 240))
+	fr, fr2, a, b := abtestbg(image.Rect(0, 0, 327, 777))
 	for i := 0; i < N; i++ {
 		// Sync: Start by inserting something into to both frames
 		n, err = sr.Read(buf)
