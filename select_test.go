@@ -1,8 +1,25 @@
 package frame
 
 import (
+	"github.com/as/etch"
 	"testing"
 )
+
+func TestSelectFlow(t *testing.T) {
+	h, w, have, want := abtestbg(R)
+	x := []byte("The quick brown fox jumped over the lazy dog")
+	lx := int64(len(x))
+	h.Insert(x, 0)
+	w.Insert(x, 0)
+	for i := int64(0); i < lx; i++ {
+		h.Select(0+i, lx)
+		h.Select(0+i, 0+i)
+		h.Insert([]byte("@"), i*2)
+		h.Delete(i*2, i*2+1)
+	}
+	h.Select(h.Len(), h.Len())
+	etch.Assert(t, have, want, "TestSelectFlow.png")
+}
 
 func TestSelect0to0(t *testing.T) {
 	h, _, have, _ := abtestbg(R)

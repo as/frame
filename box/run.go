@@ -20,6 +20,7 @@ func NewRun(minDx, maxDx int, ft *font.Font, newRulerFunc ...func([]byte, *font.
 		Font:         ft,
 		newRulerFunc: fn,
 		br:           fn(make([]byte, MaxBytes), ft),
+		br2:          fn(make([]byte, MaxBytes), ft),
 	}
 }
 
@@ -38,6 +39,7 @@ type Run struct {
 
 	newRulerFunc func([]byte, *font.Font) Ruler
 	br           Ruler
+	br2          Ruler
 }
 
 func (f *Run) Combine(g *Run, n int) {
@@ -116,14 +118,14 @@ func (f *Run) Split(bn, n int) {
 }
 
 func (f *Run) MeasureBytes(p []byte) int {
-	f.br.Reset(p)
+	f.br2.Reset(p)
 	for {
-		_, _, err := f.br.Next()
+		_, _, err := f.br2.Next()
 		if err != nil {
 			break
 		}
 	}
-	return f.br.Width()
+	return f.br2.Width()
 }
 
 // Chop drops the first n chars in box b
