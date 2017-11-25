@@ -1,6 +1,9 @@
 package frame
 
 import (
+	"github.com/as/frame/font"
+	"image"
+	"strings"
 	"testing"
 )
 
@@ -45,4 +48,37 @@ func TestInsertTabSpaceNewline(t *testing.T) {
 		h.Insert([]byte("abc\t \n\n\t $\n"), int64(j))
 	}
 	check(t, have, "TestInsertTabSpaceNewline", testMode)
+}
+
+type benchOp struct {
+	name string
+	data string
+	at   int64
+}
+
+func BenchmarkInsert1(b *testing.B) {
+	img := image.NewRGBA(image.Rect(0, 0, 1024, 768))
+	for _, v := range []benchOp{
+		{"1", "a", 0},
+		{"10", strings.Repeat("a", 10), 0},
+		{"100", strings.Repeat("a", 100), 0},
+		{"1000", strings.Repeat("a", 1000), 0},
+		{"10000", strings.Repeat("a", 10000), 0},
+		{"100000", strings.Repeat("a", 100000), 0},
+	} {
+		b.Run(v.name, func(b *testing.B) {
+			h := New(img.Bounds(), font.NewGoMono(8), img, A)
+			bb := []byte(v.data)
+			b.SetBytes(int64(len(bb)))
+			b.StopTimer()
+			b.ResetTimer()
+			at := v.at
+			for i := 0; i < b.N; i++ {
+				b.StartTimer()
+				h.Insert(bb, at)
+				b.StopTimer()
+				h.Delete(0, at)
+			}
+		})
+	}
 }

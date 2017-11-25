@@ -3,7 +3,26 @@ package frame
 import (
 	"github.com/as/frame/box"
 	"image"
+	"image/draw"
 )
+
+// Drawer implements the set of methods a frame needs to draw on a draw.Image. The frame's default behavior is to use
+// the native image/draw package and x/exp/font packages to satisfy this interface.
+type Drawer interface {
+	Draw(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, op draw.Op)
+	DrawMask(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, mask image.Image, mp image.Point, op draw.Op)
+
+	// StringBG draws a string to dst at point p
+	// StringBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *font.Font, s []byte, bg image.Image, bgp image.Point) int
+
+	// Flush requests that prior calls to the draw and string
+	// methods are flushed from an underlying soft-screen.
+	Flush()
+
+	// Cache returns the set of rectangles that have been updates but not flushed. This method exists
+	// temporarily and will be removed from this implementation. Frame does not use it.
+	Cache() []image.Rectangle
+}
 
 // Refresh renders the entire frame, including the underlying
 // bitmap. Refresh should not be called after insertion and deletion

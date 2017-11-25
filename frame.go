@@ -34,7 +34,8 @@ type Frame struct {
 	Color
 	Ticked bool
 	Scroll func(int)
-	drawcache.Drawer
+	Drawer
+	//	drawcache.Drawer
 	op draw.Op
 
 	mintab int
