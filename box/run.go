@@ -118,14 +118,14 @@ func (f *Run) Split(bn, n int) {
 }
 
 func (f *Run) MeasureBytes(p []byte) int {
-	f.br2.Reset(p)
+	br := f.newRulerFunc(p, f.Font)
 	for {
-		_, _, err := f.br2.Next()
+		_, _, err := br.Next()
 		if err != nil {
 			break
 		}
 	}
-	return f.br2.Width()
+	return br.Width()
 }
 
 // Chop drops the first n chars in box b
