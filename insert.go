@@ -13,7 +13,6 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	if p0 > f.Nchars || len(s) == 0 || f.b == nil {
 		return
 	}
-	s = append([]byte{}, s...)
 
 	// find p0, it's box, and its point in the box its in
 	b0 := f.Find(0, 0, p0)

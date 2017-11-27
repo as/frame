@@ -67,7 +67,7 @@ func (r *Run) plainbox(nb int) (nl int) {
 		}
 	}
 	b := &r.Box[nb]
-	b.Ptr = r.br.Bytes()
+	b.Ptr = append([]byte{}, r.br.Bytes()...)
 	b.Width = r.br.Width()
 	b.Nrune = r.br.Len()
 	r.Nchars += int64(r.br.Len())
