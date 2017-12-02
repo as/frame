@@ -1,7 +1,6 @@
 package font
 
 import (
-	"fmt"
 	"image"
 	"image/draw"
 	"unicode"
@@ -11,6 +10,7 @@ import (
 	"golang.org/x/image/font/basicfont"
 	"golang.org/x/image/font/gofont/gomedium"
 	"golang.org/x/image/font/gofont/gomono"
+	"golang.org/x/image/font/gofont/gomonobold"
 	"golang.org/x/image/font/gofont/goregular"
 	"golang.org/x/image/math/fixed"
 )
@@ -29,6 +29,16 @@ type Font struct {
 	cache    Cache
 	hexCache Cache
 	decCache Cache
+	imgCache map[signature]*image.RGBA
+}
+
+type rgba struct {
+	r, g, b, a uint32
+}
+type signature struct {
+	b  byte
+	dy int
+	rgba
 }
 
 func NewGoRegular(size int) *Font {
@@ -37,6 +47,10 @@ func NewGoRegular(size int) *Font {
 
 func NewGoMedium(size int) *Font {
 	return NewTTF(gomedium.TTF, size)
+}
+
+func NewGoMonoBold(size int) *Font {
+	return NewTTF(gomonobold.TTF, size)
 }
 
 func NewGoMono(size int) *Font {
@@ -58,24 +72,38 @@ func NewBasic(size int) *Font {
 	ft.dy = ft.ascent + ft.descent + ft.size
 	hexFt := fromTTF(gomono.TTF, ft.Dy()/4+3)
 	ft.hexDx = ft.genChar('_').Bounds().Dx()
+	helper := mkhelper(hexFt)
 	for i := 0; i != 256; i++ {
 		ft.cache[i] = ft.genChar(byte(i))
 		if ft.cache[i] == nil {
-			ft.cache[i] = hexFt.genHexChar(ft.Dy(), byte(i))
+			ft.cache[i] = hexFt.genHexCharTest(ft.Dy(), byte(i), helper)
 		}
 	}
 	return ft
 }
 
-func NewTTF(data []byte, size int) *Font {
-	ft := fromTTF(data, size)
-	hexFt := fromTTF(gomono.TTF, ft.Dy()/4+3)
+const hexbytes = "0123456789abcdef"
 
+func mkhelper(hexFt *Font) []*Glyph {
+	helper := make([]*Glyph, 0, len(hexbytes))
+	for _, s := range hexbytes {
+		helper = append(helper, hexFt.genChar(byte(s)))
+	}
+	return helper
+}
+
+func NewTTF(data []byte, size int) *Font {
+	//return makefont(data, size)
+	ft := fromTTF(data, size)
+	hexFt := fromTTF(gomono.TTF, ft.Dy()/3+3)
+	//hexFt := fromTTF(gomono.TTF, ft.Dy()/4+3)
 	ft.hexDx = ft.genChar('_').Bounds().Dx()
+
+	helper := mkhelper(hexFt)
 	for i := 0; i != 256; i++ {
 		ft.cache[i] = ft.genChar(byte(i))
 		if ft.cache[i] == nil {
-			ft.cache[i] = hexFt.genHexChar(ft.Dy(), byte(i))
+			ft.cache[i] = hexFt.genHexChar(ft.Dy(), byte(i), helper)
 		}
 	}
 	return ft
@@ -88,15 +116,14 @@ func fromTTF(data []byte, size int) *Font {
 	ft := &Font{
 		Face: truetype.NewFace(f,
 			&truetype.Options{
-				Size:              float64(size),
-				GlyphCacheEntries: 512 * 2,
-				SubPixelsX:        1,
+				Size: float64(size),
 			}),
 		size:    size,
 		ascent:  2,
 		descent: +(size / 3),
 		stride:  0,
 		data:    data,
+		imgCache: make(map[signature]*image.RGBA),
 	}
 	ft.dy = ft.ascent + ft.descent + ft.size
 	return ft
@@ -145,25 +172,35 @@ func (f *Font) SetLetting(px int) {
 }
 
 func (f *Font) genChar(b byte) *Glyph {
-	dr, mask, maskp, adv, _ := f.Face.Glyph(fixed.P(0, f.size), rune(b))
 	if !f.Printable(b) {
 		return nil
 	}
+	dr, mask, maskp, adv, _ := f.Face.Glyph(fixed.P(0, f.size), rune(b))
 	r := image.Rect(0, 0, Fix(adv), f.Dy())
 	m := image.NewAlpha(r)
 	r = r.Add(image.Pt(dr.Min.X, dr.Min.Y))
 	draw.Draw(m, r, mask, maskp, draw.Src)
 	return &Glyph{mask: m, Rectangle: m.Bounds()}
 }
-func (f *Font) genHexChar(dy int, b byte) *Glyph {
-	s := fmt.Sprintf("%02x", b)
-	g0 := f.genChar(s[0])
-	g1 := f.genChar(s[1])
+func (f *Font) genHexCharTest(dy int, b byte, helper []*Glyph) *Glyph {
+	g0 := helper[b/16]
+	g1 := helper[b%16]
 	r := image.Rect(2, f.descent+f.ascent, g0.Bounds().Dx()+g1.Bounds().Dx()+6, dy)
 	m := image.NewAlpha(r)
 	draw.Draw(m, r, g0.Mask(), image.ZP, draw.Over)
 	r.Min.X += g0.Mask().Bounds().Dx()
 	draw.Draw(m, r.Add(image.Pt(-f.descent/4, f.descent*2)), g1.Mask(), image.ZP, draw.Over)
+	return &Glyph{mask: m, Rectangle: m.Bounds()}
+}
+
+func (f *Font) genHexChar(dy int, b byte, helper []*Glyph) *Glyph {
+	g0 := helper[b/16]
+	g1 := helper[b%16]
+	r := image.Rect(2, f.descent+f.ascent-3, g0.Bounds().Dx()+g1.Bounds().Dx()+7, dy)
+	m := image.NewAlpha(r)
+	draw.Draw(m, r, g0.Mask(), image.ZP, draw.Over)
+	r.Min.X += g0.Mask().Bounds().Dx()
+	draw.Draw(m, r.Add(image.Pt(-f.descent/4, f.descent+f.descent/2)), g1.Mask(), image.ZP, draw.Over)
 	return &Glyph{mask: m, Rectangle: m.Bounds()}
 }
 
