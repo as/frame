@@ -7,17 +7,55 @@ import (
 	"unicode/utf8"
 )
 
+type rgba struct{
+	r,g,b,a uint32
+}
+type signature struct{
+	s string
+	dy int
+	rgba
+}
+var cache map[signature]*image.RGBA
+func init(){
+	cache = make(map[signature]*image.RGBA)
+}
+
 func StringBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *Font, s []byte, bg image.Image, bgp image.Point) int {
+	quad := rgba{}
+	{
+		r,g,b,a := src.(*image.Uniform).RGBA()
+		quad=rgba{r,g,b,a}
+	}
+	sig := signature{
+		s: string(s),
+		dy: ft.Dy(),
+		rgba: quad,
+	}
+	if img, ok := cache[sig]; ok{
+		draw.Draw(dst, img.Bounds().Add(p), img, img.Bounds().Min, draw.Src)
+		return p.X+img.Bounds().Dx() //Add(image.Pt(img.Bounds().Dx(), 0))
+	}
+	r0 := image.Rectangle{p, p}
 	for _, b := range s {
 		mask := ft.Char(b)
 		if mask == nil {
 			panic("StringBG")
 		}
 		r := mask.Bounds()
-		//draw.Draw(dst, r.Add(p), bg, bgp, draw.Src)
+		if r0.Min == image.ZP{
+			r0.Min = r.Add(p).Min
+		}
 		draw.DrawMask(dst, r.Add(p), src, sp, mask, mask.Bounds().Min, draw.Over)
 		p.X += r.Dx() + ft.stride
+		r0.Max.X += r.Dx() + ft.stride
+		if r.Dy() > r0.Dy(){
+			r0.Max.Y=r.Dy()
+		}
 	}
+	img := image.NewRGBA(image.Rect(0,0,r0.Max.X,r0.Max.Y))
+	draw.Draw(img, img.Bounds(), bg, bgp, draw.Src)
+	draw.Draw(img, img.Bounds(), dst, r0.Min, draw.Src)
+	cache[sig]=img
 	return p.X
 }
 
