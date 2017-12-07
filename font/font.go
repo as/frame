@@ -62,12 +62,13 @@ func NewBasic(size int) *Font {
 	f := basicfont.Face7x13
 	size = 13
 	ft := &Font{
-		Face:    f,
-		size:    size,
-		ascent:  2,
-		descent: 1,
-		letting: 0,
-		stride:  0,
+		Face:     f,
+		size:     size,
+		ascent:   2,
+		descent:  1,
+		letting:  0,
+		stride:   0,
+		imgCache: make(map[signature]*image.RGBA),
 	}
 	ft.dy = ft.ascent + ft.descent + ft.size
 	hexFt := fromTTF(gomono.TTF, ft.Dy()/4+3)
@@ -118,11 +119,11 @@ func fromTTF(data []byte, size int) *Font {
 			&truetype.Options{
 				Size: float64(size),
 			}),
-		size:    size,
-		ascent:  2,
-		descent: +(size / 3),
-		stride:  0,
-		data:    data,
+		size:     size,
+		ascent:   2,
+		descent:  +(size / 3),
+		stride:   0,
+		data:     data,
 		imgCache: make(map[signature]*image.RGBA),
 	}
 	ft.dy = ft.ascent + ft.descent + ft.size
