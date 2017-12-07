@@ -133,6 +133,13 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			if f.PlainBox(nb) {
 				f.stringNBG(f.b, pt, text, image.ZP, f.Font, ptr)
 			}
+// TODO(as): replace the above with the snippet below: reason:
+// stringBG is more efficient now that it does an src bitblt for an already-known character
+//			if f.PlainBox(nb){
+//				f.stringBG(f.b, pt, text, image.ZP, f.Font, ptr)
+//			} else {
+//				f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Font.Dy()), back, pt, f.op)
+//			}
 			pt.X += w
 
 			if q0 += len(ptr); q0 >= p1 {

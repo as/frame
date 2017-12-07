@@ -6,7 +6,7 @@ import (
 )
 
 // MaxBytes is the largest capacity of bytes in a box
-var MaxBytes = 512 + 3
+var MaxBytes = 256 + 3
 
 func NewRun(minDx, maxDx int, ft *font.Font, newRulerFunc ...func([]byte, *font.Font) Ruler) Run {
 	fn := NewByteRuler
@@ -20,7 +20,6 @@ func NewRun(minDx, maxDx int, ft *font.Font, newRulerFunc ...func([]byte, *font.
 		Font:         ft,
 		newRulerFunc: fn,
 		br:           fn(make([]byte, MaxBytes), ft),
-		br2:          fn(make([]byte, MaxBytes), ft),
 	}
 }
 
@@ -39,7 +38,6 @@ type Run struct {
 
 	newRulerFunc func([]byte, *font.Font) Ruler
 	br           Ruler
-	br2          Ruler
 }
 
 func (f *Run) Combine(g *Run, n int) {
@@ -118,14 +116,14 @@ func (f *Run) Split(bn, n int) {
 }
 
 func (f *Run) MeasureBytes(p []byte) int {
-	br := f.newRulerFunc(p, f.Font)
+	f.br.Reset(p)//f.newRulerFunc(p, f.Font)
 	for {
-		_, _, err := br.Next()
+		_, _, err := f.br.Next()
 		if err != nil {
 			break
 		}
 	}
-	return br.Width()
+	return f.br.Width()
 }
 
 // Chop drops the first n chars in box b
