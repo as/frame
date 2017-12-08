@@ -117,6 +117,9 @@ func fromTTF(data []byte, size int) *Font {
 	ft := &Font{
 		Face: truetype.NewFace(f,
 			&truetype.Options{
+				SubPixelsX: 64,
+				SubPixelsY: 64,
+				Hinting: gofont.HintingFull,
 				Size: float64(size),
 			}),
 		size:     size,
@@ -219,7 +222,8 @@ func (f *Font) Size() int {
 	return f.size
 }
 func Fix(i fixed.Int26_6) int {
-	return i.Round()
+	i += 1<<5
+	return i.Ceil()
 }
 func (f *Font) MeasureBytes(p []byte) (w int) {
 	for i := range p {
