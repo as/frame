@@ -116,7 +116,7 @@ func (f *Run) Split(bn, n int) {
 }
 
 func (f *Run) MeasureBytes(p []byte) int {
-	f.br.Reset(p)//f.newRulerFunc(p, f.Font)
+	f.br.Reset(p) //f.newRulerFunc(p, f.Font)
 	for {
 		_, _, err := f.br.Next()
 		if err != nil {

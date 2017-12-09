@@ -41,7 +41,7 @@ func fontsrv() {
 	}
 }
 func makefont(data []byte, size int) *Font {
-	if fontIRQ == nil{
+	if fontIRQ == nil {
 		fontIRQ = make(chan fontPKT)
 		go fontsrv()
 	}

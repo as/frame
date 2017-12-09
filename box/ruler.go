@@ -30,7 +30,7 @@ type byteRuler struct {
 	i                   int
 	w                   int
 	lastSize, lastWidth int
-	sizetab [256]int
+	sizetab             [256]int
 }
 
 type runeRuler struct {
@@ -45,8 +45,8 @@ func NewByteRuler(b []byte, ft *font.Font) Ruler {
 	return &byteRuler{Font: ft, b: b}
 }
 
-func (bs *byteRuler) MeasureByte(b byte) int{
-	if px:= bs.sizetab[b]; px != 0{
+func (bs *byteRuler) MeasureByte(b byte) int {
+	if px := bs.sizetab[b]; px != 0 {
 		return px
 	}
 	bs.sizetab[b] = bs.Font.MeasureByte(b)
