@@ -1,27 +1,30 @@
 package frame
 
 import (
-	"github.com/as/frame/box"
 	"image"
 	"image/draw"
+
+	"github.com/as/frame/box"
+	"github.com/as/frame/font"
 )
 
 // Drawer implements the set of methods a frame needs to draw on a draw.Image. The frame's default behavior is to use
 // the native image/draw package and x/exp/font packages to satisfy this interface.
 type Drawer interface {
 	Draw(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, op draw.Op)
-	DrawMask(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, mask image.Image, mp image.Point, op draw.Op)
+	//DrawMask(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, mask image.Image, mp image.Point, op draw.Op)
 
 	// StringBG draws a string to dst at point p
-	// StringBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *font.Font, s []byte, bg image.Image, bgp image.Point) int
+	StringBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *font.Font, s []byte, bg image.Image, bgp image.Point) int
 
-	// Flush requests that prior calls to the draw and string
-	// methods are flushed from an underlying soft-screen.
-	Flush()
+	// Flush requests that prior calls to the draw and string methods are flushed from an underlying soft-screen. The list of rectangles provide
+	// optional residency information. Implementations may refresh a superset of r, or ignore it entirely, as long as the entire region is
+	// refreshed
+	Flush(r ...image.Rectangle) error
 
 	// Cache returns the set of rectangles that have been updates but not flushed. This method exists
 	// temporarily and will be removed from this implementation. Frame does not use it.
-	Cache() []image.Rectangle
+	//Cache() []image.Rectangle
 }
 
 // Refresh renders the entire frame, including the underlying
@@ -76,17 +79,18 @@ func (f *Frame) Recolor(pt image.Point, p0, p1 int64, cols Palette) {
 	f.modified = true
 }
 
-func (f *Frame) redrawRun0(r *box.Run, pt image.Point, text, back image.Image) {
+func (f *Frame) redrawRun0(r *box.Run, pt image.Point, text, back image.Image) image.Point {
 	nb := 0
 	for ; nb < r.Nbox; nb++ {
 		b := &r.Box[nb]
 		pt = f.wrapMax(pt, b)
 		//if !f.noredraw && b.nrune >= 0 {
 		if b.Nrune >= 0 {
-			f.stringBG(f.b, pt, text, image.ZP, f.Font, b.Ptr, back, image.ZP)
+			f.StringBG(f.b, pt, text, image.ZP, f.Font, b.Ptr, back, image.ZP)
 		}
 		pt.X += b.Width
 	}
+	return pt
 }
 
 func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) image.Point {
@@ -100,7 +104,9 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 		stepFill := func(bn int) {
 			qt := pt
 			if pt = f.wrapMax(pt, (&f.Box[bn])); pt.Y > qt.Y {
-				f.Draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt, f.op)
+				r := image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y)
+				f.Draw(f.b, r, back, qt, f.op)
+				f.Flush(r)
 			}
 		}
 		nb := 0
@@ -127,19 +133,12 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 				ptr = ptr[:lim]
 				trim = true
 			}
-
 			w := f.WidthBox(nb, ptr)
 			f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Font.Dy()), back, pt, f.op)
 			if f.PlainBox(nb) {
-				f.stringNBG(f.b, pt, text, image.ZP, f.Font, ptr)
+				f.StringBG(f.b, pt, text, image.ZP, f.Font, ptr, nil, image.ZP)
 			}
-			// TODO(as): replace the above with the snippet below: reason:
-			// stringBG is more efficient now that it does an src bitblt for an already-known character
-			//			if f.PlainBox(nb){
-			//				f.stringBG(f.b, pt, text, image.ZP, f.Font, ptr)
-			//			} else {
-			//				f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Font.Dy()), back, pt, f.op)
-			//			}
+			f.Flush(image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Font.Dy()))
 			pt.X += w
 
 			if q0 += len(ptr); q0 >= p1 {

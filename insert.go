@@ -3,6 +3,8 @@ package frame
 import (
 	"image"
 	"image/draw"
+
+	"github.com/as/frame/font"
 )
 
 // Insert inserts the contents of s at index p0 in
@@ -61,6 +63,16 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	}
 	f.badElasticAlg()
 	return int(f.ir.Nchars)
+}
+
+func (f *Frame) Draw(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, op draw.Op) {
+	f.Drawer.Draw(dst, r, src, sp, op)
+	f.Flush(r)
+}
+func (f *Frame) StringBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *font.Font, s []byte, bg image.Image, bgp image.Point) int {
+	x := f.Drawer.StringBG(dst, p, src, sp, ft, s, bg, bgp)
+	f.Flush(image.Rect(p.X, p.Y, p.X+x, p.Y+ft.Dy()))
+	return x
 }
 
 func (f *Frame) badElasticAlg() {
@@ -183,13 +195,17 @@ func (f *Frame) boxpush(p0 int64, b0, b1 int, pt0, pt1, ppt1 image.Point) {
 	}
 }
 
-func (f *Frame) bitblt(cb0 int64, b0 int, pt0, pt1, opt0 image.Point) {
+func (f *Frame) bitblt(cb0 int64, b0 int, pt0, pt1, opt0 image.Point) (res image.Rectangle) {
 	h := f.Font.Dy()
 	y := 0
 	if pt1.Y == f.r.Max.Y {
 		y = pt1.Y
 	}
 	x := len(f.pts)
+	if x != 0 {
+		res = image.Rectangle{pt0, pt1}
+		res.Canon().Max.Add(f.pts[x-1][0])
+	}
 	run := f.Box[b0-x:]
 	x--
 	_, back := f.pick(cb0, f.p0, f.p1)
@@ -238,6 +254,7 @@ func (f *Frame) bitblt(cb0 int64, b0 int, pt0, pt1, opt0 image.Point) {
 			}
 		}
 	}
+	return res
 }
 
 func (f *Frame) pick(c, p0, p1 int64) (text, back image.Image) {

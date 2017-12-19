@@ -29,6 +29,11 @@ func (f *Frame) Delete(p0, p1 int64) int {
 	pt1 := f.PointOf(p1)
 	f.Free(n0, n1-1)
 	f.modified = true
+	defer func() {
+		r := image.Rectangle{f.r.Min, f.r.Max}
+		r.Min.Y = pt0.Y
+		f.Flush(r)
+	}()
 
 	// Advance forward, copying the first un-deleted box
 	// on the right all the way to the left, splitting them

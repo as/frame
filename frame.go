@@ -20,7 +20,7 @@ const (
 
 // Frame is a write-only container for editable text
 type Frame struct {
-	b *image.RGBA
+	b draw.Image
 	r image.Rectangle
 	box.Run
 	ir *box.Run
@@ -88,7 +88,7 @@ func tabMinMax(ft *font.Font, elastic bool) (min, max int) {
 	return mintab, maxtab
 }
 
-func newRuneFrame(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, flag ...int) *Frame {
+func newRuneFrame(r image.Rectangle, ft *font.Font, b draw.Image, cols Color, flag ...int) *Frame {
 	fl := getflag(flag...)
 	mintab, maxtab := tabMinMax(ft, fl&FrElastic != 0)
 
@@ -127,7 +127,7 @@ func getflag(flag ...int) (fl int) {
 
 // New creates a new frame on b with bounds r. The image b is used
 // as the frame's internal bitmap cache.
-func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, flag ...int) *Frame {
+func New(r image.Rectangle, ft *font.Font, b draw.Image, cols Color, flag ...int) *Frame {
 	fl := getflag(flag...)
 	if fl&FrUTF8 != 0 {
 		return newRuneFrame(r, ft, b, cols, flag...)
@@ -154,8 +154,15 @@ func New(r image.Rectangle, ft *font.Font, b *image.RGBA, cols Color, flag ...in
 	return f
 }
 
+func NewDrawer(r image.Rectangle, ft *font.Font, b draw.Image, cols Color, drawer Drawer, flag ...int) *Frame {
+	fr := New(r, ft, b, cols, flag...)
+	fr.Drawer = drawer
+	fr.stringBG = drawer.StringBG
+	return fr
+}
+
 func (f *Frame) RGBA() *image.RGBA {
-	return f.b
+	return f.b.(*image.RGBA)
 }
 func (f *Frame) Size() image.Point {
 	r := f.RGBA().Bounds()
@@ -225,7 +232,7 @@ func (f *Frame) Dot() (p0, p1 int64) {
 	return f.p0, f.p1
 }
 
-func (f *Frame) setrects(r image.Rectangle, b *image.RGBA) {
+func (f *Frame) setrects(r image.Rectangle, b draw.Image) {
 	f.b = b
 	f.r = r
 	f.r.Max.Y -= f.r.Dy() % f.Font.Dy()

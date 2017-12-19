@@ -96,10 +96,11 @@ func (f *Frame) tickat(pt image.Point, ticked bool) {
 		r.Max.X = f.r.Max.X
 	}
 	if ticked {
-		draw.Draw(f.tickback, f.tickback.Bounds(), f.b, pt.Add(f.tickback.Bounds().Min), draw.Src)
+		f.Draw(f.tickback, f.tickback.Bounds(), f.b, pt.Add(f.tickback.Bounds().Min), draw.Src)
 		f.Draw(f.b, r, f.tick, f.tick.Bounds().Min, draw.Over)
 	} else {
 		f.Draw(f.b, r, f.tickback, f.tickback.Bounds().Min, draw.Src)
 	}
+	f.Flush(r.Inset(-1))
 	f.Ticked = ticked
 }
