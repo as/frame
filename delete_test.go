@@ -10,15 +10,23 @@ import (
 
 var (
 	R     = image.Rect(0, 0, 232, 232)
-	fsize = 16
+	fsize = 555
 	ft    = font.NewBasic(fsize)
 )
+
+func tconf() *Config{
+	return &Config{
+		Font: font.NewBasic(fsize),
+		Color: &A,
+	}
+}
+
 
 func abtest(r image.Rectangle) (fr0, fr1 *Frame, a, b *image.RGBA) {
 	a = image.NewRGBA(r)
 	b = image.NewRGBA(r)
-	fr0 = New(r, font.NewBasic(fsize), a, A)
-	fr1 = New(r, font.NewBasic(fsize), b, A)
+	fr0 = New(a, a.Bounds(), tconf())
+	fr1 =  New(b, b.Bounds(), tconf())
 	return fr0, fr1, a, b
 }
 

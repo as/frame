@@ -2,30 +2,9 @@ package frame
 
 import (
 	"image"
-	"image/draw"
 
 	"github.com/as/frame/box"
-	"github.com/as/frame/font"
 )
-
-// Drawer implements the set of methods a frame needs to draw on a draw.Image. The frame's default behavior is to use
-// the native image/draw package and x/exp/font packages to satisfy this interface.
-type Drawer interface {
-	Draw(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, op draw.Op)
-	//DrawMask(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, mask image.Image, mp image.Point, op draw.Op)
-
-	// StringBG draws a string to dst at point p
-	StringBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *font.Font, s []byte, bg image.Image, bgp image.Point) int
-
-	// Flush requests that prior calls to the draw and string methods are flushed from an underlying soft-screen. The list of rectangles provide
-	// optional residency information. Implementations may refresh a superset of r, or ignore it entirely, as long as the entire region is
-	// refreshed
-	Flush(r ...image.Rectangle) error
-
-	// Cache returns the set of rectangles that have been updates but not flushed. This method exists
-	// temporarily and will be removed from this implementation. Frame does not use it.
-	//Cache() []image.Rectangle
-}
 
 // Refresh renders the entire frame, including the underlying
 // bitmap. Refresh should not be called after insertion and deletion
@@ -134,11 +113,11 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 				trim = true
 			}
 			w := f.WidthBox(nb, ptr)
-			f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Font.Dy()), back, pt, f.op)
+			f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+Dy(f.Font)), back, pt, f.op)
 			if f.PlainBox(nb) {
 				f.StringBG(f.b, pt, text, image.ZP, f.Font, ptr, nil, image.ZP)
 			}
-			f.Flush(image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Font.Dy()))
+			f.Flush(image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+Dy(f.Font)))
 			pt.X += w
 
 			if q0 += len(ptr); q0 >= p1 {

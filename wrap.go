@@ -31,7 +31,7 @@ func (f *Frame) wrapMin(pt image.Point, b *box.Box) image.Point {
 
 func (f *Frame) wrap(pt image.Point) image.Point {
 	pt.X = f.r.Min.X
-	pt.Y += f.Font.Dy()
+	pt.Y += Dy(f.Font)
 	return pt
 }
 

@@ -4,7 +4,6 @@ import (
 	"image"
 	"image/draw"
 
-	"github.com/as/frame/font"
 )
 
 // Insert inserts the contents of s at index p0 in
@@ -66,15 +65,15 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 }
 
 func (f *Frame) Draw(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, op draw.Op) {
+	if f == nil{
+		panic("nil frame")
+	}
+	if f.Drawer == nil{
+		panic("nil drawer")
+	}
 	f.Drawer.Draw(dst, r, src, sp, op)
 	f.Flush(r)
 }
-func (f *Frame) StringBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *font.Font, s []byte, bg image.Image, bgp image.Point) int {
-	x := f.Drawer.StringBG(dst, p, src, sp, ft, s, bg, bgp)
-	f.Flush(image.Rect(p.X, p.Y, p.X+x, p.Y+ft.Dy()))
-	return x
-}
-
 func (f *Frame) badElasticAlg() {
 	if f.elastic() {
 		if f.Nbox <= 1 {
@@ -158,7 +157,7 @@ func (f *Frame) boxpush(p0 int64, b0, b1 int, pt0, pt1, ppt1 image.Point) {
 
 	// update the line count
 	if b0 == f.Nbox {
-		f.Nlines = (pt1.Y - f.r.Min.Y) / f.Font.Dy()
+		f.Nlines = (pt1.Y - f.r.Min.Y) / Dy(f.Font)
 		if pt1.X > f.r.Min.X {
 			f.Nlines++
 		}
@@ -170,9 +169,9 @@ func (f *Frame) boxpush(p0 int64, b0, b1 int, pt0, pt1, ppt1 image.Point) {
 		return
 	}
 
-	qt0 := pt0.Y + f.Font.Dy()
-	qt1 := pt1.Y + f.Font.Dy()
-	f.Nlines += (qt1 - qt0) / f.Font.Dy()
+	qt0 := pt0.Y + Dy(f.Font)
+	qt1 := pt1.Y + Dy(f.Font)
+	f.Nlines += (qt1 - qt0) / Dy(f.Font)
 	if f.Nlines > f.maxlines {
 		f.trim(ppt1, p0, b1)
 	}
@@ -196,7 +195,7 @@ func (f *Frame) boxpush(p0 int64, b0, b1 int, pt0, pt1, ppt1 image.Point) {
 }
 
 func (f *Frame) bitblt(cb0 int64, b0 int, pt0, pt1, opt0 image.Point) (res image.Rectangle) {
-	h := f.Font.Dy()
+	h := Dy(f.Font)
 	y := 0
 	if pt1.Y == f.r.Max.Y {
 		y = pt1.Y

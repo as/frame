@@ -2,9 +2,11 @@ package box
 
 import (
 	"errors"
-	"github.com/as/frame/font"
 	"io"
 	"unicode/utf8"
+
+	"golang.org/x/image/font"
+	"golang.org/x/image/math/fixed"
 	//	"log"
 )
 
@@ -25,7 +27,7 @@ type Ruler interface {
 }
 
 type byteRuler struct {
-	*font.Font
+	font.Face
 	b                   []byte
 	i                   int
 	w                   int
@@ -34,27 +36,32 @@ type byteRuler struct {
 }
 
 type runeRuler struct {
-	*font.Font
+	font.Face
 	b                   []byte
 	i                   int
 	w                   int
 	lastSize, lastWidth int
 }
 
-func NewByteRuler(b []byte, ft *font.Font) Ruler {
-	return &byteRuler{Font: ft, b: b}
+func Fix(i fixed.Int26_6) int {
+	return i.Ceil()
+}
+func NewByteRuler(b []byte, ft font.Face) Ruler {
+	return &byteRuler{Face: ft, b: b}
 }
 
 func (bs *byteRuler) MeasureByte(b byte) int {
-	if px := bs.sizetab[b]; px != 0 {
-		return px
-	}
-	bs.sizetab[b] = bs.Font.MeasureByte(b)
-	return bs.sizetab[b]
+	x, _ := bs.Face.GlyphAdvance(rune(b))
+	return Fix(x)
 }
 
-func NewRuneRuler(b []byte, ft *font.Font) Ruler {
-	return &runeRuler{Font: ft, b: b}
+func (bs *runeRuler) MeasureRune(r rune) int {
+	x, _ := bs.Face.GlyphAdvance(r)
+	return Fix(x)
+}
+
+func NewRuneRuler(b []byte, ft font.Face) Ruler {
+	return &runeRuler{Face: ft, b: b}
 }
 
 func (bs *byteRuler) Bytes() []byte { return bs.b[:bs.i] }

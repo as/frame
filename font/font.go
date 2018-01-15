@@ -41,6 +41,7 @@ type signature struct {
 	rgba
 }
 
+
 func NewGoRegular(size int) *Font {
 	return NewTTF(goregular.TTF, size)
 }
@@ -222,7 +223,6 @@ func (f *Font) Size() int {
 	return f.size
 }
 func Fix(i fixed.Int26_6) int {
-	i += 1 << 5
 	return i.Ceil()
 }
 func (f *Font) MeasureBytes(p []byte) (w int) {
@@ -254,6 +254,16 @@ func (f *Font) TTF() []byte {
 }
 
 func (f *Font) Printable(b byte) bool {
+	if b == 0 || b > 127 {
+		return false
+	}
+	if unicode.IsGraphic(rune(b)) {
+		return true
+	}
+	return false
+}
+
+func Printable(b byte) bool {
 	if b == 0 || b > 127 {
 		return false
 	}

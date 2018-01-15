@@ -1,7 +1,6 @@
 package frame
 
 import (
-	"github.com/as/frame/font"
 	"image"
 	"strings"
 	"testing"
@@ -57,7 +56,7 @@ type benchOp struct {
 }
 
 func BenchmarkInsert1(b *testing.B) {
-	img := image.NewRGBA(image.Rect(0, 0, 1024, 768))
+	dst := image.NewRGBA(image.Rect(0, 0, 1024, 768))
 	for _, v := range []benchOp{
 		{"1", "a", 0},
 		{"10", strings.Repeat("a", 10), 0},
@@ -67,7 +66,7 @@ func BenchmarkInsert1(b *testing.B) {
 		{"100000", strings.Repeat("a", 100000), 0},
 	} {
 		b.Run(v.name, func(b *testing.B) {
-			h := New(img.Bounds(), font.NewGoMono(8), img, A)
+			h := New(dst, dst.Bounds(), tconf())
 			bb := []byte(v.data)
 			b.SetBytes(int64(len(bb)))
 			b.StopTimer()

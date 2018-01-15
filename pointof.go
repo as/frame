@@ -16,7 +16,7 @@ func (f *Frame) PointOf(p int64) image.Point {
 
 func (f *Frame) grid(pt image.Point) image.Point {
 	pt.Y -= f.r.Min.Y
-	pt.Y -= pt.Y % f.Font.Dy()
+	pt.Y -= pt.Y % Dy(f.Font)
 	pt.Y += f.r.Min.Y
 	if pt.X > f.r.Max.X {
 		pt.X = f.r.Max.X

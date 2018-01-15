@@ -1,11 +1,12 @@
 package frame
 
 import (
-	"github.com/as/drawcache"
-	"github.com/as/frame/box"
-	"github.com/as/frame/font"
+	"errors"
 	"image"
 	"image/draw"
+
+	"github.com/as/frame/box"
+	"golang.org/x/image/font"
 )
 
 var (
@@ -18,24 +19,54 @@ const (
 	FrUTF8
 )
 
+var (
+	ErrBadDst = errors.New("bad dst")
+)
+
+func New(dst draw.Image, r image.Rectangle, conf *Config) (*Frame) {
+	if dst == nil {
+		return nil
+	}
+	if conf == nil {
+		conf = &Config{}
+	}
+	conf.check()
+	fl := conf.Flag
+	mintab, maxtab := tabMinMax(conf.Font, fl&FrElastic != 0)
+
+	f := &Frame{
+		Font:         conf.Font,
+		Color:        *conf.Color,
+		Drawer: conf.Drawer,
+		Run:          box.NewRun(mintab, 5000, conf.Font),
+		newRulerFunc: box.NewByteRuler,
+		op:           draw.Src,
+		mintab:       mintab,
+		maxtab:       maxtab,
+		flags:        fl,
+	}
+	f.setrects(r, dst)
+	f.inittick()
+	run := box.NewRun(mintab, 5000, conf.Font)
+	f.ir = &run
+	return f
+}	
+
 // Frame is a write-only container for editable text
 type Frame struct {
-	b draw.Image
-	r image.Rectangle
 	box.Run
-	ir *box.Run
-
 	p0 int64
 	p1 int64
+	b draw.Image
+	r image.Rectangle
+	ir *box.Run
 
-	flags int
 
-	Font *font.Font
+	Font font.Face
 	Color
 	Ticked bool
 	Scroll func(int)
 	Drawer
-	//	drawcache.Drawer
 	op draw.Op
 
 	mintab int
@@ -51,13 +82,9 @@ type Frame struct {
 	noredraw  bool
 
 	pts     [][2]image.Point
-	hexFont *font.Font
-	hex     []draw.Image
 
-	// Points to the font subpackage's StringN?BG or RuneN?BG functions
-	stringBG     func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte, image.Image, image.Point) int
-	stringNBG    func(draw.Image, image.Point, image.Image, image.Point, *font.Font, []byte) int
-	newRulerFunc func(s []byte, ft *font.Font) box.Ruler
+	flags int
+	newRulerFunc func(s []byte, ft font.Face) box.Ruler
 }
 
 // Flags returns the flags currently set for the frame
@@ -79,8 +106,8 @@ func (f *Frame) elastic() bool {
 	return f.flags&FrElastic != 0
 }
 
-func tabMinMax(ft *font.Font, elastic bool) (min, max int) {
-	mintab := ft.Measure(' ')
+func tabMinMax(ft font.Face, elastic bool) (min, max int) {
+	mintab := 5 //ft.Measure(' ')
 	maxtab := mintab * 4
 	if elastic {
 		mintab = maxtab
@@ -88,7 +115,8 @@ func tabMinMax(ft *font.Font, elastic bool) (min, max int) {
 	return mintab, maxtab
 }
 
-func newRuneFrame(r image.Rectangle, ft *font.Font, b draw.Image, cols Color, flag ...int) *Frame {
+func newRuneFrame(r image.Rectangle, ft font.Face, b draw.Image, cols Color, flag ...int) *Frame {
+/*
 	fl := getflag(flag...)
 	mintab, maxtab := tabMinMax(ft, fl&FrElastic != 0)
 
@@ -110,6 +138,8 @@ func newRuneFrame(r image.Rectangle, ft *font.Font, b draw.Image, cols Color, fl
 	f.ir = &run
 	f.Drawer = drawcache.New()
 	return f
+*/
+	panic("disabled")
 }
 
 func getflag(flag ...int) (fl int) {
@@ -123,42 +153,6 @@ func getflag(flag ...int) (fl int) {
 		fl |= FrUTF8
 	}
 	return fl
-}
-
-// New creates a new frame on b with bounds r. The image b is used
-// as the frame's internal bitmap cache.
-func New(r image.Rectangle, ft *font.Font, b draw.Image, cols Color, flag ...int) *Frame {
-	fl := getflag(flag...)
-	if fl&FrUTF8 != 0 {
-		return newRuneFrame(r, ft, b, cols, flag...)
-	}
-	mintab, maxtab := tabMinMax(ft, fl&FrElastic != 0)
-
-	f := &Frame{
-		Font:         ft,
-		mintab:       mintab,
-		maxtab:       maxtab,
-		Color:        cols,
-		Run:          box.NewRun(mintab, 5000, ft),
-		stringBG:     font.StringBG,
-		stringNBG:    font.StringNBG,
-		newRulerFunc: box.NewByteRuler,
-		op:           draw.Src,
-		flags:        fl,
-	}
-	f.setrects(r, b)
-	f.inittick()
-	run := box.NewRun(f.mintab, 5000, ft)
-	f.ir = &run
-	f.Drawer = drawcache.New()
-	return f
-}
-
-func NewDrawer(r image.Rectangle, ft *font.Font, b draw.Image, cols Color, drawer Drawer, flag ...int) *Frame {
-	fr := New(r, ft, b, cols, flag...)
-	fr.Drawer = drawer
-	fr.stringBG = drawer.StringBG
-	return fr
 }
 
 func (f *Frame) RGBA() *image.RGBA {
@@ -190,13 +184,13 @@ func (f *Frame) Close() error {
 }
 
 // Reset resets the frame to display on image b with bounds r and font ft.
-func (f *Frame) Reset(r image.Rectangle, b *image.RGBA, ft *font.Font) {
+func (f *Frame) Reset(r image.Rectangle, b *image.RGBA, ft font.Face) {
 	f.r = r
 	f.b = b
 	f.SetFont(ft)
 }
 
-func (f *Frame) SetFont(ft *font.Font) {
+func (f *Frame) SetFont(ft font.Face) {
 	f.Font = ft
 	f.Run.Reset(ft)
 	f.Refresh()
@@ -235,29 +229,18 @@ func (f *Frame) Dot() (p0, p1 int64) {
 func (f *Frame) setrects(r image.Rectangle, b draw.Image) {
 	f.b = b
 	f.r = r
-	f.r.Max.Y -= f.r.Dy() % f.Font.Dy()
-	f.maxlines = f.r.Dy() / f.Font.Dy()
+	f.r.Max.Y -= f.r.Dy() % Dy(f.Font)
+	f.maxlines = f.r.Dy() / Dy(f.Font)
 }
 
 func (f *Frame) clear(freeall bool) {
 	if f.Nbox != 0 {
 		f.Run.Delete(0, f.Nbox-1)
 	}
-	if f.Box != nil {
-		free(f.Box)
-	}
 	if freeall {
-		// TODO: unnecessary
-		freeimage(f.tick)
-		freeimage(f.tickback)
 		f.tick = nil
 		f.tickback = nil
 	}
 	f.Box = nil
 	f.Ticked = false
-}
-
-func free(i interface{}) {
-}
-func freeimage(i image.Image) {
 }

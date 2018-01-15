@@ -2,13 +2,13 @@ package box
 
 import (
 	"fmt"
-	"github.com/as/frame/font"
+	"golang.org/x/image/font"
 )
 
 // MaxBytes is the largest capacity of bytes in a box
 var MaxBytes = 256 + 3
 
-func NewRun(minDx, maxDx int, ft *font.Font, newRulerFunc ...func([]byte, *font.Font) Ruler) Run {
+func NewRun(minDx, maxDx int, ft font.Face, newRulerFunc ...func([]byte, font.Face) Ruler) Run {
 	fn := NewByteRuler
 	if len(newRulerFunc) > 0 {
 		fn = newRulerFunc[0]
@@ -17,7 +17,7 @@ func NewRun(minDx, maxDx int, ft *font.Font, newRulerFunc ...func([]byte, *font.
 		delta:        32,
 		minDx:        minDx,
 		maxDx:        maxDx,
-		Font:         ft,
+		Face:         ft,
 		newRulerFunc: fn,
 		br:           fn(make([]byte, MaxBytes), ft),
 	}
@@ -26,7 +26,7 @@ func NewRun(minDx, maxDx int, ft *font.Font, newRulerFunc ...func([]byte, *font.
 // Run is a one-dimensional field of boxes. It can scan arbitrary text
 // into boxes with Bxscan().
 type Run struct {
-	*font.Font
+	font.Face
 	Nchars int64
 	Nlines int
 	Nalloc int
@@ -36,7 +36,7 @@ type Run struct {
 	minDx, maxDx int
 	delta        int
 
-	newRulerFunc func([]byte, *font.Font) Ruler
+	newRulerFunc func([]byte, font.Face) Ruler
 	br           Ruler
 }
 
@@ -60,11 +60,11 @@ func (f *Run) Count(nb int) int64 {
 // their data on the heap. If widthfn is not nill, it
 // becomes the new measuring function for the run. Boxes
 // in the run are not remeasured upon reset.
-func (f *Run) Reset(ft *font.Font) {
+func (f *Run) Reset(ft font.Face) {
 	f.Nbox = 0
 	f.Nchars = 0
 	if ft != nil {
-		f.Font = ft
+		f.Face = ft
 	}
 }
 
