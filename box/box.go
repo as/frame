@@ -3,10 +3,10 @@ package box
 const SLOP = 25
 
 type Box struct {
-	Width    int
-	Minwidth int
 	Nrune    int
 	Ptr      []byte
+	Width    int
+	Minwidth int
 }
 
 func (b *Box) Break() byte {

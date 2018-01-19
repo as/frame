@@ -3,7 +3,6 @@ package frame
 import (
 	"image"
 	"image/draw"
-	"log"
 )
 
 const (
@@ -69,11 +68,8 @@ func (f *Frame) inittick() {
 		linew = 1
 	}
 	linew2=linew2
-	log.Printf("Descent is %s", Descent(f.Font))
-	log.Printf("height is %s", Height(f.Font))
-	log.Printf("ascent is %s", Ascent(f.Font))
-	z0 := de+(he-as)+(he-as)
-	r := image.Rect(0, z0, boxw, he-(he-as)+Letting(f.Font)-1)
+	z0 := de+(he-as)+(he-as)/2
+	r := image.Rect(0, z0, boxw, he-(he-as)/2+Letting(f.Font)/2)
 	r = r.Sub(image.Pt(r.Dx()/2, 0))
 	f.tick = image.NewRGBA(r)
 	f.tickback = image.NewRGBA(r)
@@ -98,8 +94,8 @@ func (f *Frame) tickat(pt image.Point, ticked bool) {
 	if f.Ticked == ticked || f.tick == nil || !pt.In(f.Bounds().Inset(-1)) {
 		return
 	}
-	//pt.X -= 1
-	pt.Y -= Letting(f.Font) / 2
+	pt.X -= 1
+	pt.Y -= Letting(f.Font) / 4
 	r := f.tick.Bounds().Add(pt)
 	if r.Max.X > f.r.Max.X {
 		r.Max.X = f.r.Max.X

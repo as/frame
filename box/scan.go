@@ -5,72 +5,90 @@ package box
 func (r *Run) ensure(nb int) {
 	if nb == r.Nalloc {
 		r.Grow(r.delta)
-		if r.delta < 16384 {
+		if r.delta < 32768 {
 			r.delta *= 2
 		}
 	}
 }
 
 func (r *Run) Boxscan(s []byte, ymax int) {
-	//r.delta = 32
-	r.br.Reset(s)
-
-	for nb, nl := 0, 0; nl <= ymax; nb++ {
-		if _, _, err := r.br.Next(); err != nil {
+	r.Nchars+=int64(len(s))
+	i := 0
+	nb := 0
+	for nl := 0; nl <= ymax; nb++ {
+		if nb == r.Nalloc {
+			r.Grow(r.delta)
+			if r.delta < 16384 {
+				r.delta <<= 1
+			}
+		}
+		if i == len(s) {
 			break
 		}
-		r.ensure(nb)
-		if special(r.br.Last()[0]) {
-			nl += r.specialbox(nb, r.minDx, r.maxDx)
-		} else {
-			nl += r.plainbox(nb)
+		i++
+		c := s[i-1]
+		switch c { 
+		default:
+			for _, c = range s[i:] { 
+				if special(c) {
+					break
+				}
+				i++
+			}
+			r.Box[nb] = Box{
+				Nrune: i,
+				Ptr:   s[:i],
+				Width: r.measureWidth(s[:i]),
+			}
+		case '\t':
+			r.Box[nb] = Box{
+				Nrune:    -1,
+				Ptr:      s[:i],
+				Width:    r.minDx,
+				Minwidth: r.minDx,
+			}
+		case '\n':
+			r.Box[nb] = Box{
+				Nrune:    -1,
+				Ptr:      s[:i],
+				Width:    r.maxDx,
+			}
+			nl++
 		}
-		r.Nbox++
+		s = s[i:]
+		i = 0
 	}
+	r.Nchars-=int64(len(s))
+	r.Nbox += nb
 }
 
 func special(c byte) bool {
 	return c == '\t' || c == '\n'
 }
 
-func (r *Run) specialbox(nb int, min, max int) (nl int) {
-	c := r.br.Last()[0]
-	b := &r.Box[nb]
-	if c == '\n' {
-		b.Minwidth = 0
-		nl++
-	} else {
-		b.Minwidth = min
+func (r *Run) linebox(nb int) {
+	r.Box[nb] = Box{
+		Ptr:      r.br.Last(),
+		Minwidth: 0,
+		Nrune:    -1,
+		Width:    r.maxDx,
 	}
-	b.Ptr = []byte{c}
-	b.Nrune = -1
-	b.Width = max
-
-	if c == '\t' {
-		b.Width = min
-	}
-
-	r.Nchars++
-	r.br.Advance()
-	return
 }
 
-func (r *Run) plainbox(nb int) (nl int) {
-	for {
-		_, _, err := r.br.Next()
-		if err != nil {
-			break
-		}
-		if special(r.br.Last()[0]) || r.br.Len() >= MaxBytes {
-			r.br.Unread()
-			break
-		}
+func (r *Run) tabbox(nb int) {
+	r.Box[nb] = Box{
+		Ptr:      r.br.Last(),
+		Minwidth: r.minDx,
+		Nrune:    -1,
+		Width:    r.minDx,
 	}
-	b := &r.Box[nb]
-	b.Ptr = append([]byte{}, r.br.Bytes()...)
-	b.Width = r.br.Width()
-	b.Nrune = r.br.Len()
-	r.Nchars += int64(r.br.Len())
-	r.br.Advance()
-	return 0
+}
+
+func (r *Run) plainbox(nb int) {
+	rr := r.br.(*byteRuler)
+	r.Box[nb] = Box{
+		Width: rr.MeasureWidth(),
+		Nrune: rr.Len(),
+		Ptr:   rr.Last(),
+	}
 }
