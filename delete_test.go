@@ -14,19 +14,18 @@ var (
 	ft    = font.NewBasic(fsize)
 )
 
-func tconf() *Config{
+func tconf() *Config {
 	return &Config{
-		Font: font.NewBasic(fsize),
+		Font:  font.NewBasic(fsize),
 		Color: &A,
 	}
 }
-
 
 func abtest(r image.Rectangle) (fr0, fr1 *Frame, a, b *image.RGBA) {
 	a = image.NewRGBA(r)
 	b = image.NewRGBA(r)
 	fr0 = New(a, a.Bounds(), tconf())
-	fr1 =  New(b, b.Bounds(), tconf())
+	fr1 = New(b, b.Bounds(), tconf())
 	return fr0, fr1, a, b
 }
 

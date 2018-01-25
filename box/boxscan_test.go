@@ -13,11 +13,11 @@ var gomonoTTF, _ = truetype.Parse(gomono.TTF)
 
 func NewGoMono(size int) font.Face {
 	return truetype.NewFace(gomonoTTF, &truetype.Options{
-		SubPixelsX: 64,
-		SubPixelsY: 64,
+		SubPixelsX:        64,
+		SubPixelsY:        64,
 		GlyphCacheEntries: 32768,
-		Hinting:    font.HintingFull,
-		Size:       float64(size),
+		Hinting:           font.HintingFull,
+		Size:              float64(size),
 	})
 }
 

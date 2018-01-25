@@ -12,7 +12,7 @@ func (r *Run) ensure(nb int) {
 }
 
 func (r *Run) Boxscan(s []byte, ymax int) {
-	r.Nchars+=int64(len(s))
+	r.Nchars += int64(len(s))
 	i := 0
 	nb := 0
 	for nl := 0; nl <= ymax; nb++ {
@@ -27,9 +27,9 @@ func (r *Run) Boxscan(s []byte, ymax int) {
 		}
 		i++
 		c := s[i-1]
-		switch c { 
+		switch c {
 		default:
-			for _, c = range s[i:] { 
+			for _, c = range s[i:] {
 				if special(c) {
 					break
 				}
@@ -49,16 +49,16 @@ func (r *Run) Boxscan(s []byte, ymax int) {
 			}
 		case '\n':
 			r.Box[nb] = Box{
-				Nrune:    -1,
-				Ptr:      s[:i],
-				Width:    r.maxDx,
+				Nrune: -1,
+				Ptr:   s[:i],
+				Width: r.maxDx,
 			}
 			nl++
 		}
 		s = s[i:]
 		i = 0
 	}
-	r.Nchars-=int64(len(s))
+	r.Nchars -= int64(len(s))
 	r.Nbox += nb
 }
 

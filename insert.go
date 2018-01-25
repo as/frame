@@ -3,7 +3,6 @@ package frame
 import (
 	"image"
 	"image/draw"
-
 )
 
 // Insert inserts the contents of s at index p0 in
@@ -65,10 +64,10 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 }
 
 func (f *Frame) Draw(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, op draw.Op) {
-	if f == nil{
+	if f == nil {
 		panic("nil frame")
 	}
-	if f.Drawer == nil{
+	if f.Drawer == nil {
 		panic("nil drawer")
 	}
 	f.Drawer.Draw(dst, r, src, sp, op)

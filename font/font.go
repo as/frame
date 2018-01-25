@@ -41,7 +41,6 @@ type signature struct {
 	rgba
 }
 
-
 func NewGoRegular(size int) *Font {
 	return NewTTF(goregular.TTF, size)
 }

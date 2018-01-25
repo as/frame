@@ -8,6 +8,7 @@ import (
 )
 
 func StringBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *Font, s []byte, bg image.Image, bgp image.Point) int {
+	panic("StringBG")
 	if bg == nil {
 		return StringNBG(dst, p, src, sp, ft, s)
 	}
@@ -53,6 +54,7 @@ func StringBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft
 }
 
 func StringNBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *Font, s []byte) int {
+	panic("RuneNBG")
 	for _, b := range s {
 		mask := ft.Char(b)
 		if mask == nil {
@@ -66,6 +68,7 @@ func StringNBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, f
 }
 
 func RuneBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *Font, s []byte, bg image.Image, bgp image.Point) int {
+	panic("RuneNBG")
 	p.Y += ft.Size()
 	for {
 		b, size := utf8.DecodeRune(s)
@@ -85,6 +88,7 @@ func RuneBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *
 }
 
 func RuneNBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *Font, s []byte) int {
+	panic("RuneNBG")
 	p.Y += ft.Size()
 	for {
 		b, size := utf8.DecodeRune(s)

@@ -77,6 +77,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 		p0, p1 := int(p0), int(p1)
 		q0 := 0
 		trim := false
+		defer f.Flush()
 
 		// Step into box, start coloring it
 		// How much does this lambda slow things down?
@@ -85,7 +86,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			if pt = f.wrapMax(pt, (&f.Box[bn])); pt.Y > qt.Y {
 				r := image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y)
 				f.Draw(f.b, r, back, qt, f.op)
-				f.Flush(r)
+				//f.Flush(r)
 			}
 		}
 		nb := 0
@@ -117,7 +118,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			if f.PlainBox(nb) {
 				f.StringBG(f.b, pt, text, image.ZP, f.Font, ptr, nil, image.ZP)
 			}
-			f.Flush(image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+Dy(f.Font)))
+			//f.Flush(image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+Dy(f.Font)))
 			pt.X += w
 
 			if q0 += len(ptr); q0 >= p1 {

@@ -43,13 +43,11 @@ func (d *defaultDrawer) StringBG(dst draw.Image, p image.Point, src image.Image,
 		if !ok {
 			//panic("RuneBG")
 		}
-		//draw.Draw(dst, dr, bg, bgp, draw.Src)
+		if bg != nil {
+			draw.Draw(dst, dr, bg, bgp, draw.Src)
+		}
 		draw.DrawMask(dst, dr, src, sp, mask, maskp, draw.Over)
 		p.X += Fix(advance)
-		if len(s)-1 == 0 {
-			break
-		}
-		s = s[1:]
 	}
 	return p.X
 }

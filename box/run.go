@@ -21,13 +21,12 @@ func NewRun(minDx, maxDx int, ft font.Face, newRulerFunc ...func([]byte, font.Fa
 		newRulerFunc: fn,
 		br:           fn(make([]byte, MaxBytes), ft),
 	}
-	for i := range r.sizetab{
+	for i := range r.sizetab {
 		x, _ := ft.GlyphAdvance(rune(i))
 		r.sizetab[i] = Fix(x)
 	}
 	return r
 }
-
 
 // Run is a one-dimensional field of boxes. It can scan arbitrary text
 // into boxes with Bxscan().
@@ -44,12 +43,12 @@ type Run struct {
 
 	newRulerFunc func([]byte, font.Face) Ruler
 	br           Ruler
-	sizetab             [256]int
+	sizetab      [256]int
 }
 
-func (f *Run) measureWidth(s []byte) (width int){
-	for _, c := range s{
-		width+=f.sizetab[c]
+func (f *Run) measureWidth(s []byte) (width int) {
+	for _, c := range s {
+		width += f.sizetab[c]
 	}
 	return width
 }
@@ -161,16 +160,16 @@ func (f *Run) Truncate(b *Box, n int) {
 
 // Add adds n boxes after box bn, the rest are shifted up
 func (f *Run) Add(bn, n int) {
-//	if bn > f.Nbox {
-//		panic("Frame.Add")
-//	}
+	//	if bn > f.Nbox {
+	//		panic("Frame.Add")
+	//	}
 	if f.Nbox+n > f.Nalloc {
 		f.Grow(n + SLOP)
 	}
 	copy(f.Box[bn+n:], f.Box[bn:f.Nbox])
-//	for i := f.Nbox - 1; i >= bn; i-- {
-//		f.Box[i+n] = f.Box[i]
-//	}
+	//	for i := f.Nbox - 1; i >= bn; i-- {
+	//		f.Box[i+n] = f.Box[i]
+	//	}
 	f.Nbox += n
 }
 
@@ -206,9 +205,9 @@ func (f *Run) Grow(delta int) {
 
 // Dup copies the contents of box bn to box bn+1
 func (f *Run) Dup(bn int) {
-//	if f.Box[bn].Nrune < 0 {
-//		panic("Frame.Dup")
-//	}
+	//	if f.Box[bn].Nrune < 0 {
+	//		panic("Frame.Dup")
+	//	}
 	f.Add(bn, 1)
 	if f.Box[bn].Nrune >= 0 {
 		f.Box[bn+1].Ptr = append([]byte{}, f.Box[bn].Ptr...)

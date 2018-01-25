@@ -23,7 +23,7 @@ var (
 	ErrBadDst = errors.New("bad dst")
 )
 
-func New(dst draw.Image, r image.Rectangle, conf *Config) (*Frame) {
+func New(dst draw.Image, r image.Rectangle, conf *Config) *Frame {
 	if dst == nil {
 		return nil
 	}
@@ -37,7 +37,7 @@ func New(dst draw.Image, r image.Rectangle, conf *Config) (*Frame) {
 	f := &Frame{
 		Font:         conf.Font,
 		Color:        *conf.Color,
-		Drawer: conf.Drawer,
+		Drawer:       conf.Drawer,
 		Run:          box.NewRun(mintab, 5000, conf.Font),
 		newRulerFunc: box.NewByteRuler,
 		op:           draw.Src,
@@ -50,17 +50,16 @@ func New(dst draw.Image, r image.Rectangle, conf *Config) (*Frame) {
 	run := box.NewRun(mintab, 5000, conf.Font)
 	f.ir = &run
 	return f
-}	
+}
 
 // Frame is a write-only container for editable text
 type Frame struct {
 	box.Run
 	p0 int64
 	p1 int64
-	b draw.Image
-	r image.Rectangle
+	b  draw.Image
+	r  image.Rectangle
 	ir *box.Run
-
 
 	Font font.Face
 	Color
@@ -81,9 +80,9 @@ type Frame struct {
 	modified  bool
 	noredraw  bool
 
-	pts     [][2]image.Point
+	pts [][2]image.Point
 
-	flags int
+	flags        int
 	newRulerFunc func(s []byte, ft font.Face) box.Ruler
 }
 
@@ -116,29 +115,29 @@ func tabMinMax(ft font.Face, elastic bool) (min, max int) {
 }
 
 func newRuneFrame(r image.Rectangle, ft font.Face, b draw.Image, cols Color, flag ...int) *Frame {
-/*
-	fl := getflag(flag...)
-	mintab, maxtab := tabMinMax(ft, fl&FrElastic != 0)
+	/*
+		fl := getflag(flag...)
+		mintab, maxtab := tabMinMax(ft, fl&FrElastic != 0)
 
-	f := &Frame{
-		Font:         ft,
-		mintab:       mintab,
-		maxtab:       maxtab,
-		Color:        cols,
-		Run:          box.NewRun(mintab, 5000, ft, box.NewRuneRuler),
-		stringBG:     font.RuneBG,
-		stringNBG:    font.RuneNBG,
-		newRulerFunc: box.NewRuneRuler,
-		op:           draw.Src,
-		flags:        fl,
-	}
-	f.setrects(r, b)
-	f.inittick()
-	run := box.NewRun(mintab, 5000, ft, box.NewRuneRuler)
-	f.ir = &run
-	f.Drawer = drawcache.New()
-	return f
-*/
+		f := &Frame{
+			Font:         ft,
+			mintab:       mintab,
+			maxtab:       maxtab,
+			Color:        cols,
+			Run:          box.NewRun(mintab, 5000, ft, box.NewRuneRuler),
+			stringBG:     font.RuneBG,
+			stringNBG:    font.RuneNBG,
+			newRulerFunc: box.NewRuneRuler,
+			op:           draw.Src,
+			flags:        fl,
+		}
+		f.setrects(r, b)
+		f.inittick()
+		run := box.NewRun(mintab, 5000, ft, box.NewRuneRuler)
+		f.ir = &run
+		f.Drawer = drawcache.New()
+		return f
+	*/
 	panic("disabled")
 }
 

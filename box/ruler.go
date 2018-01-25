@@ -37,7 +37,7 @@ type byteRuler struct {
 
 func NewByteRuler(b []byte, ft font.Face) Ruler {
 	br := &byteRuler{Face: ft, b: b}
-	for i := range br.sizetab{
+	for i := range br.sizetab {
 		x, _ := br.Face.GlyphAdvance(rune(i))
 		br.sizetab[i] = Fix(x)
 	}
@@ -48,9 +48,9 @@ func (bs *byteRuler) MeasureByte(b byte) int {
 	return bs.sizetab[b]
 }
 
-func (bs *byteRuler) measureWidth(s []byte) (width int){
-	for _, c := range s{
-		width+=bs.sizetab[c]
+func (bs *byteRuler) measureWidth(s []byte) (width int) {
+	for _, c := range s {
+		width += bs.sizetab[c]
 	}
 	return width
 }
@@ -58,15 +58,15 @@ func (bs *byteRuler) measureWidth(s []byte) (width int){
 func (bs *byteRuler) Bytes() []byte { return bs.b[:bs.i] }
 
 func (bs *byteRuler) MeasureWidth() (width int) {
-	for _, c := range bs.b[:bs.i]{
-		width+=bs.sizetab[c] // bs.MeasureByte(c)
+	for _, c := range bs.b[:bs.i] {
+		width += bs.sizetab[c] // bs.MeasureByte(c)
 	}
 	return width
 }
 func (bs *byteRuler) Chop() []byte {
 	b := bs.b[:bs.i]
 	bs.b = bs.b[bs.i:]
-	bs.i=0
+	bs.i = 0
 	return b
 }
 func (bs *byteRuler) Advance() (err error) {
@@ -77,23 +77,23 @@ func (bs *byteRuler) Advance() (err error) {
 	bs.i = 0
 	return nil
 }
-func (bs *byteRuler) Run(){
-	for _, c := range bs.b[bs.i:] {//bs.i != len(bs.b){
-		if special(c){
+func (bs *byteRuler) Run() {
+	for _, c := range bs.b[bs.i:] { //bs.i != len(bs.b){
+		if special(c) {
 			return
 		}
 		bs.i++
 	}
 }
 
-func (bs *byteRuler) Scan() bool{
-	if bs.i == len(bs.b){
+func (bs *byteRuler) Scan() bool {
+	if bs.i == len(bs.b) {
 		return false
 	}
-	bs.i++ 
+	bs.i++
 	return true
 }
-func (bs *byteRuler) Value() byte{
+func (bs *byteRuler) Value() byte {
 	return bs.b[bs.i-1]
 }
 
@@ -110,7 +110,7 @@ func (bs *byteRuler) Next() (size, widthPx int, err error) {
 }
 
 func (bs *byteRuler) Last() []byte {
-	return bs.b[: bs.i]
+	return bs.b[:bs.i]
 }
 func (bs *byteRuler) Len() int   { return bs.i }
 func (bs *byteRuler) Width() int { return bs.w }
@@ -171,7 +171,6 @@ func NewRuneRuler(b []byte, ft font.Face) Ruler {
 
 func (bs *runeRuler) Bytes() []byte { return bs.b[:bs.i] }
 
-
 func (bs *runeRuler) Next() (size, widthPx int, err error) {
 	if bs.i == len(bs.b) {
 		return 0, 0, io.EOF
@@ -204,7 +203,6 @@ func (bs *runeRuler) Unread() (size, widthPx int, err error) {
 	bs.lastSize = -bs.lastSize
 	return lsz, bs.lastWidth, nil
 }
-
 
 func (bs *runeRuler) Last() []byte {
 	//	log.Printf("called Last: bytes=%s\n\tbs.i=%d\n\tlastsize=%d\n\n",bs.b, bs.i, bs.lastSize)

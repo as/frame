@@ -97,6 +97,11 @@ func StaticFace(f font.Face) font.Face {
 	}
 }
 
+func convert(c color.Color) color.RGBA {
+	r, g, b, a := c.RGBA()
+	return color.RGBA{byte(r >> 8), byte(g >> 8), byte(b >> 8), byte(a >> 8)}
+}
+
 type signature struct {
 	b  byte
 	fg color.RGBA
@@ -108,15 +113,16 @@ type staticFace struct {
 	font.Face
 }
 
-func (s *staticFace) RawGlyph(b byte, fg color.RGBA, bg color.RGBA) image.Image {
-	if img, ok := s.cache[signature{b, fg, bg}]; ok {
+func (s *staticFace) RawGlyph(b byte, fg, bg color.Color) image.Image {
+	sig := signature{b, convert(fg), convert(bg)}
+	if img, ok := s.cache[sig]; ok {
 		return img
 	}
 	mask, r := s.genChar(b)
 	img := image.NewRGBA(r)
 	draw.Draw(img, img.Bounds(), image.NewUniform(bg), image.ZP, draw.Src)
 	draw.DrawMask(img, img.Bounds(), image.NewUniform(fg), image.ZP, mask, r.Min, draw.Over)
-	s.cache[signature{b, fg, bg}] = img
+	s.cache[sig] = img
 	return img
 }
 func (f *staticFace) genChar(b byte) (*image.Alpha, image.Rectangle) {
