@@ -23,23 +23,38 @@ func (f *Frame) grid(pt image.Point) image.Point {
 	}
 	return pt
 }
-
 func (f *Frame) pointOf(p int64, pt image.Point, bn int) (x image.Point) {
-	for _, b := range f.Box[bn:f.Nbox] {
-		pt = f.wrapMax(pt, &b)
-		l := int64(b.Len())
-		if p >= l {
-			p -= l
-			pt = f.advance(pt, &b)
-			continue
-		}
-		if b.Nrune < 0 {
+	for ; bn < f.Nbox; bn++ {
+		b := &f.Box[bn]
+		pt = f.wrapMax(pt, b)
+		l := b.Len()
+		if p < int64(l) {
+			if b.Nrune > 0 {
+				ptr := b.Ptr
+				bsb := len(ptr)
+				i := 0
+				for p > 0 {
+					if bsb == i {
+						break
+					}
+					size := 1
+					widthPx := f.Font.Dx(ptr[i : i+size])
+					i += size
+					p -= int64(size)
+					pt.X += widthPx
+					if pt.X > f.r.Max.X {
+						panic("PtOfCharPtBox")
+					}
+				}
+			}
 			break
 		}
-		pt.X += f.Font.Dx(b.Ptr[:p])
+		p -= int64(l)
+		pt = f.advance(pt, b)
 	}
 	return pt
 }
+
 func (f *Frame) pointOfBox(p int64, nb int) (pt image.Point) {
 	Nbox := f.Nbox
 	f.Nbox = nb

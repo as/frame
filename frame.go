@@ -37,7 +37,7 @@ func (c *Config) check() *Config {
 		c.Color = &A
 	}
 	if c.Font == nil {
-		c.Font = NewCache(NewGoMono(11))
+		c.Font = NewGoMono(11)
 	}
 	if c.Drawer == nil {
 		c.Drawer = &defaultDrawer{}
@@ -67,7 +67,7 @@ func New(dst draw.Image, r image.Rectangle, conf *Config) *Frame {
 		Font:   face,
 		Color:  *conf.Color,
 		Drawer: conf.Drawer,
-		Run:    box.NewRun(mintab, 5000, conf.Font),
+		Run:    box.NewRun(mintab, 5000, face),
 		op:     draw.Src,
 		mintab: mintab,
 		maxtab: maxtab,
@@ -75,7 +75,7 @@ func New(dst draw.Image, r image.Rectangle, conf *Config) *Frame {
 	}
 	f.setrects(r, dst)
 	f.inittick()
-	run := box.NewRun(mintab, 5000, conf.Font)
+	run := box.NewRun(mintab, 5000, face)
 	f.ir = &run
 	return f
 }
@@ -154,7 +154,6 @@ func newRuneFrame(r image.Rectangle, ft font.Face, b draw.Image, cols Color, fla
 			Run:          box.NewRun(mintab, 5000, ft, box.NewRuneRuler),
 			stringBG:     font.RuneBG,
 			stringNBG:    font.RuneNBG,
-			newRulerFunc: box.NewRuneRuler,
 			op:           draw.Src,
 			flags:        fl,
 		}
@@ -218,7 +217,7 @@ func (f *Frame) Reset(r image.Rectangle, b *image.RGBA, ft font.Face) {
 
 func (f *Frame) SetFont(ft font.Face) {
 	f.Font = Open(ft)
-	f.Run.Reset(ft)
+	f.Run.Reset(f.Font)
 	f.Refresh()
 }
 

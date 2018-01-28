@@ -4,29 +4,15 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/golang/freetype/truetype"
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/gofont/gomono"
+	. "github.com/as/font"
 )
-
-var gomonoTTF, _ = truetype.Parse(gomono.TTF)
-
-func NewGoMono(size int) font.Face {
-	return truetype.NewFace(gomonoTTF, &truetype.Options{
-		SubPixelsX:        64,
-		SubPixelsY:        64,
-		GlyphCacheEntries: 32768,
-		Hinting:           font.HintingFull,
-		Size:              float64(size),
-	})
-}
 
 var fsize = 11
 
-func genBench(b *testing.B, in []byte, min, max int, fn func(int) font.Face, ftsize int, bxceil int) {
+func genBench(b *testing.B, in []byte, min, max int, fn func(int) Face, ftsize int, bxceil int) {
 	b.Helper()
 	b.SetBytes(int64(len(in)))
-	r := NewRun(min, max)
+	r := NewRun(min, max, NewCache(fn(ftsize)))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r.Boxscan(in, bxceil)

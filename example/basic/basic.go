@@ -38,10 +38,6 @@ func main() {
 			dirty = false
 		}
 
-		fr.Insert([]byte("This is basic example of an editable text frame.\n"), fr.Len())
-		fr.Insert([]byte("You can edit this text with the mouse.\n"), fr.Len())
-		fr.Insert([]byte("Or keyboard.\n"), fr.Len())
-
 		for {
 			switch e := wind.NextEvent().(type) {
 			case mouse.Event:

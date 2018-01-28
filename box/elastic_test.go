@@ -1,12 +1,12 @@
 package box
 
 import (
-	"github.com/as/frame/font"
+	. "github.com/as/font"
 	"testing"
 )
 
 func runwith(s string) *Run {
-	r := NewRun(5, 5000, font.NewBasic(fsize))
+	r := NewRun(5, 5000, NewGoMono(fsize))
 	r.Boxscan([]byte(s), 1024)
 	return &r
 }
@@ -82,12 +82,12 @@ func TestStartCell(t *testing.T) {
 */
 func TestStartCell2(t *testing.T) {
 	r := runwith("\nAAA\tBBB\tCCC")
-	r.DumpBoxes()
+	//r.DumpBoxes()
 	checkbox(t, "10", r.EndCell(3), 6)
 	checkbox(t, "20", r.EndLine(3), 6)
 	checkbox(t, `\nAAA\tBBB\tCCC`, r.StartCell(3), 1)
 	r = runwith("AAA\tBBB\tCCC")
-	r.DumpBoxes()
+	//r.DumpBoxes()
 	checkbox(t, "10", r.EndCell(3), 5)
 	checkbox(t, "20", r.EndLine(3), 5)
 	checkbox(t, `AAA\tBBB\tCCC`, r.StartCell(2), 0)

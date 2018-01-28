@@ -2,9 +2,9 @@ package box
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/as/font"
-	"golang.org/x/image/math/fixed"
 )
 
 // MaxBytes is the largest capacity of bytes in a box
@@ -12,7 +12,7 @@ var MaxBytes = 256 + 3
 
 func NewRun(minDx, maxDx int, ft font.Face) Run {
 	r := Run{
-		delta: 32,
+		delta: 132,
 		minDx: minDx,
 		maxDx: maxDx,
 		Face:  ft,
@@ -85,7 +85,6 @@ func (f *Run) Find(bn int, p, q int64) int {
 }
 
 func (f *Run) DumpBoxes() {
-	return
 	fmt.Println("dumping boxes")
 	fmt.Printf("nboxes: %d\n", f.Nbox)
 	fmt.Printf("nalloc: %d\n", f.Nalloc)
@@ -128,15 +127,16 @@ func (f *Run) Truncate(b *Box, n int) {
 		panic("Truncate")
 	}
 	b.Nrune -= n
+	log.Printf("box %#v\n", b)
 	b.Ptr = b.Ptr[:b.Nrune]
 	b.Width = f.MeasureBytes(b.Ptr)
 }
 
 // Add adds n boxes after box bn, the rest are shifted up
 func (f *Run) Add(bn, n int) {
-	//	if bn > f.Nbox {
-	//		panic("Frame.Add")
-	//	}
+	if bn > f.Nbox {
+		panic("Frame.Add")
+	}
 	if f.Nbox+n > f.Nalloc {
 		f.Grow(n + SLOP)
 	}

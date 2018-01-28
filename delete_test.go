@@ -2,7 +2,7 @@ package frame
 
 import (
 	"github.com/as/etch"
-	"github.com/as/frame/font"
+	"github.com/as/font"
 	"image"
 	"image/draw"
 	"testing"
@@ -10,8 +10,7 @@ import (
 
 var (
 	R     = image.Rect(0, 0, 232, 232)
-	fsize = 555
-	ft    = font.NewBasic(fsize)
+	fsize = 11
 )
 
 func tconf() *Config {

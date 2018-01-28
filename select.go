@@ -69,7 +69,6 @@ func (f *Frame) Select(p0, p1 int64) {
 // and uses the flush functions to draw a live selection. Control
 // is transfered back to the caller after a release event is processed.
 func (fr *Frame) Sweep(ep EventPipe, flush func()) {
-	panic("Sweep")
 	p0, p1 := fr.Dot()
 Loop:
 	for {

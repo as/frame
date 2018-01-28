@@ -19,7 +19,7 @@ func (r *Run) Boxscan(s []byte, ymax int) {
 		if nb == r.Nalloc {
 			r.Grow(r.delta)
 			if r.delta < 16384 {
-				r.delta <<= 1
+				r.delta *= 2
 			}
 		}
 		if i == len(s) {
