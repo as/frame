@@ -2,28 +2,20 @@ package box
 
 import (
 	"fmt"
-	"golang.org/x/image/font"
+
+	"github.com/as/font"
+	"golang.org/x/image/math/fixed"
 )
 
 // MaxBytes is the largest capacity of bytes in a box
 var MaxBytes = 256 + 3
 
-func NewRun(minDx, maxDx int, ft font.Face, newRulerFunc ...func([]byte, font.Face) Ruler) Run {
-	fn := NewByteRuler
-	if len(newRulerFunc) > 0 {
-		fn = newRulerFunc[0]
-	}
+func NewRun(minDx, maxDx int, ft font.Face) Run {
 	r := Run{
-		delta:        32,
-		minDx:        minDx,
-		maxDx:        maxDx,
-		Face:         ft,
-		newRulerFunc: fn,
-		br:           fn(make([]byte, MaxBytes), ft),
-	}
-	for i := range r.sizetab {
-		x, _ := ft.GlyphAdvance(rune(i))
-		r.sizetab[i] = Fix(x)
+		delta: 32,
+		minDx: minDx,
+		maxDx: maxDx,
+		Face:  ft,
 	}
 	return r
 }
@@ -34,23 +26,16 @@ type Run struct {
 	Box    []Box
 	Nalloc int
 	Nbox   int
-	font.Face
+	Face   font.Face
 	Nchars int64
 	Nlines int
 
 	minDx, maxDx int
 	delta        int
-
-	newRulerFunc func([]byte, font.Face) Ruler
-	br           Ruler
-	sizetab      [256]int
 }
 
-func (f *Run) measureWidth(s []byte) (width int) {
-	for _, c := range s {
-		width += f.sizetab[c]
-	}
-	return width
+func (f *Run) MeasureBytes(s []byte) (width int) {
+	return f.Face.Dx(s)
 }
 func (f *Run) Combine(g *Run, n int) {
 	b := g.Box[:g.Nbox]
@@ -127,17 +112,6 @@ func (f *Run) Split(bn, n int) {
 	f.Chop(&f.Box[bn+1], n)
 }
 
-func (f *Run) MeasureBytes(p []byte) int {
-	f.br.Reset(p) //f.newRulerFunc(p, f.Font)
-	for {
-		_, _, err := f.br.Next()
-		if err != nil {
-			break
-		}
-	}
-	return f.br.Width()
-}
-
 // Chop drops the first n chars in box b
 func (f *Run) Chop(b *Box, n int) {
 	if b.Nrune < 0 || b.Nrune < n {
@@ -146,7 +120,7 @@ func (f *Run) Chop(b *Box, n int) {
 	copy(b.Ptr, b.Ptr[n:])
 	b.Nrune -= n
 	b.Ptr = b.Ptr[:b.Nrune]
-	b.Width = f.measureWidth(b.Ptr)
+	b.Width = f.MeasureBytes(b.Ptr)
 }
 
 func (f *Run) Truncate(b *Box, n int) {

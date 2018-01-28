@@ -31,18 +31,13 @@ func (f *Frame) IndexOf(pt image.Point) int64 {
 			if b.Nrune < 0 {
 				qt = f.advance(qt, b)
 			} else {
-				bs := f.newRulerFunc(b.Ptr, f.Font)
-				for {
-					size, width, err := bs.Next()
-					if err != nil {
-						break
-					}
-					qt.X += width
-					if qt.X > pt.X {
-						break
-					}
-					p += int64(size)
+				step := f.Font.Fits(b.Ptr, qt.X-pt.X)
+				if step == len(b.Ptr) {
+					qt.X += b.Width
+				} else {
+					qt.X += f.Font.Dx(b.Ptr[:step])
 				}
+				p += int64(step)
 			}
 		} else {
 			p += int64(b.Len())

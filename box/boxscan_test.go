@@ -26,7 +26,7 @@ var fsize = 11
 func genBench(b *testing.B, in []byte, min, max int, fn func(int) font.Face, ftsize int, bxceil int) {
 	b.Helper()
 	b.SetBytes(int64(len(in)))
-	r := NewRun(min, max, fn(ftsize))
+	r := NewRun(min, max)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r.Boxscan(in, bxceil)

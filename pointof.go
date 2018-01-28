@@ -16,7 +16,7 @@ func (f *Frame) PointOf(p int64) image.Point {
 
 func (f *Frame) grid(pt image.Point) image.Point {
 	pt.Y -= f.r.Min.Y
-	pt.Y -= pt.Y % Dy(f.Font)
+	pt.Y -= pt.Y % f.Font.Dy()
 	pt.Y += f.r.Min.Y
 	if pt.X > f.r.Max.X {
 		pt.X = f.r.Max.X
@@ -25,29 +25,18 @@ func (f *Frame) grid(pt image.Point) image.Point {
 }
 
 func (f *Frame) pointOf(p int64, pt image.Point, bn int) (x image.Point) {
-	for ; bn < f.Nbox; bn++ {
-		b := &f.Box[bn]
-		pt = f.wrapMax(pt, b)
-		l := b.Len()
-		if p < int64(l) {
-			if b.Nrune > 0 {
-				br := f.newRulerFunc(b.Ptr, f.Font)
-				for p > 0 {
-					size, width, err := br.Next()
-					if err != nil {
-						break
-					}
-					p -= int64(size)
-					pt.X += width
-					if pt.X > f.r.Max.X {
-						panic("PtOfCharPtBox")
-					}
-				}
-			}
+	for _, b := range f.Box[bn:f.Nbox] {
+		pt = f.wrapMax(pt, &b)
+		l := int64(b.Len())
+		if p >= l {
+			p -= l
+			pt = f.advance(pt, &b)
+			continue
+		}
+		if b.Nrune < 0 {
 			break
 		}
-		p -= int64(l)
-		pt = f.advance(pt, b)
+		pt.X += f.Font.Dx(b.Ptr[:p])
 	}
 	return pt
 }

@@ -2,6 +2,7 @@ package frame
 
 import (
 	"image"
+	"log"
 
 	"github.com/as/frame/box"
 )
@@ -31,7 +32,7 @@ func (f *Frame) wrapMin(pt image.Point, b *box.Box) image.Point {
 
 func (f *Frame) wrap(pt image.Point) image.Point {
 	pt.X = f.r.Min.X
-	pt.Y += Dy(f.Font)
+	pt.Y += f.Font.Dy()
 	return pt
 }
 
@@ -46,6 +47,7 @@ func (f *Frame) advance(pt image.Point, b *box.Box) (x image.Point) {
 
 // fits returns the number of runes that can fit on the line at pt. A newline yields 1.
 func (f *Frame) fits(pt image.Point, b *box.Box) (nr int) {
+	log.Printf("pt %s box %#v\n", pt, b)
 	left := f.r.Max.X - pt.X
 	if b.Nrune < 0 {
 		if b.Minwidth <= left {
@@ -56,18 +58,7 @@ func (f *Frame) fits(pt image.Point, b *box.Box) (nr int) {
 	if left >= b.Width {
 		return b.Nrune
 	}
-	for bx := f.newRulerFunc(b.Ptr, f.Font); ; {
-		_, px, err := bx.Next()
-		if err != nil {
-			panic(err)
-		}
-		left -= px
-		if left < 0 {
-			return nr
-		}
-		nr++
-	}
-	return
+	return f.Font.Fits(b.Ptr, left)
 }
 func (f *Frame) plot(pt image.Point, b *box.Box) int {
 	b.Width = f.project(pt, b)

@@ -1,6 +1,7 @@
 package frame
 
 import (
+	. "github.com/as/font"
 	"image"
 	"strings"
 	"testing"
@@ -55,7 +56,7 @@ type benchOp struct {
 	at   int64
 }
 
-func BenchmarkInsert1(b *testing.B) {
+func BenchmarkInsertDelete(b *testing.B) {
 	dst := image.NewRGBA(image.Rect(0, 0, 1024, 768))
 	for _, v := range []benchOp{
 		{"1", "a", 0},
@@ -69,13 +70,64 @@ func BenchmarkInsert1(b *testing.B) {
 			h := New(dst, dst.Bounds(), tconf())
 			bb := []byte(v.data)
 			b.SetBytes(int64(len(bb)))
-			b.StopTimer()
-			b.ResetTimer()
 			at := v.at
+			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				b.StartTimer()
 				h.Insert(bb, at)
-				b.StopTimer()
+				h.Delete(0, at)
+			}
+		})
+	}
+}
+
+func BenchmarkInsertDeleteStaticFace(b *testing.B) {
+	dst := image.NewRGBA(image.Rect(0, 0, 1024, 768))
+	for _, v := range []benchOp{
+		{"1", "a", 0},
+		{"10", strings.Repeat("a", 10), 0},
+		{"100", strings.Repeat("a", 100), 0},
+		{"1000", strings.Repeat("a", 1000), 0},
+		{"10000", strings.Repeat("a", 10000), 0},
+		{"100000", strings.Repeat("a", 100000), 0},
+	} {
+		b.Run(v.name, func(b *testing.B) {
+			h := New(dst, dst.Bounds(), &Config{
+				Font:  NewCache(NewGoMono(fsize)),
+				Color: &A,
+			})
+			bb := []byte(v.data)
+			b.SetBytes(int64(len(bb)))
+			at := v.at
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				h.Insert(bb, at)
+				h.Delete(0, at)
+			}
+		})
+	}
+}
+
+func BenchmarkInsertDeleteBoxCache(b *testing.B) {
+	dst := image.NewRGBA(image.Rect(0, 0, 1024, 768))
+	for _, v := range []benchOp{
+		{"1", "a", 0},
+		{"10", strings.Repeat("a", 10), 0},
+		{"100", strings.Repeat("a", 100), 0},
+		{"1000", strings.Repeat("a", 1000), 0},
+		{"10000", strings.Repeat("a", 10000), 0},
+		{"100000", strings.Repeat("a", 100000), 0},
+	} {
+		b.Run(v.name, func(b *testing.B) {
+			h := New(dst, dst.Bounds(), &Config{
+				Font:  NewCliche(NewGoMono(fsize)),
+				Color: &A,
+			})
+			bb := []byte(v.data)
+			b.SetBytes(int64(len(bb)))
+			at := v.at
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				h.Insert(bb, at)
 				h.Delete(0, at)
 			}
 		})

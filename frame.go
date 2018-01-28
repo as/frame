@@ -2,11 +2,11 @@ package frame
 
 import (
 	"errors"
-	"image"
-	"image/draw"
-
+	. "github.com/as/font"
 	"github.com/as/frame/box"
 	"golang.org/x/image/font"
+	"image"
+	"image/draw"
 )
 
 var (
@@ -23,6 +23,28 @@ var (
 	ErrBadDst = errors.New("bad dst")
 )
 
+func (f *Frame) Config() *Config {
+	return &Config{
+		Flag:   f.flags,
+		Color:  &f.Color,
+		Font:   f.Font,
+		Drawer: f.Drawer,
+	}
+}
+
+func (c *Config) check() *Config {
+	if c.Color == nil {
+		c.Color = &A
+	}
+	if c.Font == nil {
+		c.Font = NewCache(NewGoMono(11))
+	}
+	if c.Drawer == nil {
+		c.Drawer = &defaultDrawer{}
+	}
+	return c
+}
+
 func New(dst draw.Image, r image.Rectangle, conf *Config) *Frame {
 	if dst == nil {
 		return nil
@@ -32,18 +54,24 @@ func New(dst draw.Image, r image.Rectangle, conf *Config) *Frame {
 	}
 	conf.check()
 	fl := conf.Flag
-	mintab, maxtab := tabMinMax(conf.Font, fl&FrElastic != 0)
+	var face Face
+	switch f := conf.Font.(type) {
+	case Face:
+		face = f
+	case font.Face:
+		face = Open(f)
+	}
+	mintab, maxtab := tabMinMax(face, fl&FrElastic != 0)
 
 	f := &Frame{
-		Font:         conf.Font,
-		Color:        *conf.Color,
-		Drawer:       conf.Drawer,
-		Run:          box.NewRun(mintab, 5000, conf.Font),
-		newRulerFunc: box.NewByteRuler,
-		op:           draw.Src,
-		mintab:       mintab,
-		maxtab:       maxtab,
-		flags:        fl,
+		Font:   face,
+		Color:  *conf.Color,
+		Drawer: conf.Drawer,
+		Run:    box.NewRun(mintab, 5000, conf.Font),
+		op:     draw.Src,
+		mintab: mintab,
+		maxtab: maxtab,
+		flags:  fl,
 	}
 	f.setrects(r, dst)
 	f.inittick()
@@ -61,7 +89,7 @@ type Frame struct {
 	r  image.Rectangle
 	ir *box.Run
 
-	Font font.Face
+	Font Face
 	Color
 	Ticked bool
 	Scroll func(int)
@@ -82,8 +110,7 @@ type Frame struct {
 
 	pts [][2]image.Point
 
-	flags        int
-	newRulerFunc func(s []byte, ft font.Face) box.Ruler
+	flags int
 }
 
 // Flags returns the flags currently set for the frame
@@ -190,7 +217,7 @@ func (f *Frame) Reset(r image.Rectangle, b *image.RGBA, ft font.Face) {
 }
 
 func (f *Frame) SetFont(ft font.Face) {
-	f.Font = ft
+	f.Font = Open(ft)
 	f.Run.Reset(ft)
 	f.Refresh()
 }
@@ -228,8 +255,9 @@ func (f *Frame) Dot() (p0, p1 int64) {
 func (f *Frame) setrects(r image.Rectangle, b draw.Image) {
 	f.b = b
 	f.r = r
-	f.r.Max.Y -= f.r.Dy() % Dy(f.Font)
-	f.maxlines = f.r.Dy() / Dy(f.Font)
+	h := f.Font.Dy()
+	f.r.Max.Y -= f.r.Dy() % h
+	f.maxlines = f.r.Dy() / h
 }
 
 func (f *Frame) clear(freeall bool) {

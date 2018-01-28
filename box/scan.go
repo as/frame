@@ -38,7 +38,7 @@ func (r *Run) Boxscan(s []byte, ymax int) {
 			r.Box[nb] = Box{
 				Nrune: i,
 				Ptr:   s[:i],
-				Width: r.measureWidth(s[:i]),
+				Width: r.MeasureBytes(s[:i]),
 			}
 		case '\t':
 			r.Box[nb] = Box{
@@ -64,31 +64,4 @@ func (r *Run) Boxscan(s []byte, ymax int) {
 
 func special(c byte) bool {
 	return c == '\t' || c == '\n'
-}
-
-func (r *Run) linebox(nb int) {
-	r.Box[nb] = Box{
-		Ptr:      r.br.Last(),
-		Minwidth: 0,
-		Nrune:    -1,
-		Width:    r.maxDx,
-	}
-}
-
-func (r *Run) tabbox(nb int) {
-	r.Box[nb] = Box{
-		Ptr:      r.br.Last(),
-		Minwidth: r.minDx,
-		Nrune:    -1,
-		Width:    r.minDx,
-	}
-}
-
-func (r *Run) plainbox(nb int) {
-	rr := r.br.(*byteRuler)
-	r.Box[nb] = Box{
-		Width: rr.MeasureWidth(),
-		Nrune: rr.Len(),
-		Ptr:   rr.Last(),
-	}
 }

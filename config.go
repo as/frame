@@ -2,14 +2,10 @@ package frame
 
 import (
 	"image"
-	"image/color"
 	"image/draw"
 	"unicode"
 
-	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
-	"golang.org/x/image/font/gofont/gomono"
-	"golang.org/x/image/math/fixed"
 )
 
 type Config struct {
@@ -20,121 +16,30 @@ type Config struct {
 	Drawer Drawer
 }
 
-func (c *Config) check() *Config {
-	if c.Color == nil {
-		c.Color = &A
-	}
-	if c.Font == nil {
-		c.Font = StaticFace(NewGoMono(11))
-	}
-	if c.Drawer == nil {
-		c.Drawer = &defaultDrawer{}
-	}
-	return c
-}
+// Drawer implements the set of methods a frame needs to draw on a draw.Image. The frame's default behavior is to use
+// the native image/draw package and x/exp/font packages to satisfy this interface.
+type Drawer interface {
+	Draw(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, op draw.Op)
+	//DrawMask(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, mask image.Image, mp image.Point, op draw.Op)
 
-func (f *Frame) Config() *Config {
-	return &Config{
-		Flag:   f.flags,
-		Color:  &f.Color,
-		Font:   f.Font,
-		Drawer: f.Drawer,
-	}
-}
+	// StringBG draws a string to dst at point p
+	StringBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft font.Face, s []byte, bg image.Image, bgp image.Point) int
 
-var gomonoTTF, _ = truetype.Parse(gomono.TTF)
+	// Flush requests that prior calls to the draw and string methods are flushed from an underlying soft-screen. The list of rectangles provide
+	// optional residency information. Implementations may refresh a superset of r, or ignore it entirely, as long as the entire region is
+	// refreshed
+	Flush(r ...image.Rectangle) error
 
-func Letting(f font.Face) int {
-	if f, ok := f.(*staticFace); ok {
-		return f.dy
-	}
-	return Dy(f) / 2
+	// Cache returns the set of rectangles that have been updates but not flushed. This method exists
+	// temporarily and will be removed from this implementation. Frame does not use it.
+	//Cache() []image.Rectangle
 }
-func Height(f font.Face) int {
-	if f, ok := f.(*staticFace); ok {
-		return f.h
-	}
-	return f.Metrics().Height.Ceil()
+type Palette struct {
+	Text, Back image.Image
 }
-func Ascent(f font.Face) int {
-	if f, ok := f.(*staticFace); ok {
-		return f.a
-	}
-	return f.Metrics().Ascent.Ceil()
-}
-func Descent(f font.Face) int {
-	if f, ok := f.(*staticFace); ok {
-		return f.d
-	}
-	return f.Metrics().Descent.Ceil()
-}
-func Dy(f font.Face) int {
-	if f, ok := f.(*staticFace); ok {
-		return f.dy
-	}
-	return Height(f) + Height(f)/2
-}
-func NewGoMono(size int) font.Face {
-	return truetype.NewFace(gomonoTTF, &truetype.Options{
-		SubPixelsX: 64,
-		SubPixelsY: 64,
-		Size:       float64(size),
-	})
-}
-
-func StaticFace(f font.Face) font.Face {
-	if _, ok := f.(*staticFace); ok {
-		return f
-	}
-	return &staticFace{
-		a:     Ascent(f),
-		d:     Descent(f),
-		h:     Height(f),
-		l:     Letting(f),
-		dy:    Height(f) + Height(f)/2,
-		cache: make(map[signature]*image.RGBA),
-		Face:  f,
-	}
-}
-
-func convert(c color.Color) color.RGBA {
-	r, g, b, a := c.RGBA()
-	return color.RGBA{byte(r >> 8), byte(g >> 8), byte(b >> 8), byte(a >> 8)}
-}
-
-type signature struct {
-	b  byte
-	fg color.RGBA
-	bg color.RGBA
-}
-type staticFace struct {
-	h, a, d, l, dy int
-	cache          map[signature]*image.RGBA
-	font.Face
-}
-
-func (s *staticFace) RawGlyph(b byte, fg, bg color.Color) image.Image {
-	sig := signature{b, convert(fg), convert(bg)}
-	if img, ok := s.cache[sig]; ok {
-		return img
-	}
-	mask, r := s.genChar(b)
-	img := image.NewRGBA(r)
-	draw.Draw(img, img.Bounds(), image.NewUniform(bg), image.ZP, draw.Src)
-	draw.DrawMask(img, img.Bounds(), image.NewUniform(fg), image.ZP, mask, r.Min, draw.Over)
-	s.cache[sig] = img
-	return img
-}
-func (f *staticFace) genChar(b byte) (*image.Alpha, image.Rectangle) {
-	dr, mask, maskp, adv, _ := f.Face.Glyph(fixed.P(0, Height(f.Face)), rune(b))
-	r := image.Rect(0, 0, Fix(adv), Dy(f.Face))
-	m := image.NewAlpha(r)
-	r = r.Add(image.Pt(dr.Min.X, dr.Min.Y))
-	draw.Draw(m, r, mask, maskp, draw.Src)
-	return m, m.Bounds()
-}
-func StaticGoMono(size int) font.Face {
-	return StaticFace(NewGoMono(size))
+type Color struct {
+	Palette
+	Hi Palette
 }
 
 func Printable(b byte) bool {
