@@ -76,7 +76,7 @@ func (f *Frame) inittick() {
 	draw.Draw(f.tick, f.tick.Bounds().Inset(1), f.Color.Hi.Back, image.ZP, draw.Src)
 	tbg := f.tickbg()
 	drawtick := func(x0, y0, x1, y1 int) {
-		draw.Draw(f.tick, image.Rect(x0, y0, x1, y1), tbg, image.ZP, draw.Src)
+		draw.Draw(f.tick, image.Rect(x0-3, y0, x1-3, y1), tbg, image.ZP, draw.Src)
 	}
 	drawtick(r.Min.X, r.Min.Y, r.Max.X, r.Min.Y+boxw)
 	drawtick(r.Min.X, r.Max.Y-(boxw), r.Max.X, r.Max.Y)

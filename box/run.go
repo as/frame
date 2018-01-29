@@ -2,7 +2,6 @@ package box
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/as/font"
 )
@@ -12,7 +11,7 @@ var MaxBytes = 256 + 3
 
 func NewRun(minDx, maxDx int, ft font.Face) Run {
 	r := Run{
-		delta: 132,
+		delta: 32,
 		minDx: minDx,
 		maxDx: maxDx,
 		Face:  ft,
@@ -85,6 +84,7 @@ func (f *Run) Find(bn int, p, q int64) int {
 }
 
 func (f *Run) DumpBoxes() {
+
 	fmt.Println("dumping boxes")
 	fmt.Printf("nboxes: %d\n", f.Nbox)
 	fmt.Printf("nalloc: %d\n", f.Nalloc)
@@ -127,7 +127,6 @@ func (f *Run) Truncate(b *Box, n int) {
 		panic("Truncate")
 	}
 	b.Nrune -= n
-	log.Printf("box %#v\n", b)
 	b.Ptr = b.Ptr[:b.Nrune]
 	b.Width = f.MeasureBytes(b.Ptr)
 }
@@ -141,7 +140,7 @@ func (f *Run) Add(bn, n int) {
 		f.Grow(n + SLOP)
 	}
 	copy(f.Box[bn+n:], f.Box[bn:f.Nbox])
-	//	for i := f.Nbox - 1; i >= bn; i-- {
+	//or i := f.Nbox - 1; i >= bn; i-- {
 	//		f.Box[i+n] = f.Box[i]
 	//	}
 	f.Nbox += n
@@ -179,9 +178,9 @@ func (f *Run) Grow(delta int) {
 
 // Dup copies the contents of box bn to box bn+1
 func (f *Run) Dup(bn int) {
-	//	if f.Box[bn].Nrune < 0 {
-	//		panic("Frame.Dup")
-	//	}
+	if f.Box[bn].Nrune < 0 {
+		panic("Frame.Dup")
+	}
 	f.Add(bn, 1)
 	if f.Box[bn].Nrune >= 0 {
 		f.Box[bn+1].Ptr = append([]byte{}, f.Box[bn].Ptr...)

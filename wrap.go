@@ -2,7 +2,6 @@ package frame
 
 import (
 	"image"
-	"log"
 
 	"github.com/as/frame/box"
 )
@@ -48,7 +47,6 @@ func (f *Frame) advance(pt image.Point, b *box.Box) (x image.Point) {
 // fits returns the number of runes that can fit on the line at pt. A newline yields 1.
 func (f *Frame) fits(pt image.Point, b *box.Box) (nr int) {
 	left := f.r.Max.X - pt.X
-	log.Printf("pt %s box %#v left %d\n", pt, b, left)
 	if b.Nrune < 0 {
 		if b.Minwidth <= left {
 			return 1

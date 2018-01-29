@@ -10,7 +10,7 @@ import (
 )
 
 // If adding new graphical tests, change to modeSaveResult
-const testMode = modeCheckResult
+const testMode = modeSaveResult
 
 const (
 	modeSaveResult = iota
@@ -19,7 +19,7 @@ const (
 
 func TestMain(m *testing.M) {
 	v := m.Run()
-	if testMode == modeSaveResult {
+	if testMode == modeCheckResult {
 		v = 1
 		fmt.Println("*** DANGER ***")
 		fmt.Println("*** testMode == modeSaveResult ")

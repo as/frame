@@ -12,13 +12,15 @@ func (r *Run) ensure(nb int) {
 }
 
 func (r *Run) Boxscan(s []byte, ymax int) {
+	r.Nbox = 0
+	r.Nchars = 0
 	r.Nchars += int64(len(s))
 	i := 0
 	nb := 0
 	for nl := 0; nl <= ymax; nb++ {
 		if nb == r.Nalloc {
 			r.Grow(r.delta)
-			if r.delta < 16384 {
+			if r.delta < 32768 {
 				r.delta *= 2
 			}
 		}
