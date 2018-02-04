@@ -16,6 +16,7 @@ func NewRun(minDx, maxDx int, ft font.Face) Run {
 		maxDx: maxDx,
 		Face:  ft,
 	}
+	r.ensure(r.delta)
 	return r
 }
 
