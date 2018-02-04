@@ -11,7 +11,7 @@ import (
 type Config struct {
 	Flag   int
 	Scroll func(int)
-	Color  *Color
+	Color  Color
 	Font   font.Face
 	Drawer Drawer
 }

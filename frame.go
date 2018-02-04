@@ -26,15 +26,17 @@ var (
 func (f *Frame) Config() *Config {
 	return &Config{
 		Flag:   f.flags,
-		Color:  &f.Color,
+		Color:  f.Color,
 		Font:   f.Font,
 		Drawer: f.Drawer,
 	}
 }
 
+var zc Color
 func (c *Config) check() *Config {
-	if c.Color == nil {
-		c.Color = &A
+	
+	if c.Color == zc {
+		c.Color = A
 	}
 	if c.Font == nil {
 		c.Font = NewGoMono(11)
@@ -65,7 +67,7 @@ func New(dst draw.Image, r image.Rectangle, conf *Config) *Frame {
 
 	f := &Frame{
 		Font:   face,
-		Color:  *conf.Color,
+		Color:  conf.Color,
 		Drawer: conf.Drawer,
 		Run:    box.NewRun(mintab, 5000, face),
 		op:     draw.Src,
@@ -132,8 +134,8 @@ func (f *Frame) elastic() bool {
 	return f.flags&FrElastic != 0
 }
 
-func tabMinMax(ft font.Face, elastic bool) (min, max int) {
-	mintab := 5 //ft.Measure(' ')
+func tabMinMax(ft Face, elastic bool) (min, max int) {
+	mintab := ft.Dx([]byte{' '})
 	maxtab := mintab * 4
 	if elastic {
 		mintab = maxtab

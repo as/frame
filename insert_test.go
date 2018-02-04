@@ -93,7 +93,7 @@ func BenchmarkInsertDeleteStaticFace(b *testing.B) {
 		b.Run(v.name, func(b *testing.B) {
 			h := New(dst, dst.Bounds(), &Config{
 				Font:  NewCache(NewGoMono(fsize)),
-				Color: &A,
+				Color: A,
 			})
 			bb := []byte(v.data)
 			b.SetBytes(int64(len(bb)))
@@ -120,7 +120,7 @@ func BenchmarkInsertDeleteBoxCache(b *testing.B) {
 		b.Run(v.name, func(b *testing.B) {
 			h := New(dst, dst.Bounds(), &Config{
 				Font:  NewCliche(NewGoMono(fsize)),
-				Color: &A,
+				Color: A,
 			})
 			bb := []byte(v.data)
 			b.SetBytes(int64(len(bb)))
