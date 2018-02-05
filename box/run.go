@@ -166,7 +166,7 @@ func (f *Run) Free(n0, n1 int) {
 	}
 	for i := n0; i < n1; i++ {
 		if f.Box[i].Nrune >= 0 {
-			f.Box[i].Ptr = nil
+			f.Box[i].Ptr = make([]byte, 0, MaxBytes)
 		}
 	}
 }
