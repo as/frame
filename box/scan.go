@@ -43,23 +43,12 @@ func (r *Run) Boxscan(s []byte, ymax int) {
 				}
 				i++
 			}
-			b := &r.Box[nb]
-			b.Nrune=i
-			b.Ptr = b.Ptr[:i]
-			copy(b.Ptr, s[:i])
-			b.Width = r.MeasureBytes(b.Ptr)
-//			r.Box[nb] = Box{
-//				Nrune: i,
-//				Ptr:   s[:i],
-//				Width: r.MeasureBytes(s[:i]),
-//			}
+			r.Box[nb] = Box{
+				Nrune: i,
+				Ptr:   s[:i],
+				Width: r.MeasureBytes(s[:i]),
+			}
 		case '\t':
-			b := &r.Box[nb]
-			b.Nrune=-1
-			b.Ptr=b.Ptr[:1]
-			b.Ptr[0]='\t'
-			b.Width=r.maxDx
-			b.Minwidth=r.minDx
 //			r.Box[nb] = Box{
 //				Nrune:    -1,
 //				Ptr:      []byte("\t"),
