@@ -144,9 +144,6 @@ func (f *Run) Add(bn, n int) {
 		f.Grow(n + SLOP)
 	}
 	copy(f.Box[bn+n:], f.Box[bn:f.Nbox])
-	//or i := f.Nbox - 1; i >= bn; i-- {
-	//		f.Box[i+n] = f.Box[i]
-	//	}
 	f.Nbox += n
 }
 
@@ -178,11 +175,7 @@ func (f *Run) Free(n0, n1 int) {
 // Grow allocates memory for delta more boxes
 func (f *Run) Grow(delta int) {
 	f.Nalloc += delta
-	bx :=make([]Box, delta)
-	for i := range bx{
-		bx[i].Ptr=make([]byte,0,MaxBytes)
-	}
-	f.Box = append(f.Box, bx...)
+	f.Box = append(f.Box, make([]Box, delta)...)
 }
 
 // Dup copies the contents of box bn to box bn+1
