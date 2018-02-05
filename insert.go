@@ -262,16 +262,6 @@ func (f *Frame) pick(c, p0, p1 int64) (text, back image.Image) {
 	return f.Color.Text, f.Color.Back
 }
 
-func region(c, p0, p1 int64) int {
-	if c < p0 {
-		return -1
-	}
-	if c >= p1 {
-		return 1
-	}
-	return 0
-}
-
 //
 // Below ideas
 
