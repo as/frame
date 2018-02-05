@@ -39,9 +39,6 @@ func (f *Run) MeasureBytes(s []byte) (width int) {
 }
 func (f *Run) Combine(g *Run, n int) {
 	b := g.Box[:g.Nbox]
-	for i := range b{
-		b[i].Ptr = append([]byte{}, b[i].Ptr...)
-	}
 	f.Add(n, len(b))
 	copy(f.Box[n:], b)
 }
