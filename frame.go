@@ -33,8 +33,9 @@ func (f *Frame) Config() *Config {
 }
 
 var zc Color
+
 func (c *Config) check() *Config {
-	
+
 	if c.Color == zc {
 		c.Color = A
 	}

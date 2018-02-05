@@ -10,8 +10,8 @@ func (r *Run) ensure(nb int) {
 		}
 	}
 }
-func min(a,b int) int{
-	if a<b{
+func min(a, b int) int {
+	if a < b {
 		return a
 	}
 	return b
@@ -37,16 +37,16 @@ func (r *Run) Boxscan(s []byte, ymax int) {
 		c := s[i-1]
 		switch c {
 		default:
-			for _, c = range s[i:min(len(s),MaxBytes)] {
+			for _, c = range s[i:min(len(s), MaxBytes)] {
 				if special(c) {
 					break
 				}
 				i++
 			}
 			r.Box[nb] = Box{
-				Nrune:    i,
-				Ptr:      s[:i],
-				Width:   r.MeasureBytes(s[:i]),
+				Nrune: i,
+				Ptr:   s[:i],
+				Width: r.MeasureBytes(s[:i]),
 			}
 		case '\t':
 			r.Box[nb] = Box{

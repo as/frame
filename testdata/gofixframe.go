@@ -1,5 +1,5 @@
 // This is the raw driver file for gofix, to run it, put it in %GOROOT%\src\cmd\fix\
-// and then rebuild the `go fix` tool. 
+// and then rebuild the `go fix` tool.
 package main
 
 import (
@@ -20,8 +20,8 @@ var frameFix = fix{
 
 func frame(f *ast.File) bool {
 	fixed := false
-	if rewriteImport(f, "github.com/as/frame/font", "github.com/as/font"){
-		fixed=true
+	if rewriteImport(f, "github.com/as/frame/font", "github.com/as/font") {
+		fixed = true
 	}
 	if !imports(f, "github.com/as/frame") {
 		return fixed
@@ -51,13 +51,13 @@ func frame(f *ast.File) bool {
 		switch len(args) {
 		default:
 			flags = args[4]
-			fallthrough 
+			fallthrough
 		case 4:
 			dst := args[2]
 			r := args[0]
 			ft := args[1]
 			col := args[3]
-			fcall.Args = []ast.Expr{dst,r,mkConfig(ft,col, flags)}
+			fcall.Args = []ast.Expr{dst, r, mkConfig(ft, col, flags)}
 			fixed = true
 		case 3:
 		case 2:
@@ -65,36 +65,36 @@ func frame(f *ast.File) bool {
 		case 0:
 		}
 	})
-	
+
 	return fixed
 }
 
-func colorFix(a ast.Expr) ast.Expr{
+func colorFix(a ast.Expr) ast.Expr {
 	return a
 }
 
 func mkConfig(ft, col, flags ast.Expr) (exp *ast.UnaryExpr) {
 	list := []ast.Expr{
-				&ast.KeyValueExpr{
-					Key: &ast.Ident{
-						Name: "Font",
-					},
-					Value: ft,
-				},
-				&ast.KeyValueExpr{
-					Key: &ast.Ident{
-						Name: "Color",
-					},
-					Value: col,
-				},
-			}
-	if flags != nil{
-			list = append(list, &ast.KeyValueExpr{
-					Key: &ast.Ident{
-						Name: "Flag",
-					},
-					Value: flags,
-				})
+		&ast.KeyValueExpr{
+			Key: &ast.Ident{
+				Name: "Font",
+			},
+			Value: ft,
+		},
+		&ast.KeyValueExpr{
+			Key: &ast.Ident{
+				Name: "Color",
+			},
+			Value: col,
+		},
+	}
+	if flags != nil {
+		list = append(list, &ast.KeyValueExpr{
+			Key: &ast.Ident{
+				Name: "Flag",
+			},
+			Value: flags,
+		})
 	}
 	return &ast.UnaryExpr{
 		Op: token.AND,

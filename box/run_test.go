@@ -9,13 +9,13 @@ import (
 // genrun generates a run with a pre-fixed font and dimensions
 func genrun(s ...string) (r Run) {
 	return Run{
-		delta: 32,
-		minDx: 5,
-		maxDx: 5000,
-		Face:  font.NewGoMono(11),
+		delta:  32,
+		minDx:  5,
+		maxDx:  5000,
+		Face:   font.NewGoMono(11),
 		Nalloc: len(s),
-		Nbox: len(s),
-		Box: genbox(5,5000,10,s...),
+		Nbox:   len(s),
+		Box:    genbox(5, 5000, 10, s...),
 	}
 }
 
@@ -76,7 +76,7 @@ func runCompare(t *testing.T, strict bool, have, want Run) {
 	runCk(t, have)
 	runCk(t, want)
 	h, w := have.Box, want.Box
-	if !strict{
+	if !strict {
 		h = h[:have.Nbox]
 		w = w[:want.Nbox]
 	}
@@ -86,12 +86,12 @@ func runCompare(t *testing.T, strict bool, have, want Run) {
 func boxCompare(t *testing.T, have, want []Box) {
 	t.Helper()
 	failed := false
-	fail := func(){
+	fail := func() {
 		t.Fail()
 		failed = true
 	}
-	defer func(){
-		if failed{
+	defer func() {
+		if failed {
 			dumpBoxes(have)
 			dumpBoxes(want)
 		}

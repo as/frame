@@ -39,7 +39,7 @@ func (f *Run) MeasureBytes(s []byte) (width int) {
 }
 func (f *Run) Combine(g *Run, n int) {
 	b := g.Box[:g.Nbox]
-	for i:= range b{
+	for i := range b {
 		b := &b[i]
 		b.Ptr = append([]byte{}, b.Ptr...)
 	}
@@ -88,7 +88,7 @@ func (f *Run) Find(bn int, p, q int64) int {
 	return bn
 }
 
-func dumpBoxes(bx []Box){
+func dumpBoxes(bx []Box) {
 	for i, b := range bx {
 		fmt.Printf("[%d] (%p) (nrune=%d l=%d w=%d mw=%d bc=%x): %q\n",
 			i, &bx[i], b.Nrune, (&b).Len(), b.Width, b.Minwidth, b.Break(), b.Ptr)
@@ -190,9 +190,9 @@ func (f *Run) Dup(bn int) {
 		panic("Frame.Dup")
 	}
 	f.Add(bn, 1)
-//	if f.Box[bn].Nrune >= 0 {
-		f.Box[bn+1].Ptr = append([]byte{}, f.Box[bn].Ptr...)
-//	}
+	//	if f.Box[bn].Nrune >= 0 {
+	f.Box[bn+1].Ptr = append([]byte{}, f.Box[bn].Ptr...)
+	//	}
 }
 
 // Close closess box n0-n1 inclusively. The rest are shifted down
