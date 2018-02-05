@@ -39,6 +39,10 @@ func (f *Run) MeasureBytes(s []byte) (width int) {
 }
 func (f *Run) Combine(g *Run, n int) {
 	b := g.Box[:g.Nbox]
+	for i:= range b{
+		b := &b[i]
+		b.Ptr = append([]byte{}, b.Ptr...)
+	}
 	f.Add(n, len(b))
 	copy(f.Box[n:], b)
 }
@@ -111,7 +115,9 @@ func (f *Run) Merge(bn int) {
 // Split splits box bn into two boxes; bn and bn+1, at index n
 func (f *Run) Split(bn, n int) {
 	f.Dup(bn)
-	f.Truncate(&f.Box[bn], (&f.Box[bn]).Nrune-n)
+	b := &f.Box[bn]
+	b.Ptr = append([]byte{}, b.Ptr...)
+	f.Truncate(b, b.Nrune-n)
 	f.Chop(&f.Box[bn+1], n)
 }
 

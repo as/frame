@@ -59,7 +59,7 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	if f.p0 == f.p1 {
 		f.tickat(f.PointOf(f.p0), true)
 	}
-//	f.badElasticAlg()
+	f.badElasticAlg()
 	return int(f.ir.Nchars)
 }
 
