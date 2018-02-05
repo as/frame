@@ -12,24 +12,7 @@ type indexTest struct {
 	pt     image.Point
 }
 
-func TestIndexOfWrap(t *testing.T) {
-	h, _, _, _ := abtestbg(R)
-	x := []byte("a")
-	dx := h.Font.Dx(x)
-	for i := 1; i < 100000; i++{
-		h.Insert(x, h.Len())
-		have := h.IndexOf(R.Max)
-		want := int64(dx*i)// h.IndexOf(h.PointOf(int64(dx*i)))
-		if have != want{
-			t.Logf("round %d: have: %d want %d\n", i, have, want)
-			t.Fail()
-		}
-		if tdx := dx*i; tdx > h.Bounds().Max.X{
-			t.Logf("round %d: didnt wrap: %d\n", i, tdx)
-			t.Fail()
-		}
-	}
-}
+func TestIndexOfWrap(t *testing.T) {}
 
 func TestIndexOf(t *testing.T) {
 	tab := []pointTest{
@@ -41,13 +24,6 @@ func TestIndexOf(t *testing.T) {
 		{"\n", 100, 0, image.Pt(0, 1*8)},
 		{"\n\n", 0, 1, image.Pt(0, 2*8)},
 		{"\n\n\n", 0, 1, image.Pt(0, 3*8)},
-		{"\t\n", 0, 0, image.Pt(0, 0*8)},
-		{"\t\n", 100, 1+0, image.Pt(0, 1*8)},
-		{"\t\n\n", 0, 1+1, image.Pt(0, 2*8)},
-		{"\t\n\n\n", 0, 1+1, image.Pt(0, 3*8)},
-		//		{"hello3", 2, image.Pt(0, 0)},
-		//		{"hello4", 3, image.Pt(0, 0)},
-		//		{"hello5", 4, image.Pt(0, 0)},
 	}
 	for _, v := range tab {
 		h, _, _, _ := abtestbg(R)

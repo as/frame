@@ -39,6 +39,9 @@ func (f *Run) MeasureBytes(s []byte) (width int) {
 }
 func (f *Run) Combine(g *Run, n int) {
 	b := g.Box[:g.Nbox]
+	for i := range b{
+		b[i].Ptr = append([]byte{}, b[i].Ptr...)
+	}
 	f.Add(n, len(b))
 	copy(f.Box[n:], b)
 }
@@ -84,15 +87,18 @@ func (f *Run) Find(bn int, p, q int64) int {
 	return bn
 }
 
-func (f *Run) DumpBoxes() {
+func dumpBoxes(bx []Box){
+	for i, b := range bx {
+		fmt.Printf("[%d] (%p) (nrune=%d l=%d w=%d mw=%d bc=%x): %q\n",
+			i, &bx[i], b.Nrune, (&b).Len(), b.Width, b.Minwidth, b.Break(), b.Ptr)
+	}
+}
 
+func (f *Run) DumpBoxes() {
 	fmt.Println("dumping boxes")
 	fmt.Printf("nboxes: %d\n", f.Nbox)
 	fmt.Printf("nalloc: %d\n", f.Nalloc)
-	for i, b := range f.Box {
-		fmt.Printf("[%d] (%p) (nrune=%d l=%d w=%d mw=%d bc=%x): %q\n",
-			i, &f.Box[i], b.Nrune, (&b).Len(), b.Width, b.Minwidth, b.Break(), b.Ptr)
-	}
+	dumpBoxes(f.Box)
 }
 
 // Merge merges box bn and bn+1
@@ -166,7 +172,8 @@ func (f *Run) Free(n0, n1 int) {
 	}
 	for i := n0; i < n1; i++ {
 		if f.Box[i].Nrune >= 0 {
-			f.Box[i].Ptr = make([]byte, 0, MaxBytes)
+			f.Box[i].Ptr = nil
+			//f.Box[i].Ptr = make([]byte, 0, MaxBytes)
 		}
 	}
 }
@@ -174,7 +181,11 @@ func (f *Run) Free(n0, n1 int) {
 // Grow allocates memory for delta more boxes
 func (f *Run) Grow(delta int) {
 	f.Nalloc += delta
-	f.Box = append(f.Box, make([]Box, delta)...)
+	bx :=make([]Box, delta)
+	for i := range bx{
+		bx[i].Ptr=make([]byte,0,MaxBytes)
+	}
+	f.Box = append(f.Box, bx...)
 }
 
 // Dup copies the contents of box bn to box bn+1
@@ -183,9 +194,9 @@ func (f *Run) Dup(bn int) {
 		panic("Frame.Dup")
 	}
 	f.Add(bn, 1)
-	if f.Box[bn].Nrune >= 0 {
+//	if f.Box[bn].Nrune >= 0 {
 		f.Box[bn+1].Ptr = append([]byte{}, f.Box[bn].Ptr...)
-	}
+//	}
 }
 
 // Close closess box n0-n1 inclusively. The rest are shifted down

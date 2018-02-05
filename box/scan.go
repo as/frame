@@ -43,24 +43,40 @@ func (r *Run) Boxscan(s []byte, ymax int) {
 				}
 				i++
 			}
-			r.Box[nb] = Box{
-				Nrune: i,
-				Ptr:   s[:i],
-				Width: r.MeasureBytes(s[:i]),
-			}
+			b := &r.Box[nb]
+			b.Nrune=i
+			b.Ptr = b.Ptr[:i]
+			copy(b.Ptr, s[:i])
+			b.Width = r.MeasureBytes(b.Ptr)
+//			r.Box[nb] = Box{
+//				Nrune: i,
+//				Ptr:   s[:i],
+//				Width: r.MeasureBytes(s[:i]),
+//			}
 		case '\t':
-			r.Box[nb] = Box{
-				Nrune:    -1,
-				Ptr:      []byte("\t"),
-				Width:    r.minDx,
-				Minwidth: r.minDx,
-			}
+			b := &r.Box[nb]
+			b.Nrune=-1
+			b.Ptr=b.Ptr[:1]
+			b.Ptr[0]='\t'
+			b.Width=r.maxDx
+			b.Minwidth=r.minDx
+//			r.Box[nb] = Box{
+//				Nrune:    -1,
+//				Ptr:      []byte("\t"),
+//				Width:    r.minDx,
+//				Minwidth: r.minDx,
+//			}
 		case '\n':
-			r.Box[nb] = Box{
-				Nrune: -1,
-				Ptr:   []byte("\n"),
-				Width: r.maxDx,
-			}
+			b := &r.Box[nb]
+			b.Nrune=-1
+			b.Ptr=b.Ptr[:1]
+			b.Ptr[0]='\n'
+			b.Width=r.maxDx
+//			r.Box[nb] = Box{
+//				Nrune: -1,
+//				Ptr:   []byte("\n"),
+//				Width: r.maxDx,
+//			}
 			nl++
 		}
 		s = s[i:]
