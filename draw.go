@@ -114,9 +114,11 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 				trim = true
 			}
 			w := f.WidthBox(nb, ptr)
-			f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Font.Dy()), back, pt, f.op)
 			if f.PlainBox(nb) {
-				f.StringBG(f.b, pt, text, image.ZP, f.Font, ptr, nil, image.ZP)
+				f.StringBG(f.b, pt, text, image.ZP, f.Font, ptr, back, image.ZP) //TODO(as): bug is that when back==nil, StringBG turns into StringNBG and that doesn't work with replacement runes.
+			} else {
+				f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Font.Dy()), back, pt, f.op)
+			
 			}
 			pt.X += w
 
