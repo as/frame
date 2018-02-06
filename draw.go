@@ -73,7 +73,8 @@ func (f *Frame) redrawRun0(r *box.Run, pt image.Point, text, back image.Image) i
 }
 
 func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) image.Point {
-	{ // doubled
+	{
+		// doubled
 		p0, p1 := int(p0), int(p1)
 		q0 := 0
 		trim := false
@@ -115,10 +116,12 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			}
 			w := f.WidthBox(nb, ptr)
 			if f.PlainBox(nb) {
-				f.StringBG(f.b, pt, text, image.ZP, f.Font, ptr, back, image.ZP) //TODO(as): bug is that when back==nil, StringBG turns into StringNBG and that doesn't work with replacement runes.
+
+				f.StringBG(f.b, pt, text, image.ZP, f.Font, ptr, back, image.ZP)
+				//TODO(as): bug is that when back==nil, StringBG turns into StringNBG and that doesn't work with replacement runes.
 			} else {
 				f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Font.Dy()), back, pt, f.op)
-			
+
 			}
 			pt.X += w
 
