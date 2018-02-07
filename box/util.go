@@ -13,7 +13,7 @@ func (r *Run) WidthBox(n int, alt []byte) int {
 	if b.Nrune < 0 || len(alt) == b.Len() {
 		return b.Width
 	}
-	return r.MeasureBytes(alt)
+	return r.Face.Dx(alt)
 }
 
 // BoxBytes returns a trimmed pointer to box n's slice data

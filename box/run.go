@@ -34,9 +34,6 @@ type Run struct {
 	delta        int
 }
 
-func (f *Run) MeasureBytes(s []byte) (width int) {
-	return f.Face.Dx(s)
-}
 func (f *Run) Combine(g *Run, n int) {
 	b := g.Box[:g.Nbox]
 	for i := range b {
@@ -129,7 +126,7 @@ func (f *Run) Chop(b *Box, n int) {
 	copy(b.Ptr, b.Ptr[n:])
 	b.Nrune -= n
 	b.Ptr = b.Ptr[:b.Nrune]
-	b.Width = f.MeasureBytes(b.Ptr)
+	b.Width = f.Face.Dx(b.Ptr)
 }
 
 func (f *Run) Truncate(b *Box, n int) {
@@ -138,7 +135,7 @@ func (f *Run) Truncate(b *Box, n int) {
 	}
 	b.Nrune -= n
 	b.Ptr = b.Ptr[:b.Nrune]
-	b.Width = f.MeasureBytes(b.Ptr)
+	b.Width = f.Face.Dx(b.Ptr)
 }
 
 // Add adds n boxes after box bn, the rest are shifted up

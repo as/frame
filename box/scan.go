@@ -23,6 +23,7 @@ func (r *Run) Boxscan(s []byte, ymax int) {
 	r.Nchars += int64(len(s))
 	i := 0
 	nb := 0
+
 	for nl := 0; nl <= ymax; nb++ {
 		if nb == r.Nalloc {
 			r.Grow(r.delta)
@@ -46,7 +47,7 @@ func (r *Run) Boxscan(s []byte, ymax int) {
 			r.Box[nb] = Box{
 				Nrune: i,
 				Ptr:   s[:i],
-				Width: r.MeasureBytes(s[:i]),
+				Width: r.Face.Dx(s[:i]),
 			}
 		case '\t':
 			r.Box[nb] = Box{
