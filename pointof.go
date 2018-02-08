@@ -31,21 +31,24 @@ func (f *Frame) pointOf(p int64, pt image.Point, bn int) (x image.Point) {
 		if p < int64(l) {
 			if b.Nrune > 0 {
 				ptr := b.Ptr
-				bsb := len(ptr)
-				i := 0
-				for p > 0 {
-					if bsb == i {
-						break
-					}
-					size := 1
-					widthPx := f.Font.Dx(ptr[i : i+size])
-					i += size
-					p -= int64(size)
-					pt.X += widthPx
-					if pt.X > f.r.Max.X {
-						panic("PtOfCharPtBox")
-					}
+				if p > 0{
+					pt.X += f.Font.Dx(ptr[:p])
 				}
+//				bsb := len(ptr)
+//				i := 0
+//				for p > 0 {
+//					if bsb == i {
+//						break
+//					}
+//					size := 1
+//					widthPx := f.Font.Dx(ptr[i : i+size])
+//					i += size
+//					p -= int64(size)
+//					pt.X += widthPx
+//					if pt.X > f.r.Max.X {
+//						panic("PtOfCharPtBox")
+//					}
+//				}
 			}
 			break
 		}
