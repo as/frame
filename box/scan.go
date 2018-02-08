@@ -34,7 +34,7 @@ func (r *Run) zRunescan(s []byte, ymax int) {
 				r.delta *= 2
 			}
 		}
-		i+=adv
+		i += adv
 		if i == len(s) {
 			break
 		}
@@ -49,22 +49,22 @@ func (r *Run) zRunescan(s []byte, ymax int) {
 			}
 			r.Box[nb] = Box{
 				Nrune: i,
-				Ptr:   s[i:i+adv],
-				Width: r.Face.Dx(s[i:i+adv]),
+				Ptr:   s[i : i+adv],
+				Width: r.Face.Dx(s[i : i+adv]),
 			}
 		case '\t':
-			adv=1
+			adv = 1
 			r.Box[nb] = Box{
 				Nrune:    -1,
-				Ptr:      s[i:i+adv],
+				Ptr:      s[i : i+adv],
 				Width:    r.minDx,
 				Minwidth: r.minDx,
 			}
 		case '\n':
-			adv=1
+			adv = 1
 			r.Box[nb] = Box{
 				Nrune: -1,
-				Ptr:   s[i:i+adv],
+				Ptr:   s[i : i+adv],
 				Width: r.maxDx,
 			}
 			nl++
