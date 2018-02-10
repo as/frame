@@ -103,13 +103,11 @@ type Frame struct {
 	maxtab int
 	full   int
 
-	tick      draw.Image
-	tickback  draw.Image
-	tickscale int
-	tickoff   bool
-	maxlines  int
-	modified  bool
-	noredraw  bool
+	tick     draw.Image
+	tickback draw.Image
+	tickoff  bool
+	maxlines int
+	modified bool
 
 	pts [][2]image.Point
 
@@ -142,32 +140,6 @@ func tabMinMax(ft Face, elastic bool) (min, max int) {
 		mintab = maxtab
 	}
 	return mintab, maxtab
-}
-
-func newRuneFrame(r image.Rectangle, ft font.Face, b draw.Image, cols Color, flag ...int) *Frame {
-	/*
-		fl := getflag(flag...)
-		mintab, maxtab := tabMinMax(ft, fl&FrElastic != 0)
-
-		f := &Frame{
-			Font:         ft,
-			mintab:       mintab,
-			maxtab:       maxtab,
-			Color:        cols,
-			Run:          box.NewRun(mintab, 5000, ft, box.NewRuneRuler),
-			stringBG:     font.RuneBG,
-			stringNBG:    font.RuneNBG,
-			op:           draw.Src,
-			flags:        fl,
-		}
-		f.setrects(r, b)
-		f.inittick()
-		run := box.NewRun(mintab, 5000, ft, box.NewRuneRuler)
-		f.ir = &run
-		f.Drawer = drawcache.New()
-		return f
-	*/
-	panic("disabled")
 }
 
 func getflag(flag ...int) (fl int) {
@@ -260,16 +232,4 @@ func (f *Frame) setrects(r image.Rectangle, b draw.Image) {
 	h := f.Font.Dy()
 	f.r.Max.Y -= f.r.Dy() % h
 	f.maxlines = f.r.Dy() / h
-}
-
-func (f *Frame) clear(freeall bool) {
-	if f.Nbox != 0 {
-		f.Run.Delete(0, f.Nbox-1)
-	}
-	if freeall {
-		f.tick = nil
-		f.tickback = nil
-	}
-	f.Box = nil
-	f.Ticked = false
 }

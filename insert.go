@@ -9,7 +9,6 @@ import (
 // the frame and returns the number of characters
 // written.
 func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
-	type Pts [2]image.Point
 	if p0 > f.Nchars || len(s) == 0 || f.b == nil {
 		return
 	}
@@ -262,6 +261,7 @@ func (f *Frame) pick(c, p0, p1 int64) (text, back image.Image) {
 	return f.Color.Text, f.Color.Back
 }
 
+/*
 //
 // Below ideas
 
@@ -342,10 +342,4 @@ func (f *Frame) zInsertElastic(s []byte, p0 int64) (wrote int) {
 	return int(f.ir.Nchars)
 
 }
-
-func drawBorder(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, thick int) {
-	draw.Draw(dst, image.Rect(r.Min.X, r.Min.Y, r.Max.X, r.Min.Y+thick), src, sp, draw.Src)
-	draw.Draw(dst, image.Rect(r.Min.X, r.Max.Y-thick, r.Max.X, r.Max.Y), src, sp, draw.Src)
-	draw.Draw(dst, image.Rect(r.Min.X, r.Min.Y, r.Min.X+thick, r.Max.Y), src, sp, draw.Src)
-	draw.Draw(dst, image.Rect(r.Max.X-thick, r.Min.Y, r.Max.X, r.Max.Y), src, sp, draw.Src)
-}
+*/

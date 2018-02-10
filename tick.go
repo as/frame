@@ -69,7 +69,6 @@ func (f *Frame) inittick() {
 	if linew < 1 {
 		linew = 1
 	}
-	linew2 = linew2
 	z0 := de - 2
 	r := image.Rect(0, z0, boxw, he-(he-as)/2+f.Font.Letting()/2)
 	r = r.Sub(image.Pt(r.Dx()/2, 0))
@@ -87,7 +86,6 @@ func (f *Frame) inittick() {
 	} else {
 		drawtick(-linew2, 0, linew2, r.Max.Y)
 	}
-	drawtick = drawtick
 
 }
 

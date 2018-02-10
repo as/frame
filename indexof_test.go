@@ -5,13 +5,6 @@ import (
 	"testing"
 )
 
-type indexTest struct {
-	insert string
-	p0     int64
-	c0     int64
-	pt     image.Point
-}
-
 func TestIndexOfWrap(t *testing.T) {}
 
 func TestIndexOf(t *testing.T) {

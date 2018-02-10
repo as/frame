@@ -6,7 +6,6 @@ import (
 	"github.com/as/etch"
 	"github.com/as/io/spaz"
 	"image"
-	"io"
 	"io/ioutil"
 	"math/rand"
 	"testing"
@@ -85,7 +84,6 @@ func init() {
 }
 
 type reader struct {
-	ur io.Reader
 }
 
 func (reader) Read(p []byte) (n int, err error) {
