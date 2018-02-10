@@ -16,9 +16,11 @@ func TestFuzz(t *testing.T) {
 	t.Skip("warning: fuzz test skipped")
 	// The inverse of Insert is Delete. We can use this assumption
 	// to create a graphical fuzz test.
-	var err error
-	var n int
-	var B [327 * 777]byte
+	var (
+		err error
+		n   int
+		B   [327 * 777]byte
+	)
 	buf := B[:]
 	N := 128 // number of rounds
 	sr := spaz.NewReader(bufio.NewReader(reader{}))
