@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/as/font"
 	"github.com/as/frame"
-	"github.com/as/frame/font"
 	"golang.org/x/exp/shiny/driver"
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/mobile/event/key"
@@ -28,7 +28,7 @@ func main() {
 		wind, _ := src.NewWindow(&screen.NewWindowOptions{winSize.X, winSize.Y, "basic"})
 		b, _ := src.NewBuffer(winSize)
 		draw.Draw(b.RGBA(), b.Bounds(), frame.A.Back, image.ZP, draw.Src)
-		fr := frame.New(image.Rectangle{image.ZP, winSize}, font.NewGoMono(14), b.RGBA(), frame.A, frame.FrUTF8)
+		fr := frame.New(b.RGBA(), image.Rectangle{image.ZP, winSize}, &frame.Config{Font: font.NewGoMono(14), Color: frame.A, Flag: frame.FrUTF8})
 		fr.Refresh()
 		wind.Send(paint.Event{})
 		ck := func() {

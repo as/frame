@@ -2,8 +2,8 @@
 package main
 
 import (
+	"github.com/as/font"
 	"github.com/as/frame"
-	"github.com/as/frame/font"
 	"golang.org/x/exp/shiny/driver"
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/mobile/event/key"
@@ -38,7 +38,7 @@ func main() {
 		draw.Draw(b.RGBA(), b.Bounds(), frame.A.Back, image.ZP, draw.Src)
 
 		// Create a new frame using a 14-pt GoMono font
-		fr := frame.New(image.Rectangle{image.ZP, winSize}, font.NewGoMono(14), b.RGBA(), frame.A)
+		fr := frame.New(b.RGBA(), image.Rectangle{image.ZP, winSize}, &frame.Config{Font: font.NewGoMono(14), Color: frame.A})
 		fr.Refresh()
 
 		// Prevent redundant redraws

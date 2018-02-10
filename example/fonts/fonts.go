@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/as/font"
 	"github.com/as/frame"
-	"github.com/as/frame/font"
 	"golang.org/x/exp/shiny/driver"
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/mobile/event/key"
@@ -32,7 +32,7 @@ func main() {
 		ft := font.NewGoMono(25)
 		ft.SetLetting(14)
 		ft.SetStride(3)
-		fr := frame.New(image.Rectangle{image.ZP, winSize}, ft, b.RGBA(), frame.A)
+		fr := frame.New(b.RGBA(), image.Rectangle{image.ZP, winSize}, &frame.Config{Font: ft, Color: frame.A})
 		fr.Refresh()
 		wind.Send(paint.Event{})
 		ck := func() {
