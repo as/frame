@@ -80,7 +80,7 @@ func mkConfig(ft, col, flags ast.Expr) (exp *ast.UnaryExpr) {
 	list := []ast.Expr{
 		&ast.KeyValueExpr{
 			Key: &ast.Ident{
-				Name: "Font",
+				Name: "Face",
 			},
 			Value: ft,
 		},

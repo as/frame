@@ -12,7 +12,7 @@ type Config struct {
 	Flag   int
 	Scroll func(int)
 	Color  Color
-	Font   font.Face
+	Face   font.Face
 	Drawer Drawer
 }
 
