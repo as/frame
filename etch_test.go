@@ -36,3 +36,12 @@ func check(t *testing.T, have image.Image, name string, mode int) {
 	}
 	etch.AssertFile(t, have, wantfile, fmt.Sprintf("%s.png", name))
 }
+
+// helpful is an interface that allows this code to use Go1.9's t.Helper() method
+// without breaking out of data continuous integration components (CircleCI) which
+// run older Go versions not supporting t.Helper().
+//
+//
+type helpful interface{
+	Helper()
+}

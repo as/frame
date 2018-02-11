@@ -6,6 +6,15 @@ import (
 	"github.com/as/font"
 )
 
+// helpful is an interface that allows this code to use Go1.9's t.Helper() method
+// without breaking out of data continuous integration components (CircleCI) which
+// run older Go versions not supporting t.Helper().
+//
+//
+type help interface{
+	Helper()
+}
+
 // genrun generates a run with a pre-fixed font and dimensions
 func genrun(s ...string) (r Run) {
 	return Run{
@@ -49,12 +58,13 @@ func genbox(min, max, fontdx int, s ...string) (bx []Box) {
 }
 
 func runCk(t *testing.T, have Run) {
-	t.Helper()
+	if t, ok := interface{}(t).(help); ok{ t.Helper() }
 	boxCk(t, have.Box)
 }
 
 func boxCk(t *testing.T, have []Box) {
-	t.Helper()
+	
+	if t, ok := interface{}(t).(help); ok{ t.Helper() }
 	for bn, h := range have {
 		if h.Nrune < -1 {
 			t.Logf("box %d: should never have Nrune < -1", bn)
@@ -72,7 +82,8 @@ func boxCk(t *testing.T, have []Box) {
 }
 
 func runCompare(t *testing.T, strict bool, have, want Run) {
-	t.Helper()
+	
+	if t, ok := interface{}(t).(help); ok{ t.Helper() }
 	runCk(t, have)
 	runCk(t, want)
 	h, w := have.Box, want.Box
@@ -84,7 +95,8 @@ func runCompare(t *testing.T, strict bool, have, want Run) {
 }
 
 func boxCompare(t *testing.T, have, want []Box) {
-	t.Helper()
+	if t, ok := interface{}(t).(help); ok{ t.Helper() }
+	
 	failed := false
 	fail := func() {
 		t.Fail()
