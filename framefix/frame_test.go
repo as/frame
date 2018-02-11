@@ -36,7 +36,7 @@ import (
 
 func main() {
 	img := image.NewRGBA(image.Rect(0, 0, 100, 100))
-	frame.New(img, img.Bounds(), &frame.Config{Font: font.NewGoMono(11), Color: frame.Mono, Flag: frame.FrElastic})
+	frame.New(img, img.Bounds(), &frame.Config{Face: font.NewGoMono(11), Color: frame.Mono, Flag: frame.FrElastic})
 }
 `,
 	},
