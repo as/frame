@@ -122,10 +122,6 @@ https://github.com/as/frame/blob/master/example/utf8/utf8.go
 - Elastic
 https://github.com/as/frame/blob/master/example/elastic/elastic.go
 
-- Fast (use if you need better performance or have graphical lag)
-https://github.com/as/frame/blob/master/example/fast/fast.go
-
-Specifically, the section `Data structures in the terminal` served as a guide
 
 ## Feature Set
 
@@ -145,3 +141,5 @@ See `github.com/as/ui/win` for an example.
 ## See Also
 
 http://doc.cat-v.org/plan_9/4th_edition/papers/sam/
+
+Specifically, the section `Data structures in the terminal` served as a guide
