@@ -35,12 +35,11 @@ func (f *Frame) Config() *Config {
 var zc Color
 
 func (c *Config) check() *Config {
-
 	if c.Color == zc {
 		c.Color = A
 	}
 	if c.Font == nil {
-		c.Font = NewGoMono(11)
+		c.Font = NewFace(11)
 	}
 	if c.Drawer == nil {
 		c.Drawer = &defaultDrawer{}
@@ -48,39 +47,17 @@ func (c *Config) check() *Config {
 	return c
 }
 
-func New(dst draw.Image, r image.Rectangle, conf *Config) *Frame {
-	if dst == nil {
-		return nil
+func negotiateFace(f font.Face, flags int) Face {
+	if flags&FrUTF8 != 0 {
+		return NewCache(NewRune(f))
 	}
-	if conf == nil {
-		conf = &Config{}
-	}
-	conf.check()
-	fl := conf.Flag
-	var face Face
-	switch f := conf.Font.(type) {
+	switch f := f.(type) {
 	case Face:
-		face = f
+		return f
 	case font.Face:
-		face = Open(f)
+		return Open(f)
 	}
-	mintab, maxtab := tabMinMax(face, fl&FrElastic != 0)
-
-	f := &Frame{
-		Font:   face,
-		Color:  conf.Color,
-		Drawer: conf.Drawer,
-		Run:    box.NewRun(mintab, 5000, face),
-		op:     draw.Src,
-		mintab: mintab,
-		maxtab: maxtab,
-		flags:  fl,
-	}
-	f.setrects(r, dst)
-	f.inittick()
-	run := box.NewRun(mintab, 5000, face)
-	f.ir = &run
-	return f
+	return Open(f)
 }
 
 // Frame is a write-only container for editable text
@@ -112,6 +89,34 @@ type Frame struct {
 	pts [][2]image.Point
 
 	flags int
+}
+
+func New(dst draw.Image, r image.Rectangle, conf *Config) *Frame {
+	if dst == nil {
+		return nil
+	}
+	if conf == nil {
+		conf = &Config{}
+	}
+	conf.check()
+	fl := conf.Flag
+	face := negotiateFace(conf.Font, fl)
+	mintab, maxtab := tabMinMax(face, fl&FrElastic != 0)
+	f := &Frame{
+		Font:   face,
+		Color:  conf.Color,
+		Drawer: conf.Drawer,
+		Run:    box.NewRun(mintab, 5000, face),
+		op:     draw.Src,
+		mintab: mintab,
+		maxtab: maxtab,
+		flags:  fl,
+	}
+	f.setrects(r, dst)
+	f.inittick()
+	run := box.NewRun(mintab, 5000, face)
+	f.ir = &run
+	return f
 }
 
 // Flags returns the flags currently set for the frame
