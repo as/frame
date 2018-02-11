@@ -2,46 +2,44 @@ package box
 
 import (
 	"fmt"
-	"github.com/as/frame/font"
+
+	"github.com/as/font"
 )
 
 // MaxBytes is the largest capacity of bytes in a box
 var MaxBytes = 256 + 3
 
-func NewRun(minDx, maxDx int, ft *font.Font, newRulerFunc ...func([]byte, *font.Font) Ruler) Run {
-	fn := NewByteRuler
-	if len(newRulerFunc) > 0 {
-		fn = newRulerFunc[0]
+func NewRun(minDx, maxDx int, ft font.Face) Run {
+	r := Run{
+		delta: 32,
+		minDx: minDx,
+		maxDx: maxDx,
+		Face:  ft,
 	}
-	return Run{
-		delta:        32,
-		minDx:        minDx,
-		maxDx:        maxDx,
-		Font:         ft,
-		newRulerFunc: fn,
-		br:           fn(make([]byte, MaxBytes), ft),
-	}
+	r.ensure(r.delta)
+	return r
 }
 
 // Run is a one-dimensional field of boxes. It can scan arbitrary text
 // into boxes with Bxscan().
 type Run struct {
-	*font.Font
-	Nchars int64
-	Nlines int
+	Box    []Box
 	Nalloc int
 	Nbox   int
-	Box    []Box
+	Face   font.Face
+	Nchars int64
+	Nlines int
 
 	minDx, maxDx int
 	delta        int
-
-	newRulerFunc func([]byte, *font.Font) Ruler
-	br           Ruler
 }
 
 func (f *Run) Combine(g *Run, n int) {
 	b := g.Box[:g.Nbox]
+	for i := range b {
+		b := &b[i]
+		b.Ptr = append([]byte{}, b.Ptr...)
+	}
 	f.Add(n, len(b))
 	copy(f.Box[n:], b)
 }
@@ -60,11 +58,11 @@ func (f *Run) Count(nb int) int64 {
 // their data on the heap. If widthfn is not nill, it
 // becomes the new measuring function for the run. Boxes
 // in the run are not remeasured upon reset.
-func (f *Run) Reset(ft *font.Font) {
+func (f *Run) Reset(ft font.Face) {
 	f.Nbox = 0
 	f.Nchars = 0
 	if ft != nil {
-		f.Font = ft
+		f.Face = ft
 	}
 }
 
@@ -87,15 +85,18 @@ func (f *Run) Find(bn int, p, q int64) int {
 	return bn
 }
 
+func dumpBoxes(bx []Box) {
+	for i, b := range bx {
+		fmt.Printf("[%d] (%p) (nrune=%d l=%d w=%d mw=%d bc=%x): %q\n",
+			i, &bx[i], b.Nrune, (&b).Len(), b.Width, b.Minwidth, b.Break(), b.Ptr)
+	}
+}
+
 func (f *Run) DumpBoxes() {
-	return
 	fmt.Println("dumping boxes")
 	fmt.Printf("nboxes: %d\n", f.Nbox)
 	fmt.Printf("nalloc: %d\n", f.Nalloc)
-	for i, b := range f.Box {
-		fmt.Printf("[%d] (%p) (nrune=%d l=%d w=%d mw=%d bc=%x): %q\n",
-			i, &f.Box[i], b.Nrune, (&b).Len(), b.Width, b.Minwidth, b.Break(), b.Ptr)
-	}
+	dumpBoxes(f.Box)
 }
 
 // Merge merges box bn and bn+1
@@ -111,19 +112,10 @@ func (f *Run) Merge(bn int) {
 // Split splits box bn into two boxes; bn and bn+1, at index n
 func (f *Run) Split(bn, n int) {
 	f.Dup(bn)
-	f.Truncate(&f.Box[bn], (&f.Box[bn]).Nrune-n)
+	b := &f.Box[bn]
+	b.Ptr = append([]byte{}, b.Ptr...)
+	f.Truncate(b, b.Nrune-n)
 	f.Chop(&f.Box[bn+1], n)
-}
-
-func (f *Run) MeasureBytes(p []byte) int {
-	f.br.Reset(p) //f.newRulerFunc(p, f.Font)
-	for {
-		_, _, err := f.br.Next()
-		if err != nil {
-			break
-		}
-	}
-	return f.br.Width()
 }
 
 // Chop drops the first n chars in box b
@@ -134,7 +126,7 @@ func (f *Run) Chop(b *Box, n int) {
 	copy(b.Ptr, b.Ptr[n:])
 	b.Nrune -= n
 	b.Ptr = b.Ptr[:b.Nrune]
-	b.Width = f.MeasureBytes(b.Ptr)
+	b.Width = f.Face.Dx(b.Ptr)
 }
 
 func (f *Run) Truncate(b *Box, n int) {
@@ -143,7 +135,7 @@ func (f *Run) Truncate(b *Box, n int) {
 	}
 	b.Nrune -= n
 	b.Ptr = b.Ptr[:b.Nrune]
-	b.Width = f.MeasureBytes(b.Ptr)
+	b.Width = f.Face.Dx(b.Ptr)
 }
 
 // Add adds n boxes after box bn, the rest are shifted up
@@ -154,9 +146,7 @@ func (f *Run) Add(bn, n int) {
 	if f.Nbox+n > f.Nalloc {
 		f.Grow(n + SLOP)
 	}
-	for i := f.Nbox - 1; i >= bn; i-- {
-		f.Box[i+n] = f.Box[i]
-	}
+	copy(f.Box[bn+n:], f.Box[bn:f.Nbox])
 	f.Nbox += n
 }
 
@@ -180,6 +170,7 @@ func (f *Run) Free(n0, n1 int) {
 	for i := n0; i < n1; i++ {
 		if f.Box[i].Nrune >= 0 {
 			f.Box[i].Ptr = nil
+			//f.Box[i].Ptr = make([]byte, 0, MaxBytes)
 		}
 	}
 }
@@ -196,9 +187,9 @@ func (f *Run) Dup(bn int) {
 		panic("Frame.Dup")
 	}
 	f.Add(bn, 1)
-	if f.Box[bn].Nrune >= 0 {
-		f.Box[bn+1].Ptr = append([]byte{}, f.Box[bn].Ptr...)
-	}
+	//	if f.Box[bn].Nrune >= 0 {
+	f.Box[bn+1].Ptr = append([]byte{}, f.Box[bn].Ptr...)
+	//	}
 }
 
 // Close closess box n0-n1 inclusively. The rest are shifted down

@@ -58,18 +58,23 @@ func (f *Frame) tickbg() image.Image {
 	*/
 
 }
+
 func (f *Frame) inittick() {
-	h := f.Font.Dy()
-	boxw, linew := mktick(h)
+
+	he := f.Face.Height()
+	as := f.Face.Ascent()
+	de := f.Face.Descent()
+	boxw, linew := mktick(he)
 	linew2 := linew / 2
 	if linew < 1 {
 		linew = 1
 	}
-	r := image.Rect(0, 0, boxw, h)
+	z0 := de - 2
+	r := image.Rect(0, z0, boxw, he-(he-as)/2+f.Face.Letting()/2)
 	r = r.Sub(image.Pt(r.Dx()/2, 0))
 	f.tick = image.NewRGBA(r)
 	f.tickback = image.NewRGBA(r)
-	draw.Draw(f.tick, f.tick.Bounds().Inset(1), f.Color.Hi.Back, image.ZP, draw.Src)
+	draw.Draw(f.tick, f.tick.Bounds(), f.Color.Back, image.ZP, draw.Src)
 	tbg := f.tickbg()
 	drawtick := func(x0, y0, x1, y1 int) {
 		draw.Draw(f.tick, image.Rect(x0, y0, x1, y1), tbg, image.ZP, draw.Src)
@@ -77,9 +82,9 @@ func (f *Frame) inittick() {
 	drawtick(r.Min.X, r.Min.Y, r.Max.X, r.Min.Y+boxw)
 	drawtick(r.Min.X, r.Max.Y-(boxw), r.Max.X, r.Max.Y)
 	if boxw%2 != 0 {
-		drawtick(-linew2, 0, linew2+1, h)
+		drawtick(-linew2, 0, linew2+1, r.Max.Y)
 	} else {
-		drawtick(-linew2, 0, linew2, h)
+		drawtick(-linew2, 0, linew2, r.Max.Y)
 	}
 
 }
@@ -90,16 +95,17 @@ func (f *Frame) tickat(pt image.Point, ticked bool) {
 		return
 	}
 	pt.X -= 1
-	pt.Y -= f.Font.Letting() / 2
+	//pt.Y -= f.Font.Letting() / 4
 	r := f.tick.Bounds().Add(pt)
 	if r.Max.X > f.r.Max.X {
 		r.Max.X = f.r.Max.X
 	}
 	if ticked {
-		draw.Draw(f.tickback, f.tickback.Bounds(), f.b, pt.Add(f.tickback.Bounds().Min), draw.Src)
-		f.Draw(f.b, r, f.tick, f.tick.Bounds().Min, draw.Over)
+		f.Draw(f.tickback, f.tickback.Bounds(), f.b, pt.Add(f.tickback.Bounds().Min), draw.Src)
+		f.Draw(f.b, r, f.tick, f.tick.Bounds().Min, draw.Src)
 	} else {
 		f.Draw(f.b, r, f.tickback, f.tickback.Bounds().Min, draw.Src)
 	}
+	//f.Flush(r.Inset(-1))
 	f.Ticked = ticked
 }

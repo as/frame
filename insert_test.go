@@ -1,10 +1,11 @@
 package frame
 
 import (
-	"github.com/as/frame/font"
 	"image"
 	"strings"
 	"testing"
+
+	. "github.com/as/font"
 )
 
 func TestInsertOneChar(t *testing.T) {
@@ -56,28 +57,59 @@ type benchOp struct {
 	at   int64
 }
 
-func BenchmarkInsert1(b *testing.B) {
-	img := image.NewRGBA(image.Rect(0, 0, 1024, 768))
+var dst = image.NewRGBA(image.Rect(0, 0, 1024, 768))
+
+func BenchmarkInsertGoMono(b *testing.B) { b.Helper(); bInsert(b, withFace(NewGoMono(fsize))) }
+func BenchmarkInsertGoMonoCache(b *testing.B) {
+	b.Helper()
+	bInsert(b, withFace(NewCache(NewGoMono(fsize))))
+}
+func BenchmarkInsertGoMonoReplaceCache(b *testing.B) {
+	b.Helper()
+	bInsert(b, withFace(
+		NewCache(
+			Replacer(
+				NewGoMono(fsize), NewHex(fsize), nil,
+			),
+		),
+	),
+	)
+}
+func BenchmarkInsertGoMonoCliche(b *testing.B) {
+	b.Helper()
+	bInsert(b, withFace(NewCliche(NewGoMono(fsize))))
+}
+func BenchmarkInsertGoMonoRune(b *testing.B) {
+	b.Helper()
+	bInsert(b, withFace(NewRune(NewGoMono(fsize))))
+}
+func BenchmarkInsertGoMonoRuneCache(b *testing.B) {
+	b.Helper()
+	bInsert(b, withFace(NewCache(NewRune(NewGoMono(fsize)))))
+}
+
+func withFace(ft Face) *Frame {
+	return New(dst, dst.Bounds(), &Config{Face: ft, Color: A})
+}
+
+func bInsert(b *testing.B, f *Frame) {
+	//	b.Skip("not ready")
+	b.Helper()
 	for _, v := range []benchOp{
 		{"1", "a", 0},
-		{"10", strings.Repeat("a", 10), 0},
-		{"100", strings.Repeat("a", 100), 0},
-		{"1000", strings.Repeat("a", 1000), 0},
-		{"10000", strings.Repeat("a", 10000), 0},
-		{"100000", strings.Repeat("a", 100000), 0},
+		{"10", strings.Repeat("a\n", 10), 0},
+		{"100", strings.Repeat("a\n", 100), 0},
+		{"1000", strings.Repeat("a\n", 1000), 0},
+		{"10000", strings.Repeat("a\n", 10000), 0},
+		{"100000", strings.Repeat("a\n", 100000), 0},
 	} {
 		b.Run(v.name, func(b *testing.B) {
-			h := New(img.Bounds(), font.NewGoMono(8), img, A)
 			bb := []byte(v.data)
 			b.SetBytes(int64(len(bb)))
-			b.StopTimer()
-			b.ResetTimer()
 			at := v.at
+			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				b.StartTimer()
-				h.Insert(bb, at)
-				b.StopTimer()
-				h.Delete(0, at)
+				f.Insert(bb, at)
 			}
 		})
 	}

@@ -6,7 +6,6 @@ import (
 	"github.com/as/etch"
 	"github.com/as/io/spaz"
 	"image"
-	"io"
 	"io/ioutil"
 	"math/rand"
 	"testing"
@@ -14,15 +13,18 @@ import (
 )
 
 func TestFuzz(t *testing.T) {
+	t.Skip("warning: fuzz test skipped")
 	// The inverse of Insert is Delete. We can use this assumption
 	// to create a graphical fuzz test.
-	var err error
-	var n int
-	var B [327 * 777]byte
+	var (
+		err error
+		n   int
+		B   [327 * 777]byte
+	)
 	buf := B[:]
 	N := 128 // number of rounds
 	sr := spaz.NewReader(bufio.NewReader(reader{}))
-	fr, fr2, a, b := abtestbg(image.Rect(0, 0, 327, 777))
+	fr, fr2, a, b := abtestbg(image.Rect(0, 0, 327, 771))
 	for i := 0; i < N; i++ {
 		// Sync: Start by inserting something into to both frames
 		n, err = sr.Read(buf)
@@ -84,7 +86,6 @@ func init() {
 }
 
 type reader struct {
-	ur io.Reader
 }
 
 func (reader) Read(p []byte) (n int, err error) {

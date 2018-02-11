@@ -9,7 +9,6 @@ import (
 // the frame and returns the number of characters
 // written.
 func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
-	type Pts [2]image.Point
 	if p0 > f.Nchars || len(s) == 0 || f.b == nil {
 		return
 	}
@@ -63,6 +62,16 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	return int(f.ir.Nchars)
 }
 
+func (f *Frame) Draw(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, op draw.Op) {
+	if f == nil {
+		panic("nil frame")
+	}
+	if f.Drawer == nil {
+		panic("nil drawer")
+	}
+	f.Drawer.Draw(dst, r, src, sp, op)
+	f.Flush(r)
+}
 func (f *Frame) badElasticAlg() {
 	if f.elastic() {
 		if f.Nbox <= 1 {
@@ -136,7 +145,7 @@ func (f *Frame) boxalign(cb0 int64, b0 int, pt0, pt1 image.Point) (int64, int, i
 // boxpush moves boxes down the frame to make room for an insertion
 // from pt0 to pt1
 func (f *Frame) boxpush(p0 int64, b0, b1 int, pt0, pt1, ppt1 image.Point) {
-
+	h := f.Face.Dy()
 	// delete boxes that ran off the frame
 	// and update the char count
 	if pt1.Y == f.r.Max.Y && b0 < f.Nbox {
@@ -146,7 +155,7 @@ func (f *Frame) boxpush(p0 int64, b0, b1 int, pt0, pt1, ppt1 image.Point) {
 
 	// update the line count
 	if b0 == f.Nbox {
-		f.Nlines = (pt1.Y - f.r.Min.Y) / f.Font.Dy()
+		f.Nlines = (pt1.Y - f.r.Min.Y) / h
 		if pt1.X > f.r.Min.X {
 			f.Nlines++
 		}
@@ -158,9 +167,9 @@ func (f *Frame) boxpush(p0 int64, b0, b1 int, pt0, pt1, ppt1 image.Point) {
 		return
 	}
 
-	qt0 := pt0.Y + f.Font.Dy()
-	qt1 := pt1.Y + f.Font.Dy()
-	f.Nlines += (qt1 - qt0) / f.Font.Dy()
+	qt0 := pt0.Y + h
+	qt1 := pt1.Y + h
+	f.Nlines += (qt1 - qt0) / h
 	if f.Nlines > f.maxlines {
 		f.trim(ppt1, p0, b1)
 	}
@@ -183,13 +192,17 @@ func (f *Frame) boxpush(p0 int64, b0, b1 int, pt0, pt1, ppt1 image.Point) {
 	}
 }
 
-func (f *Frame) bitblt(cb0 int64, b0 int, pt0, pt1, opt0 image.Point) {
-	h := f.Font.Dy()
+func (f *Frame) bitblt(cb0 int64, b0 int, pt0, pt1, opt0 image.Point) (res image.Rectangle) {
+	h := f.Face.Dy()
 	y := 0
 	if pt1.Y == f.r.Max.Y {
 		y = pt1.Y
 	}
 	x := len(f.pts)
+	if x != 0 {
+		res = image.Rectangle{pt0, pt1}
+		res.Canon().Max.Add(f.pts[x-1][0])
+	}
 	run := f.Box[b0-x:]
 	x--
 	_, back := f.pick(cb0, f.p0, f.p1)
@@ -238,6 +251,7 @@ func (f *Frame) bitblt(cb0 int64, b0 int, pt0, pt1, opt0 image.Point) {
 			}
 		}
 	}
+	return res
 }
 
 func (f *Frame) pick(c, p0, p1 int64) (text, back image.Image) {
@@ -247,16 +261,7 @@ func (f *Frame) pick(c, p0, p1 int64) (text, back image.Image) {
 	return f.Color.Text, f.Color.Back
 }
 
-func region(c, p0, p1 int64) int {
-	if c < p0 {
-		return -1
-	}
-	if c >= p1 {
-		return 1
-	}
-	return 0
-}
-
+/*
 //
 // Below ideas
 
@@ -337,10 +342,4 @@ func (f *Frame) zInsertElastic(s []byte, p0 int64) (wrote int) {
 	return int(f.ir.Nchars)
 
 }
-
-func drawBorder(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, thick int) {
-	draw.Draw(dst, image.Rect(r.Min.X, r.Min.Y, r.Max.X, r.Min.Y+thick), src, sp, draw.Src)
-	draw.Draw(dst, image.Rect(r.Min.X, r.Max.Y-thick, r.Max.X, r.Max.Y), src, sp, draw.Src)
-	draw.Draw(dst, image.Rect(r.Min.X, r.Min.Y, r.Min.X+thick, r.Max.Y), src, sp, draw.Src)
-	draw.Draw(dst, image.Rect(r.Max.X-thick, r.Min.Y, r.Max.X, r.Max.Y), src, sp, draw.Src)
-}
+*/

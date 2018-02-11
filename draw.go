@@ -1,28 +1,10 @@
 package frame
 
 import (
-	"github.com/as/frame/box"
 	"image"
-	"image/draw"
+
+	"github.com/as/frame/box"
 )
-
-// Drawer implements the set of methods a frame needs to draw on a draw.Image. The frame's default behavior is to use
-// the native image/draw package and x/exp/font packages to satisfy this interface.
-type Drawer interface {
-	Draw(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, op draw.Op)
-	DrawMask(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, mask image.Image, mp image.Point, op draw.Op)
-
-	// StringBG draws a string to dst at point p
-	// StringBG(dst draw.Image, p image.Point, src image.Image, sp image.Point, ft *font.Font, s []byte, bg image.Image, bgp image.Point) int
-
-	// Flush requests that prior calls to the draw and string
-	// methods are flushed from an underlying soft-screen.
-	Flush()
-
-	// Cache returns the set of rectangles that have been updates but not flushed. This method exists
-	// temporarily and will be removed from this implementation. Frame does not use it.
-	Cache() []image.Rectangle
-}
 
 // Refresh renders the entire frame, including the underlying
 // bitmap. Refresh should not be called after insertion and deletion
@@ -76,44 +58,68 @@ func (f *Frame) Recolor(pt image.Point, p0, p1 int64, cols Palette) {
 	f.modified = true
 }
 
-func (f *Frame) redrawRun0(r *box.Run, pt image.Point, text, back image.Image) {
+func (f *Frame) redrawRun0(r *box.Run, pt image.Point, text, back image.Image) image.Point {
 	nb := 0
 	for ; nb < r.Nbox; nb++ {
 		b := &r.Box[nb]
 		pt = f.wrapMax(pt, b)
 		//if !f.noredraw && b.nrune >= 0 {
 		if b.Nrune >= 0 {
-			f.stringBG(f.b, pt, text, image.ZP, f.Font, b.Ptr, back, image.ZP)
+			f.StringBG(f.b, pt, text, image.ZP, f.Face, b.Ptr, back, image.ZP)
 		}
 		pt.X += b.Width
 	}
+	return pt
+}
+
+// widthBox returns the width of box n. If the length of
+// alt is different than the box, alt is measured and
+// returned instead.
+func (f *Frame) widthBox(b *box.Box, alt []byte) int {
+	if b.Nrune < 0 || len(alt) == b.Len() {
+		return b.Width
+	}
+	return f.Face.Dx(alt)
 }
 
 func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) image.Point {
-	{ // doubled
+	{
+		// doubled
 		p0, p1 := int(p0), int(p1)
 		q0 := 0
 		trim := false
 
+		var (
+			nb int
+			b  *box.Box
+		)
+
+		for nb = 0; nb < f.Nbox; nb++ {
+			b = &f.Box[nb]
+			l := q0 + b.Len()
+			if l > p0 {
+				break
+			}
+			q0 = l
+		}
+
 		// Step into box, start coloring it
 		// How much does this lambda slow things down?
-		stepFill := func(bn int) {
+		stepFill := func() {
 			qt := pt
-			if pt = f.wrapMax(pt, (&f.Box[bn])); pt.Y > qt.Y {
-				f.Draw(f.b, image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y), back, qt, f.op)
+			if pt = f.wrapMax(pt, b); pt.Y > qt.Y {
+				r := image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y)
+				f.Draw(f.b, r, back, qt, f.op)
+				//f.Flush(r)
 			}
-		}
-		nb := 0
-		for ; nb < f.Nbox && q0+f.LenBox(nb) <= p0; nb++ {
-			// region -2: skip
-			q0 += f.LenBox(nb)
 		}
 
 		for ; nb < f.Nbox && q0 < p1; nb++ {
+			b = &f.Box[nb]
 			if q0 >= p0 { // region 0 or 1 or 2
-				stepFill(nb)
+				stepFill()
 			}
-			ptr := f.BoxBytes(nb)
+			ptr := b.Ptr[:b.Len()]
 			if q0 < p0 {
 				// region -1: shift p right inside the selection
 				ptr = ptr[p0-q0:]
@@ -127,19 +133,14 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 				ptr = ptr[:lim]
 				trim = true
 			}
+			w := f.widthBox(b, ptr)
+			if b.Nrune > 0 {
+				f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Face.Dy()), back, pt, f.op)
+				f.StringBG(f.b, pt, text, image.ZP, f.Face, ptr, back, image.ZP)
+			} else {
+				f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Face.Dy()), back, pt, f.op)
 
-			w := f.WidthBox(nb, ptr)
-			f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Font.Dy()), back, pt, f.op)
-			if f.PlainBox(nb) {
-				f.stringNBG(f.b, pt, text, image.ZP, f.Font, ptr)
 			}
-			// TODO(as): replace the above with the snippet below: reason:
-			// stringBG is more efficient now that it does an src bitblt for an already-known character
-			//			if f.PlainBox(nb){
-			//				f.stringBG(f.b, pt, text, image.ZP, f.Font, ptr)
-			//			} else {
-			//				f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Font.Dy()), back, pt, f.op)
-			//			}
 			pt.X += w
 
 			if q0 += len(ptr); q0 >= p1 {
@@ -147,8 +148,9 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			}
 		}
 
-		if p1 > p0 && nb != 0 && nb < f.Nbox && f.LenBox(nb-1) > 0 && !trim {
-			stepFill(nb)
+		if p1 > p0 && nb != 0 && nb < f.Nbox && f.Box[nb-1].Len() > 0 && !trim {
+			b = &f.Box[nb]
+			stepFill()
 		}
 		return pt
 	}

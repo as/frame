@@ -1,8 +1,12 @@
 package main
 
 import (
+	"image"
+	"image/draw"
+	"sync"
+
+	"github.com/as/font"
 	"github.com/as/frame"
-	"github.com/as/frame/font"
 	"golang.org/x/exp/shiny/driver"
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/mobile/event/key"
@@ -10,9 +14,6 @@ import (
 	"golang.org/x/mobile/event/mouse"
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
-	"image"
-	"image/draw"
-	"sync"
 )
 
 var wg sync.WaitGroup
@@ -28,7 +29,7 @@ func main() {
 		wind, _ := src.NewWindow(&screen.NewWindowOptions{winSize.X, winSize.Y, "basic"})
 		b, _ := src.NewBuffer(winSize)
 		draw.Draw(b.RGBA(), b.Bounds(), frame.A.Back, image.ZP, draw.Src)
-		fr := frame.New(image.Rectangle{image.ZP, winSize}, font.NewGoMono(14), b.RGBA(), frame.A, frame.FrUTF8)
+		fr := frame.New(b.RGBA(), image.Rectangle{image.ZP, winSize}, &frame.Config{Face: font.NewGoMono(14), Color: frame.A, Flag: frame.FrUTF8})
 		fr.Refresh()
 		wind.Send(paint.Event{})
 		ck := func() {
@@ -41,19 +42,16 @@ func main() {
 		fr.Insert([]byte("utf8 test"), fr.Len())
 		fr.Insert([]byte(utf), fr.Len())
 		fr.Insert([]byte("end"), fr.Len())
+		flush := func() {
+			wind.Upload(fr.Bounds().Min, b, fr.Bounds())
+			wind.Publish()
+		}
 		for {
 			switch e := wind.NextEvent().(type) {
 			case mouse.Event:
 				if e.Button == 1 && e.Direction == 1 {
 					p0 := fr.IndexOf(pt(e))
 					fr.Select(p0, p0)
-					flush := func() {
-						for _, r := range fr.Cache() {
-							wind.Upload(r.Min, b, r)
-						}
-						fr.Flush()
-						wind.Publish()
-					}
 					flush()
 					fr.Sweep(wind, flush)
 					wind.Send(paint.Event{})
@@ -86,11 +84,7 @@ func main() {
 				fr.Refresh()
 				ck()
 			case paint.Event:
-				for _, r := range fr.Cache() {
-					wind.Upload(r.Min, b, r)
-				}
-				fr.Flush()
-				wind.Publish()
+				flush()
 			case lifecycle.Event:
 				if e.To == lifecycle.StageDead {
 					return

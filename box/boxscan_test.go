@@ -2,361 +2,59 @@ package box
 
 import (
 	"bytes"
-	"github.com/as/frame/font"
 	"testing"
+
+	. "github.com/as/font"
 )
 
 var fsize = 11
 
-func BenchmarkScanByte(b *testing.B) {
-	b.Skip("broken")
-	bb := []byte("a")
-	b.SetBytes(int64(len(bb)))
-	r := NewRun(5, 5000, font.NewBasic(fsize))
-	b.StopTimer()
+func genBench(b *testing.B, in []byte, min, max int, fn func(int) Face, ftsize int, bxceil int) {
+	b.Helper()
+	b.SetBytes(int64(len(in)))
+	r := NewRun(min, max, NewCache(fn(ftsize)))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 1)
-		b.StopTimer()
-	}
-}
-
-func BenchmarkScanByteFont(b *testing.B) {
-	b.Skip("broken")
-	bb := []byte("a")
-	b.SetBytes(int64(len(bb)))
-	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft)
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 1)
-		b.StopTimer()
-	}
-}
-
-func BenchmarkScan16Bytes(b *testing.B) {
-	b.Skip("broken")
-	bb := []byte("The quick brown ")
-	fn := font.NewBasic(fsize)
-	r := NewRun(5, 5000, fn)
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 1)
-		b.StopTimer()
-	}
-}
-
-func BenchmarkScan16BytesFont(b *testing.B) {
-	b.Skip("broken")
-	bb := []byte("The quick brown ")
-	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft)
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 1)
-		b.StopTimer()
-	}
-}
-func BenchmarkScanHelloWorld(b *testing.B) {
-	bb := []byte(`package main\nimport "fmt"\n\nfunc main(){\n\tfmt.Println("hello world")\n}\n\n`)
-	b.SetBytes(int64(len(bb)))
-	fn := font.NewBasic(fsize)
-	r := NewRun(5, 5000, fn)
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 10)
-		b.StopTimer()
-	}
-}
-func BenchmarkScanHelloWorldFont(b *testing.B) {
-	bb := []byte(`package main\nimport "fmt"\n\nfunc main(){\n\tfmt.Println("hello world")\n}\n\n`)
-	b.SetBytes(int64(len(bb)))
-	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft)
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 10)
-		b.StopTimer()
+		r.Boxscan(in, bxceil)
 	}
 }
 
 func roll(size int) []byte {
 	b := new(bytes.Buffer)
 	for i := 0; i < size; i++ {
-		b.WriteByte(byte(i % 256))
+		b.WriteByte(byte(i))
 	}
 	return b.Bytes()
 }
 
-func BenchmarkScanBinary100(b *testing.B) {
-	bb := roll(100)
-	b.SetBytes(int64(len(bb)))
-	fn := font.NewBasic(fsize)
-	r := NewRun(5, 5000, fn)
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 100)
-		b.StopTimer()
-	}
-
+func BenchmarkScanByte(b *testing.B) { genBench(b, []byte("a"), 5, 5000, NewGoMono, 11, 1) }
+func BenchmarkScan16Bytes(b *testing.B) {
+	genBench(b, []byte("The quick brown "), 5, 5000, NewGoMono, 11, 1)
 }
-func BenchmarkScanBinary100Font(b *testing.B) {
-	bb := roll(100)
-	b.SetBytes(int64(len(bb)))
-	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft)
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 100)
-		b.StopTimer()
-	}
-
+func BenchmarkScanHelloWorld(b *testing.B) {
+	genBench(b, []byte(`package main\nimport "fmt"\n\nfunc main(){\n\tfmt.Println("hello world")\n}\n\n`), 5, 5000, NewGoMono, 11, 1)
 }
-
-func BenchmarkScanBinary1000(b *testing.B) {
-	bb := roll(1000)
-
-	b.SetBytes(int64(len(bb)))
-	fn := font.NewBasic(fsize)
-
-	r := NewRun(5, 5000, fn)
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 100)
-		b.StopTimer()
-	}
-
-}
-func BenchmarkScanBinary1000Font(b *testing.B) {
-	bb := roll(1000)
-	b.SetBytes(int64(len(bb)))
-	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft)
-
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 1000)
-		b.StopTimer()
-	}
-}
-
-func Ben5000(b *testing.B) {
-	bb := roll(5000)
-	b.SetBytes(int64(len(bb)))
-	fn := font.NewBasic(fsize)
-	r := NewRun(5, 5000, fn)
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 100)
-		b.StopTimer()
-	}
-
-}
-func BenchmarkScanBinary5000Font(b *testing.B) {
-	bb := roll(5000)
-	b.SetBytes(int64(len(bb)))
-	fn := font.NewBasic(fsize)
-	r := NewRun(5, 5000, fn)
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 1000)
-		b.StopTimer()
-	}
-}
-
-func BenchmarkScanBinary100000(b *testing.B) {
-	bb := roll(100000)
-	b.SetBytes(int64(len(bb)))
-	fn := font.NewBasic(fsize)
-	r := NewRun(5, 5000, fn)
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 100000)
-		b.StopTimer()
-	}
-
-}
-func BenchmarkScanBinary100000Font(b *testing.B) {
-	bb := roll(100000)
-	b.SetBytes(int64(len(bb)))
-	fn := font.NewGoRegular(9)
-	r := NewRun(5, 5000, fn)
-
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 100000)
-		b.StopTimer()
-	}
-}
-
-func BenchmarkLongLine100000(b *testing.B) {
-	bb := bytes.Repeat([]byte{'a'}, 100000)
-	b.SetBytes(int64(len(bb)))
-	fn := font.NewGoRegular(8)
-	r := NewRun(5, 5000, fn)
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 100000)
-		b.StopTimer()
-	}
-
-}
-func BenchmarkLongLine100000Font(b *testing.B) {
-	bb := bytes.Repeat([]byte{'a'}, 100000)
-	b.SetBytes(int64(len(bb)))
-	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft)
-
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 100000)
-		b.StopTimer()
-	}
-}
-
 func Benchmark100000Lines(b *testing.B) {
-	bb := bytes.Repeat([]byte{'\n'}, 100000)
-	b.SetBytes(int64(len(bb)))
-	fn := font.NewGoRegular(8)
-	r := NewRun(5, 5000, fn)
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 100000)
-		b.StopTimer()
-	}
-
+	genBench(b, bytes.Repeat([]byte{'\n'}, 100000), 5, 5000, NewGoMono, 8, 100000)
 }
-func Benchmark100000LinesFont(b *testing.B) {
-	bb := bytes.Repeat([]byte{'\n'}, 100000)
-	b.SetBytes(int64(len(bb)))
-	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft)
-
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 100000)
-		b.StopTimer()
-	}
-}
-
 func Benchmark100000Lines2Byte(b *testing.B) {
-	bb := bytes.Repeat([]byte{'a', '\n'}, 100000)
-	b.SetBytes(int64(len(bb)))
-	fn := font.NewGoRegular(16)
-	r := NewRun(5, 5000, fn)
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 100000)
-		b.StopTimer()
-	}
-
+	genBench(b, bytes.Repeat([]byte{'a', '\n'}, 100000), 5, 5000, NewGoMono, 16, 100000)
 }
-func Benchmark100000Lines2ByteFont(b *testing.B) {
-	bb := bytes.Repeat([]byte{'a', '\n'}, 100000)
-	b.SetBytes(int64(len(bb)))
-	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft)
-
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 100000)
-		b.StopTimer()
-	}
-}
-
 func Benchmark100000Lines4Byte(b *testing.B) {
-	bb := bytes.Repeat([]byte{'a', 'a', 'a', '\n'}, 100000)
-	b.SetBytes(int64(len(bb)))
-	fn := font.NewGoRegular(8)
-	r := NewRun(5, 5000, fn)
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 100000)
-		b.StopTimer()
-	}
-
+	genBench(b, bytes.Repeat([]byte{'a', 'a', 'a', '\n'}, 100000), 5, 5000, NewGoMono, 16, 100000)
 }
-func Benchmark100000Lines4ByteFont(b *testing.B) {
-	bb := bytes.Repeat([]byte{'a', 'a', 'a', '\n'}, 100000)
-	b.SetBytes(int64(len(bb)))
-	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft)
-
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 100000)
-		b.StopTimer()
-	}
-}
-
 func Benchmark100000Lines16Byte(b *testing.B) {
-	bb := bytes.Repeat([]byte{'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', '\n'}, 100000)
-	b.SetBytes(int64(len(bb)))
-	fn := font.NewGoRegular(8)
-	r := NewRun(5, 5000, fn)
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 100000)
-		b.StopTimer()
-	}
-
+	genBench(b, bytes.Repeat([]byte{'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', '\n'}, 100000), 5, 5000, NewGoMono, 16, 100000)
 }
-func Benchmark100000Lines16ByteFont(b *testing.B) {
-	bb := bytes.Repeat([]byte{'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', '\n'}, 100000)
-	b.SetBytes(int64(len(bb)))
-	ft := font.NewGoRegular(8)
-	r := NewRun(5, 5000, ft)
-
-	b.StopTimer()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StartTimer()
-		r.Boxscan(bb, 100000)
-		b.StopTimer()
-	}
+func BenchmarkScanBinary100(b *testing.B)  { genBench(b, roll(100), 5, 5000, NewGoMono, 11, 100) }
+func BenchmarkScanBinary1000(b *testing.B) { genBench(b, roll(1000), 5, 5000, NewGoMono, 11, 1000) }
+func BenchmarkScanBinary5000(b *testing.B) { genBench(b, roll(5000), 5, 5000, NewGoMono, 11, 5000) }
+func BenchmarkScanBinary10000(b *testing.B) {
+	genBench(b, roll(10000), 5, 5000, NewGoMono, 11, 10000)
+}
+func BenchmarkScanBinary100000(b *testing.B) {
+	genBench(b, roll(100000), 5, 5000, NewGoMono, 11, 100000)
+}
+func BenchmarkLongLine100000(b *testing.B) {
+	genBench(b, bytes.Repeat([]byte{'a'}, 100000), 5, 5000, NewGoMono, 8, 100000)
 }

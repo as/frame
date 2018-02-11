@@ -39,11 +39,6 @@ var (
 	MTextW = solid(255-59, 255-50, 255-43)
 )
 
-type Color struct {
-	Palette
-	Hi Palette
-}
-
 var (
 	Acme = Color{
 		Palette: Palette{Text: Gray, Back: Yellow},
@@ -84,7 +79,3 @@ var (
 		},
 	}
 )
-
-type Palette struct {
-	Text, Back image.Image
-}

@@ -6,10 +6,9 @@ import (
 
 // IndexOf returns the chracter index under the
 // point pt.
-func (f *Frame) IndexOf(pt image.Point) int64 {
+func (f *Frame) IndexOf(pt image.Point) (p int64) {
 	pt = f.grid(pt)
 	qt := f.r.Min
-	p := int64(0)
 	bn := 0
 	for ; bn < f.Nbox && qt.Y < pt.Y; bn++ {
 		b := &f.Box[bn]
@@ -31,18 +30,9 @@ func (f *Frame) IndexOf(pt image.Point) int64 {
 			if b.Nrune < 0 {
 				qt = f.advance(qt, b)
 			} else {
-				bs := f.newRulerFunc(b.Ptr, f.Font)
-				for {
-					size, width, err := bs.Next()
-					if err != nil {
-						break
-					}
-					qt.X += width
-					if qt.X > pt.X {
-						break
-					}
-					p += int64(size)
-				}
+				left := pt.X - qt.X
+				p += int64(f.Face.Fits(b.Ptr, left))
+				qt.X += left
 			}
 		} else {
 			p += int64(b.Len())
