@@ -87,13 +87,13 @@ func (f *Frame) Delete(p0, p1 int64) int {
 	if pt0.X > f.r.Min.X {
 		extra = 1
 	}
-	h := f.Font.Dy()
+	h := f.Face.Dy()
 	f.Nlines = (pt0.Y-f.r.Min.Y)/h + extra
 	f.badElasticAlg()
 	return int(p1 - p0) //n - f.Nlines
 }
 func (f *Frame) delete(pt0, pt1 image.Point, n0, n1 int, cn1 int64) (image.Point, image.Point, int, int) {
-	h := f.Font.Dy()
+	h := f.Face.Dy()
 	for pt1.X != pt0.X && n1 < f.Nbox {
 		b := &f.Box[n1]
 		pt0 = f.wrapMin(pt0, b)
@@ -129,7 +129,7 @@ func (f *Frame) fixTrailer(pt0, pt1 image.Point, n1 int) (image.Point, image.Poi
 	if n1 == f.Nbox && pt0.X != pt1.X {
 		f.Paint(pt0, pt1, f.Color.Back)
 	}
-	h := f.Font.Dy()
+	h := f.Face.Dy()
 	pt2 := f.pointOf(65536, pt1, n1)
 	if pt2.Y > f.r.Max.Y {
 		pt2.Y = f.r.Max.Y - h

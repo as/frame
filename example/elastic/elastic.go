@@ -29,7 +29,7 @@ func main() {
 		draw.Draw(b.RGBA(), b.Bounds(), frame.A.Back, image.ZP, draw.Src)
 
 		fr := frame.New(b.RGBA(), b.Bounds(), &frame.Config{
-			Font:  font.NewGoRegular(14),
+			Face:  font.NewGoRegular(14),
 			Color: frame.A,
 			Flag:  frame.FrUTF8 | frame.FrElastic,
 		},

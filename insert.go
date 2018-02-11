@@ -145,7 +145,7 @@ func (f *Frame) boxalign(cb0 int64, b0 int, pt0, pt1 image.Point) (int64, int, i
 // boxpush moves boxes down the frame to make room for an insertion
 // from pt0 to pt1
 func (f *Frame) boxpush(p0 int64, b0, b1 int, pt0, pt1, ppt1 image.Point) {
-	h := f.Font.Dy()
+	h := f.Face.Dy()
 	// delete boxes that ran off the frame
 	// and update the char count
 	if pt1.Y == f.r.Max.Y && b0 < f.Nbox {
@@ -193,7 +193,7 @@ func (f *Frame) boxpush(p0 int64, b0, b1 int, pt0, pt1, ppt1 image.Point) {
 }
 
 func (f *Frame) bitblt(cb0 int64, b0 int, pt0, pt1, opt0 image.Point) (res image.Rectangle) {
-	h := f.Font.Dy()
+	h := f.Face.Dy()
 	y := 0
 	if pt1.Y == f.r.Max.Y {
 		y = pt1.Y

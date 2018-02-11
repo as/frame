@@ -31,7 +31,7 @@ func (f *Frame) IndexOf(pt image.Point) (p int64) {
 				qt = f.advance(qt, b)
 			} else {
 				left := pt.X - qt.X
-				p += int64(f.Font.Fits(b.Ptr, left))
+				p += int64(f.Face.Fits(b.Ptr, left))
 				qt.X += left
 			}
 		} else {

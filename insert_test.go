@@ -89,7 +89,7 @@ func BenchmarkInsertGoMonoRuneCache(b *testing.B) {
 }
 
 func withFace(ft Face) *Frame {
-	return New(dst, dst.Bounds(), &Config{Font: ft, Color: A})
+	return New(dst, dst.Bounds(), &Config{Face: ft, Color: A})
 }
 
 func bInsert(b *testing.B, f *Frame) {

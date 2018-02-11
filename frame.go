@@ -27,7 +27,7 @@ func (f *Frame) Config() *Config {
 	return &Config{
 		Flag:   f.flags,
 		Color:  f.Color,
-		Font:   f.Font,
+		Face:   f.Face,
 		Drawer: f.Drawer,
 	}
 }
@@ -38,8 +38,8 @@ func (c *Config) check() *Config {
 	if c.Color == zc {
 		c.Color = A
 	}
-	if c.Font == nil {
-		c.Font = NewFace(11)
+	if c.Face == nil {
+		c.Face = NewFace(11)
 	}
 	if c.Drawer == nil {
 		c.Drawer = &defaultDrawer{}
@@ -69,7 +69,7 @@ type Frame struct {
 	r  image.Rectangle
 	ir *box.Run
 
-	Font Face
+	Face Face
 	Color
 	Ticked bool
 	Scroll func(int)
@@ -100,10 +100,10 @@ func New(dst draw.Image, r image.Rectangle, conf *Config) *Frame {
 	}
 	conf.check()
 	fl := conf.Flag
-	face := negotiateFace(conf.Font, fl)
+	face := negotiateFace(conf.Face, fl)
 	mintab, maxtab := tabMinMax(face, fl&FrElastic != 0)
 	f := &Frame{
-		Font:   face,
+		Face:   face,
 		Color:  conf.Color,
 		Drawer: conf.Drawer,
 		Run:    box.NewRun(mintab, 5000, face),
@@ -129,7 +129,7 @@ func (f *Frame) Flags() int {
 func (f *Frame) SetFlags(flags int) {
 	fl := getflag(flags)
 	f.flags = fl
-	f.mintab, f.maxtab = tabMinMax(f.Font, f.elastic())
+	f.mintab, f.maxtab = tabMinMax(f.Face, f.elastic())
 	//	f.Reset( f.r, f.RGBA(),f.Font)
 	//	f.mintab, f.maxtab = tabMinMax(f.Font, f.elastic())
 }
@@ -196,8 +196,8 @@ func (f *Frame) Reset(r image.Rectangle, b *image.RGBA, ft font.Face) {
 }
 
 func (f *Frame) SetFont(ft font.Face) {
-	f.Font = Open(ft)
-	f.Run.Reset(f.Font)
+	f.Face = Open(ft)
+	f.Run.Reset(f.Face)
 	f.Refresh()
 }
 
@@ -234,7 +234,7 @@ func (f *Frame) Dot() (p0, p1 int64) {
 func (f *Frame) setrects(r image.Rectangle, b draw.Image) {
 	f.b = b
 	f.r = r
-	h := f.Font.Dy()
+	h := f.Face.Dy()
 	f.r.Max.Y -= f.r.Dy() % h
 	f.maxlines = f.r.Dy() / h
 }

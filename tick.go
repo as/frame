@@ -61,16 +61,16 @@ func (f *Frame) tickbg() image.Image {
 
 func (f *Frame) inittick() {
 
-	he := f.Font.Height()
-	as := f.Font.Ascent()
-	de := f.Font.Descent()
+	he := f.Face.Height()
+	as := f.Face.Ascent()
+	de := f.Face.Descent()
 	boxw, linew := mktick(he)
 	linew2 := linew / 2
 	if linew < 1 {
 		linew = 1
 	}
 	z0 := de - 2
-	r := image.Rect(0, z0, boxw, he-(he-as)/2+f.Font.Letting()/2)
+	r := image.Rect(0, z0, boxw, he-(he-as)/2+f.Face.Letting()/2)
 	r = r.Sub(image.Pt(r.Dx()/2, 0))
 	f.tick = image.NewRGBA(r)
 	f.tickback = image.NewRGBA(r)

@@ -15,7 +15,7 @@ var (
 
 func tconf() *Config {
 	return &Config{
-		Font:  font.NewGoMono(fsize),
+		Face:  font.NewGoMono(fsize),
 		Color: A,
 	}
 }

@@ -65,7 +65,7 @@ func (f *Frame) redrawRun0(r *box.Run, pt image.Point, text, back image.Image) i
 		pt = f.wrapMax(pt, b)
 		//if !f.noredraw && b.nrune >= 0 {
 		if b.Nrune >= 0 {
-			f.StringBG(f.b, pt, text, image.ZP, f.Font, b.Ptr, back, image.ZP)
+			f.StringBG(f.b, pt, text, image.ZP, f.Face, b.Ptr, back, image.ZP)
 		}
 		pt.X += b.Width
 	}
@@ -135,10 +135,10 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			}
 			w := f.widthBox(b, ptr)
 			if b.Nrune > 0 {
-				f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Font.Dy()), back, pt, f.op)
-				f.StringBG(f.b, pt, text, image.ZP, f.Font, ptr, back, image.ZP)
+				f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Face.Dy()), back, pt, f.op)
+				f.StringBG(f.b, pt, text, image.ZP, f.Face, ptr, back, image.ZP)
 			} else {
-				f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Font.Dy()), back, pt, f.op)
+				f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Face.Dy()), back, pt, f.op)
 
 			}
 			pt.X += w

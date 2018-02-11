@@ -9,7 +9,7 @@ import (
 
 // bxscan resets the measuring function and calls Bxscan in the embedded run
 func (f *Frame) boxscan(s []byte, pt image.Point) (image.Point, image.Point) {
-	switch f.Font.(type) {
+	switch f.Face.(type) {
 	case font.Rune:
 		f.ir.Runescan(s, f.maxlines)
 	case interface{}:

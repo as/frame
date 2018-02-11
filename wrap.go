@@ -31,7 +31,7 @@ func (f *Frame) wrapMin(pt image.Point, b *box.Box) image.Point {
 
 func (f *Frame) wrap(pt image.Point) image.Point {
 	pt.X = f.r.Min.X
-	pt.Y += f.Font.Dy()
+	pt.Y += f.Face.Dy()
 	return pt
 }
 
@@ -56,7 +56,7 @@ func (f *Frame) fits(pt image.Point, b *box.Box) (nr int) {
 	if left >= b.Width {
 		return b.Nrune
 	}
-	return f.Font.Fits(b.Ptr, left)
+	return f.Face.Fits(b.Ptr, left)
 }
 func (f *Frame) plot(pt image.Point, b *box.Box) int {
 	b.Width = f.project(pt, b)
