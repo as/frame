@@ -3,8 +3,6 @@ package frame
 import (
 	"image"
 	"image/draw"
-	//	"image/draw"
-
 	"golang.org/x/mobile/event/mouse"
 )
 
