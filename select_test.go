@@ -21,6 +21,48 @@ func TestSelectFlow(t *testing.T) {
 	etch.Assert(t, have, want, "TestSelectFlow.png")
 }
 
+func testReg(t *testing.T, name, what string, where int){
+	t.Helper()
+	h, _, have, _ := abtestbg(R)
+	h.Insert([]byte("abcde"), 0)
+	h.Select(1, 4)
+	ckDot(t, h, 1,4)
+	h.Insert([]byte(what), int64(where))
+	p0, p1 := int64(1), int64(4)
+	if where <= 1 {
+		p0++
+		p1++
+	} else if where < 4{
+		p1++
+	}
+	ckDot(t, h, p0,p1)
+	h.Select(p0, p1)
+	check(t, have, "TestInsertRegion"+name, testMode)
+}
+
+func TestRegion0(t *testing.T){ testReg(t, "0", "0", 0) }
+func TestRegion1(t *testing.T){ testReg(t, "1", "1", 1) }
+func TestRegion2(t *testing.T){ testReg(t, "2", "2", 2) }
+func TestRegion3(t *testing.T){ testReg(t, "3", "3", 3) }
+func TestRegion4(t *testing.T){ testReg(t, "4", "4", 4) }
+func TestRegion5(t *testing.T){ testReg(t, "5", "5", 5) }
+
+func ckDot(t *testing.T, f *Frame, p0, p1 int64){
+	t.Helper()
+	q0, q1 := f.Dot()
+	if q0 != int64(p0) || q1 != int64(p1){
+		t.Logf("bad selection: have [%d:%d), want [%d:%d)\n", q0,q1,p0,p1)
+		t.Fail()
+	}
+}
+
+func TestInsertExtendsSelection(t *testing.T){
+	h, _, _, _ := abtestbg(R)
+	h.Insert([]byte("abcde"), 0)
+	h.Select(1, 4)
+	h.Insert([]byte("x"), 2)
+	ckDot(t, h, 1,5)
+}
 func TestSelect0to0(t *testing.T) {
 	h, _, have, _ := abtestbg(R)
 	h.Insert(testSelectData, 0)
