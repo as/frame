@@ -54,7 +54,12 @@ func (f *Frame) Insert(s []byte, p0 int64) (wrote int) {
 	}
 	f.clean(ppt0, b1, b0)
 	f.Nchars += f.ir.Nchars
-	f.p0, f.p1 = coInsert(p0, p0+f.Nchars, f.p0, f.p1)
+	if p0 <= f.p0{
+		f.p0+=f.ir.Nchars
+		f.p1+=f.ir.Nchars
+	} else if p0 < f.p1{
+		f.p1+=f.ir.Nchars
+	}
 	if f.p0 == f.p1 {
 		f.tickat(f.PointOf(f.p0), true)
 	}
