@@ -1,9 +1,30 @@
 package frame
 
 import (
+	"golang.org/x/mobile/event/mouse"
 	"image"
 	"image/draw"
-	"golang.org/x/mobile/event/mouse"
+)
+
+type EventPipe interface {
+	Send(e interface{})
+	SendFirst(e interface{})
+	NextEvent() interface{}
+}
+
+type (
+	Selector interface {
+		Select(p0, p1 int64)
+		Dot() (p0, p1 int64)
+	}
+	Projector interface {
+		PointOf(int64) image.Point
+		IndexOf(image.Point) int64
+	}
+	Sweeper interface {
+		Projector
+		Selector
+	}
 )
 
 // Paint paints the color col on the frame at points pt0-pt1. The result is a Z shaped fill
@@ -23,19 +44,15 @@ func (f *Frame) Paint(p0, p1 image.Point, col image.Image) {
 
 	if n == 0 { // one line
 		f.Draw(f.b, image.Rectangle{p0, q1}, col, image.ZP, draw.Over)
-		f.Flush(image.Rectangle{p0, q1})
 	} else {
 		if p0.X >= f.r.Max.X {
 			p0.X = f.r.Max.X // - 1
 		}
 		f.Draw(f.b, image.Rect(p0.X, p0.Y, f.r.Max.X, q0.Y), col, image.ZP, draw.Over)
-		f.Flush(image.Rect(p0.X, p0.Y, f.r.Max.X, q0.Y))
 		if n > 1 {
 			f.Draw(f.b, image.Rect(f.r.Min.X, q0.Y, f.r.Max.X, p1.Y), col, image.ZP, draw.Over)
-			f.Flush(image.Rect(f.r.Min.X, q0.Y, f.r.Max.X, p1.Y))
 		}
 		f.Draw(f.b, image.Rect(f.r.Min.X, p1.Y, q1.X, q1.Y), col, image.ZP, draw.Over)
-		f.Flush(image.Rect(f.r.Min.X, p1.Y, q1.X, q1.Y))
 	}
 }
 
@@ -53,9 +70,9 @@ func (f *Frame) Select(p0, p1 int64) {
 		} else if p0 > pp0 {
 			f.Redraw(f.PointOf(pp0), pp0, p0, false)
 		}
-		if pp1 < p1 {
+		if p1 > pp1 {
 			f.Redraw(f.PointOf(pp1), pp1, p1, true)
-		} else if pp1 > p1 {
+		} else if p1 < pp1 {
 			f.Redraw(f.PointOf(p1), p1, pp1, false)
 		}
 	}
@@ -86,27 +103,6 @@ Loop:
 		}
 	}
 }
-
-type EventPipe interface {
-	Send(e interface{})
-	SendFirst(e interface{})
-	NextEvent() interface{}
-}
-
-type (
-	Selector interface {
-		Select(p0, p1 int64)
-		Dot() (p0, p1 int64)
-	}
-	Projector interface {
-		PointOf(int64) image.Point
-		IndexOf(image.Point) int64
-	}
-	Sweeper interface {
-		Projector
-		Selector
-	}
-)
 
 func pt(e mouse.Event) image.Point {
 	return image.Pt(int(e.X), int(e.Y))

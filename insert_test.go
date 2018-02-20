@@ -61,11 +61,15 @@ var dst = image.NewRGBA(image.Rect(0, 0, 1024, 768))
 
 func BenchmarkInsertGoMono(b *testing.B) { b.Helper(); bInsert(b, withFace(NewGoMono(fsize))) }
 func BenchmarkInsertGoMonoCache(b *testing.B) {
-	if b, ok := interface{}(b).(help); ok{b.Helper() }
+	if b, ok := interface{}(b).(help); ok {
+		b.Helper()
+	}
 	bInsert(b, withFace(NewCache(NewGoMono(fsize))))
 }
 func BenchmarkInsertGoMonoReplaceCache(b *testing.B) {
-	if b, ok := interface{}(b).(help); ok{ b.Helper() }
+	if b, ok := interface{}(b).(help); ok {
+		b.Helper()
+	}
 	bInsert(b, withFace(
 		NewCache(
 			Replacer(
@@ -76,15 +80,21 @@ func BenchmarkInsertGoMonoReplaceCache(b *testing.B) {
 	)
 }
 func BenchmarkInsertGoMonoCliche(b *testing.B) {
-	if b, ok := interface{}(b).(help); ok{b.Helper() }
+	if b, ok := interface{}(b).(help); ok {
+		b.Helper()
+	}
 	bInsert(b, withFace(NewCliche(NewGoMono(fsize))))
 }
 func BenchmarkInsertGoMonoRune(b *testing.B) {
-	if b, ok := interface{}(b).(help); ok{b.Helper() }
+	if b, ok := interface{}(b).(help); ok {
+		b.Helper()
+	}
 	bInsert(b, withFace(NewRune(NewGoMono(fsize))))
 }
 func BenchmarkInsertGoMonoRuneCache(b *testing.B) {
-	if b, ok := interface{}(b).(help); ok{b.Helper() }
+	if b, ok := interface{}(b).(help); ok {
+		b.Helper()
+	}
 	bInsert(b, withFace(NewCache(NewRune(NewGoMono(fsize)))))
 }
 
@@ -94,7 +104,9 @@ func withFace(ft Face) *Frame {
 
 func bInsert(b *testing.B, f *Frame) {
 	//	b.Skip("not ready")
-	if b, ok := interface{}(b).(help); ok{ b.Helper() }
+	if b, ok := interface{}(b).(help); ok {
+		b.Helper()
+	}
 	for _, v := range []benchOp{
 		{"1", "a", 0},
 		{"10", strings.Repeat("a\n", 10), 0},
@@ -120,6 +132,6 @@ func bInsert(b *testing.B, f *Frame) {
 // run older Go versions not supporting t.Helper().
 //
 //
-type help interface{
+type help interface {
 	Helper()
 }

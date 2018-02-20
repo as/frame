@@ -1,8 +1,9 @@
 package frame
 
 import (
-	_ "github.com/as/etch"
 	"image"
+
+	_ "github.com/as/etch"
 )
 
 // Delete deletes the range [p0:p1) and

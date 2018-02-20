@@ -107,13 +107,12 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 		// How much does this lambda slow things down?
 		stepFill := func() {
 			qt := pt
-			if pt = f.wrapMax(pt, b); pt.Y > qt.Y {
+			pt = f.wrapMax(pt, b)
+			if pt.Y > qt.Y {
 				r := image.Rect(qt.X, qt.Y, f.r.Max.X, pt.Y)
 				f.Draw(f.b, r, back, qt, f.op)
-				//f.Flush(r)
 			}
 		}
-
 		for ; nb < f.Nbox && q0 < p1; nb++ {
 			b = &f.Box[nb]
 			if q0 >= p0 { // region 0 or 1 or 2
@@ -127,7 +126,7 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 			}
 
 			trim = false
-			if q1 := q0 + len(ptr); q1 >= p1 {
+			if q1 := q0 + len(ptr); q1 > p1 {
 				// region 1: would draw too much, retract the selection
 				lim := len(ptr) - (q1 - p1)
 				ptr = ptr[:lim]
@@ -139,15 +138,13 @@ func (f *Frame) drawsel(pt image.Point, p0, p1 int64, back, text image.Image) im
 				f.StringBG(f.b, pt, text, image.ZP, f.Face, ptr, back, image.ZP)
 			} else {
 				f.Draw(f.b, image.Rect(pt.X, pt.Y, min(pt.X+w, f.r.Max.X), pt.Y+f.Face.Dy()), back, pt, f.op)
-
 			}
 			pt.X += w
 
-			if q0 += len(ptr); q0 >= p1 {
+			if q0 += len(ptr); q0 > p1 {
 				break
 			}
 		}
-
 		if p1 > p0 && nb != 0 && nb < f.Nbox && f.Box[nb-1].Len() > 0 && !trim {
 			b = &f.Box[nb]
 			stepFill()
