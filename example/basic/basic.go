@@ -59,20 +59,21 @@ func main() {
 				if e.Rune == '\r' {
 					e.Rune = '\n'
 				}
+				p0, p1 := fr.Dot()
 				if e.Rune > 0x79 || e.Rune < 0 {
 					continue
 				}
-				p0, p1 := fr.Dot()
 				if e.Rune == '\x08' {
 					if p0 == p1 && p0 > 0 {
 						p0--
 					}
 					fr.Delete(p0, p1)
 				} else {
+					if p0 != p1 {
+						fr.Delete(p0, p1)
+					}
 					fr.Insert([]byte{byte(e.Rune)}, p0)
-					p0++
 				}
-				fr.Select(p0, p0)
 				dirty = true
 				ck()
 			case size.Event:
