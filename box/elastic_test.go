@@ -1,8 +1,9 @@
 package box
 
 import (
-	. "github.com/as/font"
 	"testing"
+
+	. "github.com/as/font"
 )
 
 func runwith(s string) *Run {

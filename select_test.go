@@ -1,8 +1,9 @@
 package frame
 
 import (
-	"github.com/as/etch"
 	"testing"
+
+	"github.com/as/etch"
 )
 
 func TestSelectFlow(t *testing.T) {

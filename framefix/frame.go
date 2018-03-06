@@ -23,8 +23,11 @@ var frameFix = fix{
 
 func frame(f *ast.File) bool {
 	fixed := false
-	if rewriteImport(f, "github.com/as/frame/font", "github.com/as/font") {
-		fixed = true
+	if imports(f, "github.com/as/frame/font") {
+		defer func() {
+			rewriteImport(f, "github.com/as/frame/font", "github.com/as/font")
+			fixed = true
+		}()
 	}
 	if !imports(f, "github.com/as/frame") {
 		return fixed
@@ -46,6 +49,11 @@ func frame(f *ast.File) bool {
 			return
 		}
 		x := se.Sel
+		if x.Name == "Font" {
+			x.Name = "Face"
+			fixed = true
+			return
+		}
 		if x.Name != "New" {
 			return
 		}

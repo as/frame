@@ -2,11 +2,12 @@ package frame
 
 import (
 	"errors"
+	"image"
+	"image/draw"
+
 	. "github.com/as/font"
 	"github.com/as/frame/box"
 	"golang.org/x/image/font"
-	"image"
-	"image/draw"
 )
 
 var (

@@ -1,11 +1,12 @@
 package frame
 
 import (
-	"github.com/as/etch"
-	"github.com/as/font"
 	"image"
 	"image/draw"
 	"testing"
+
+	"github.com/as/etch"
+	"github.com/as/font"
 )
 
 var (

@@ -1,9 +1,10 @@
 package frame
 
 import (
-	"golang.org/x/mobile/event/mouse"
 	"image"
 	"image/draw"
+
+	"golang.org/x/mobile/event/mouse"
 )
 
 type EventPipe interface {

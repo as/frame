@@ -3,13 +3,14 @@ package frame
 import (
 	"bufio"
 	"fmt"
-	"github.com/as/etch"
-	"github.com/as/io/spaz"
 	"image"
 	"io/ioutil"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/as/etch"
+	"github.com/as/io/spaz"
 )
 
 func TestFuzz(t *testing.T) {
