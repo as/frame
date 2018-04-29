@@ -84,8 +84,8 @@ func (f *Frame) Select(p0, p1 int64) {
 // Sweep reads a sequence of mouse.Events from the event pipe
 // and uses the flush functions to draw a live selection. Control
 // is transfered back to the caller after a release event is processed.
-func (fr *Frame) Sweep(ep EventPipe, flush func()) {
-	p0, p1 := fr.Dot()
+func (f *Frame) Sweep(ep EventPipe, flush func()) {
+	p0, p1 := f.Dot()
 Loop:
 	for {
 		e := ep.NextEvent()
@@ -95,8 +95,8 @@ Loop:
 				ep.SendFirst(e)
 				break Loop
 			}
-			p1 = fr.IndexOf(pt(e))
-			fr.Select(min64(p0, p1), max64(p0, p1))
+			p1 = f.IndexOf(pt(e))
+			f.Select(min64(p0, p1), max64(p0, p1))
 			flush()
 		case interface{}:
 			ep.SendFirst(e)
