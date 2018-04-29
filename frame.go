@@ -162,7 +162,8 @@ func getflag(flag ...int) (fl int) {
 }
 
 func (f *Frame) RGBA() *image.RGBA {
-	return f.b.(*image.RGBA)
+	rgba, _ := f.b.(*image.RGBA)
+	return rgba
 }
 func (f *Frame) Size() image.Point {
 	r := f.RGBA().Bounds()
@@ -207,23 +208,35 @@ func (f *Frame) Bounds() image.Rectangle {
 	return f.r.Bounds()
 }
 
-// Full returns true if the last line in the frame is full
+// Full returns true if the last line in the frame is full.
 func (f *Frame) Full() bool {
+	if f == nil{
+		return true
+	}
 	return f.full == 1
 }
 
 // Maxline returns the max number of wrapped lines fitting on the frame
 func (f *Frame) MaxLine() int {
+	if f == nil{
+		return 0
+	}
 	return f.maxlines
 }
 
 // Line returns the number of wrapped lines currently in the frame
 func (f *Frame) Line() int {
+	if f == nil{
+		return 0
+	}
 	return f.Nlines
 }
 
 // Len returns the number of bytes currently in the frame
 func (f *Frame) Len() int64 {
+	if f == nil{
+		return 0
+	}
 	return f.Nchars
 }
 
