@@ -166,8 +166,7 @@ func (f *Frame) RGBA() *image.RGBA {
 	return rgba
 }
 func (f *Frame) Size() image.Point {
-	r := f.RGBA().Bounds()
-	return image.Pt(r.Dx(), r.Dy())
+	return f.r.Size()
 }
 
 // Dirty returns true if the contents of the frame have changes since the last redraw
