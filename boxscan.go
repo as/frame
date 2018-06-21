@@ -7,6 +7,12 @@ import (
 	"github.com/as/frame/box"
 )
 
+const(
+	// strict enables panic on the condition that the frame is too small to fix
+	// any characters
+	strict = false
+)
+
 // bxscan resets the measuring function and calls Bxscan in the embedded run
 func (f *Frame) boxscan(s []byte, pt image.Point) (image.Point, image.Point) {
 	switch f.Face.(type) {
@@ -44,7 +50,10 @@ func (f *Frame) boxscan2D(r *box.Run, pt image.Point) image.Point {
 		}
 		if b.Nrune > 0 {
 			if n = f.fits(pt, b); n == 0 {
-				panic("drawRun: fits 0")
+				if strict{
+					panic("boxscan2D: fits 0")
+				}
+				return pt
 			}
 			if n != b.Nrune {
 				r.Split(nb, n)
