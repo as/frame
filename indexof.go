@@ -7,6 +7,11 @@ import (
 // IndexOf returns the chracter index under the
 // point pt.
 func (f *Frame) IndexOf(pt image.Point) (p int64) {
+	pt.X+=1
+	return f.indexOf(pt)
+}
+
+func (f *Frame) indexOf(pt image.Point) (p int64) {
 	pt = f.grid(pt)
 	qt := f.r.Min
 	bn := 0
