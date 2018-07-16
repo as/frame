@@ -7,7 +7,7 @@ import (
 	"github.com/as/frame/box"
 )
 
-const(
+const (
 	// strict enables panic on the condition that the frame is too small to fix
 	// any characters
 	strict = false
@@ -50,7 +50,7 @@ func (f *Frame) boxscan2D(r *box.Run, pt image.Point) image.Point {
 		}
 		if b.Nrune > 0 {
 			if n = f.fits(pt, b); n == 0 {
-				if strict{
+				if strict {
 					panic("boxscan2D: fits 0")
 				}
 				return pt

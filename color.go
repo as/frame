@@ -5,77 +5,64 @@ import (
 	"image/color"
 )
 
-func solid(r, g, b byte) *image.Uniform {
-	return uniform(r, g, b, 255)
-}
-func uniform(r, g, b, a byte) *image.Uniform {
-	return image.NewUniform(color.RGBA{r, g, b, a})
-}
-
 var (
-	Yellow = solid(255, 255, 224)
-	Green  = solid(0x99, 0xCC, 0x99)
-	Red    = solid(0xCC, 0x99, 0x99)
-	Gray   = solid(0x12, 0x12, 0x12)
-	Mauve  = solid(0x99, 0x99, 0xDD)
+	// Common colors found in Acme
+	Black  = image.Black
+	White  = image.White
+	Blue   = &image.Uniform{color.RGBA{0x99, 0x99, 0xCC, 0xFF}}
+	Yellow = &image.Uniform{color.RGBA{0xFF, 0xFF, 0xFD, 0xFF}}
+	Gray   = &image.Uniform{color.RGBA{0x90, 0x0C, 0xC0, 0xFF}}
+	Red    = &image.Uniform{color.RGBA{0xCC, 0x99, 0x99, 0xFF}}
+	Green  = &image.Uniform{color.RGBA{0x99, 0xCC, 0x99, 0xFF}}
 
-	Ozone     = solid(216, 216, 232)
-	Strata    = solid(248, 242, 248)
-	AntiPeach = solid(0, 12, 24)
-	Peach     = solid(255, 248, 232)
-
-	BBody = solid(243, 248, 254)
-	BTag  = solid(214, 230, 252)
-	GBody = solid(226, 235, 232)
-	GTag  = solid(226, 225, 232)
-	PTag  = solid(222, 207, 236)
-	PBody = solid(252, 232, 252)
-
-	MMauve = solid(0x66, 0x55, 0x88)
-	MTagG  = solid(28-10, 31-13, 38-15)
-	MTagC  = MTagW
-	MTagW  = solid(28, 31, 38)
-	MBodyW = solid(43, 50, 59)
-	MTextW = solid(255-59, 255-50, 255-43)
+	// Other colors
+	Peach = &image.Uniform{color.RGBA{0xFF, 0xF8, 0xE8, 0xFF}}
+	Mauve = &image.Uniform{color.RGBA{0x90, 0x90, 0xC0, 0xFF}}
 )
 
 var (
-	Acme = Color{
-		Palette: Palette{Text: Gray, Back: Yellow},
-		Hi:      Palette{Text: image.White, Back: Mauve},
-	}
-	Mono = Color{
-		Palette: Palette{Text: image.Black, Back: image.White},
-		Hi:      Palette{Text: image.White, Back: image.Black},
-	}
-	A = Color{
-		Palette: Palette{
-			Text: AntiPeach,
-			Back: Peach,
-		},
-		Hi: Palette{
-			Back: Mauve,
-			Text: image.White,
-		},
-	}
-	ATag0 = Color{
-		Palette: Palette{
-			Text: Gray,
-			Back: Ozone,
-		},
-		Hi: Palette{
-			Back: Mauve,
-			Text: image.White,
-		},
-	}
-	ATag1 = Color{
-		Palette: Palette{
-			Text: Gray,
-			Back: Strata,
-		},
-		Hi: Palette{
-			Back: Mauve,
-			Text: image.White,
-		},
-	}
+	// Acme is the color scheme found in the Acme text editor
+	Acme = NewColor(Gray, Yellow, White, Blue)
+	Mono = NewColor(Black, White, White, Black)
+	A    = NewColor(Gray, Peach, White, Mauve)
 )
+
+// NewColor returns a Color for the given foreground and background
+// images. Two extra colors may be provided to set the highlighted
+// foreground and background image palette.
+func NewColor(fg, bg image.Image, hi ...image.Image) Color {
+	c := Color{Palette: Palette{Text: fg, Back: bg}}
+	if len(hi) > 0 {
+		c.Hi.Text = hi[0]
+	}
+	if len(hi) > 1 {
+		c.Hi.Back = hi[1]
+	}
+	return c
+}
+
+// NewUniform is like NewColor, only it accepts arguments
+// as color.Color values instead of images.
+func NewUniform(fg, bg color.Color, hi ...color.Color) Color {
+	var img = make([]image.Image, 0, len(hi))
+	if len(hi) > 0 {
+		img = append(img, image.NewUniform(hi[0]))
+	}
+	if len(hi) > 1 {
+		img = append(img, image.NewUniform(hi[1]))
+	}
+	return NewColor(image.NewUniform(fg), image.NewUniform(bg), img...)
+}
+
+// Color is constructed from a Palette pair. The Hi Palette describes
+// the appearance of highlighted text.
+type Color struct {
+	Palette
+	Hi Palette
+}
+
+// Pallete contains two images used to paint text and backgrounds
+// on the frame.
+type Palette struct {
+	Text, Back image.Image
+}

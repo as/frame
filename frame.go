@@ -5,14 +5,8 @@ import (
 	"image"
 	"image/draw"
 
-	. "github.com/as/font"
+	"github.com/as/font"
 	"github.com/as/frame/box"
-	"golang.org/x/image/font"
-)
-
-var (
-	ForceElastic bool
-	ForceUTF8    bool
 )
 
 const (
@@ -21,45 +15,13 @@ const (
 )
 
 var (
-	ErrBadDst = errors.New("bad dst")
+	ForceElastic bool
+	ForceUTF8    bool
 )
 
-func (f *Frame) Config() *Config {
-	return &Config{
-		Flag:   f.flags,
-		Color:  f.Color,
-		Face:   f.Face,
-		Drawer: f.Drawer,
-	}
-}
-
-var zc Color
-
-func (c *Config) check() *Config {
-	if c.Color == zc {
-		c.Color = A
-	}
-	if c.Face == nil {
-		c.Face = NewFace(11)
-	}
-	if c.Drawer == nil {
-		c.Drawer = &defaultDrawer{}
-	}
-	return c
-}
-
-func negotiateFace(f font.Face, flags int) Face {
-	if flags&FrUTF8 != 0 {
-		return NewCache(NewRune(f))
-	}
-	switch f := f.(type) {
-	case Face:
-		return f
-	case font.Face:
-		return Open(f)
-	}
-	return Open(f)
-}
+var (
+	ErrBadDst = errors.New("bad dst")
+)
 
 // Frame is a write-only container for editable text
 type Frame struct {
@@ -70,7 +32,7 @@ type Frame struct {
 	r  image.Rectangle
 	ir *box.Run
 
-	Face Face
+	Face font.Face
 	Color
 	Ticked bool
 	Scroll func(int)
@@ -120,6 +82,17 @@ func New(dst draw.Image, r image.Rectangle, conf *Config) *Frame {
 	return f
 }
 
+func (f *Frame) Config() *Config {
+	return &Config{
+		Flag:   f.flags,
+		Color:  f.Color,
+		Face:   f.Face,
+		Drawer: f.Drawer,
+	}
+}
+
+var zc Color
+
 // Flags returns the flags currently set for the frame
 func (f *Frame) Flags() int {
 	return f.flags
@@ -139,26 +112,13 @@ func (f *Frame) elastic() bool {
 	return f.flags&FrElastic != 0
 }
 
-func tabMinMax(ft Face, elastic bool) (min, max int) {
+func tabMinMax(ft font.Face, elastic bool) (min, max int) {
 	mintab := ft.Dx([]byte{' '})
 	maxtab := mintab * 4
 	if elastic {
 		mintab = maxtab
 	}
 	return mintab, maxtab
-}
-
-func getflag(flag ...int) (fl int) {
-	if len(flag) != 0 {
-		fl = flag[0]
-	}
-	if ForceElastic {
-		fl |= FrElastic
-	}
-	if ForceUTF8 {
-		fl |= FrUTF8
-	}
-	return fl
 }
 
 func (f *Frame) RGBA() *image.RGBA {
@@ -179,9 +139,14 @@ func (f *Frame) SetDirty(dirty bool) {
 	f.modified = dirty
 }
 
+func (f *Frame) SetFont(ft font.Face) {
+	f.Face = font.Open(ft)
+	f.Run.Reset(f.Face)
+	f.Refresh()
+}
+
 func (f *Frame) SetOp(op draw.Op) {
 	f.op = op
-
 }
 
 // Close closes the frame
@@ -196,12 +161,6 @@ func (f *Frame) Reset(r image.Rectangle, b *image.RGBA, ft font.Face) {
 	f.SetFont(ft)
 }
 
-func (f *Frame) SetFont(ft font.Face) {
-	f.Face = Open(ft)
-	f.Run.Reset(f.Face)
-	f.Refresh()
-}
-
 // Bounds returns the frame's clipping rectangle
 func (f *Frame) Bounds() image.Rectangle {
 	return f.r.Bounds()
@@ -209,7 +168,7 @@ func (f *Frame) Bounds() image.Rectangle {
 
 // Full returns true if the last line in the frame is full.
 func (f *Frame) Full() bool {
-	if f == nil{
+	if f == nil {
 		return true
 	}
 	return f.full == 1
@@ -217,7 +176,7 @@ func (f *Frame) Full() bool {
 
 // Maxline returns the max number of wrapped lines fitting on the frame
 func (f *Frame) MaxLine() int {
-	if f == nil{
+	if f == nil {
 		return 0
 	}
 	return f.maxlines
@@ -225,7 +184,7 @@ func (f *Frame) MaxLine() int {
 
 // Line returns the number of wrapped lines currently in the frame
 func (f *Frame) Line() int {
-	if f == nil{
+	if f == nil {
 		return 0
 	}
 	return f.Nlines
@@ -233,7 +192,7 @@ func (f *Frame) Line() int {
 
 // Len returns the number of bytes currently in the frame
 func (f *Frame) Len() int64 {
-	if f == nil{
+	if f == nil {
 		return 0
 	}
 	return f.Nchars

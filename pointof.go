@@ -6,7 +6,7 @@ import (
 
 // Grid returns a grid-aligned point on the frame relative to pt
 func (f *Frame) Grid(pt image.Point) image.Point {
-	if f == nil{
+	if f == nil {
 		return image.ZP
 	}
 	return f.grid(pt)
@@ -14,7 +14,7 @@ func (f *Frame) Grid(pt image.Point) image.Point {
 
 // PointOf returns the point on the closest to index p.
 func (f *Frame) PointOf(p int64) image.Point {
-	if f == nil{
+	if f == nil {
 		return image.ZP
 	}
 	return f.pointOf(p, f.r.Min, 0)
