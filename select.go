@@ -3,29 +3,6 @@ package frame
 import (
 	"image"
 	"image/draw"
-
-	"golang.org/x/mobile/event/mouse"
-)
-
-type EventPipe interface {
-	Send(e interface{})
-	SendFirst(e interface{})
-	NextEvent() interface{}
-}
-
-type (
-	Selector interface {
-		Select(p0, p1 int64)
-		Dot() (p0, p1 int64)
-	}
-	Projector interface {
-		PointOf(int64) image.Point
-		IndexOf(image.Point) int64
-	}
-	Sweeper interface {
-		Projector
-		Selector
-	}
 )
 
 // Paint paints the color col on the frame at points pt0-pt1. The result is a Z shaped fill
@@ -79,48 +56,4 @@ func (f *Frame) Select(p0, p1 int64) {
 	}
 	f.modified = true
 	f.p0, f.p1 = p0, p1
-}
-
-// Sweep reads a sequence of mouse.Events from the event pipe
-// and uses the flush functions to draw a live selection. Control
-// is transfered back to the caller after a release event is processed.
-func (f *Frame) Sweep(ep EventPipe, flush func()) {
-	p0, p1 := f.Dot()
-Loop:
-	for {
-		e := ep.NextEvent()
-		switch e := e.(type) {
-		case mouse.Event:
-			if e.Direction != 0 {
-				ep.SendFirst(e)
-				break Loop
-			}
-			p1 = f.IndexOf(pt(e))
-			f.Select(min64(p0, p1), max64(p0, p1))
-			flush()
-		case interface{}:
-			ep.SendFirst(e)
-			break Loop
-		}
-	}
-}
-
-func pt(e mouse.Event) image.Point {
-	return image.Pt(int(e.X), int(e.Y))
-}
-
-func min64(a, b int64) int64 {
-	if a < b {
-		return a
-	}
-	return b
-}
-func max64(a, b int64) int64 {
-	if a < b {
-		return b
-	}
-	return a
-}
-
-type ScrollEvent struct {
 }

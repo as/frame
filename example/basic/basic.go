@@ -18,10 +18,6 @@ import (
 var wg sync.WaitGroup
 var winSize = image.Pt(1024, 768)
 
-func pt(e mouse.Event) image.Point {
-	return image.Pt(int(e.X), int(e.Y))
-}
-
 func main() {
 	driver.Main(func(src screen.Screen) {
 		var dirty = true
@@ -38,18 +34,18 @@ func main() {
 			dirty = false
 		}
 
+		flush := func() {
+			wind.Upload(fr.Bounds().Min, b, fr.Bounds())
+			wind.Publish()
+		}
 		for {
 			switch e := wind.NextEvent().(type) {
 			case mouse.Event:
 				if e.Button == 1 && e.Direction == 1 {
 					p0 := fr.IndexOf(pt(e))
 					fr.Select(p0, p0)
-					flush := func() {
-						wind.Upload(fr.Bounds().Min, b, fr.Bounds())
-						wind.Publish()
-					}
 					flush()
-					fr.Sweep(wind, flush)
+					frameSweep(fr, wind, flush)
 					wind.Send(paint.Event{})
 				}
 			case key.Event:
@@ -91,4 +87,30 @@ func main() {
 			}
 		}
 	})
+}
+
+func pt(e mouse.Event) image.Point {
+	return image.Pt(int(e.X), int(e.Y))
+}
+
+func frameSweep(f *frame.Frame, ep screen.Window, flush func()) {
+	p0, p1 := f.Dot()
+	for {
+		switch e := ep.NextEvent().(type) {
+		case mouse.Event:
+			if e.Direction != 0 {
+				ep.SendFirst(e)
+				return
+			}
+			if p1 = f.IndexOf(pt(e)); p0 > p1 {
+				f.Select(p1, p0)
+			} else {
+				f.Select(p0, p1)
+			}
+			flush()
+		case interface{}:
+			ep.SendFirst(e)
+			return
+		}
+	}
 }
