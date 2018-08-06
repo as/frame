@@ -5,7 +5,7 @@
 
 Package frame implements graphical, editable text widgets compatible with Plan 9's libframe(3). Unlike libframe, the text is
 byte-addressed and preserves NUL terminated strings. The related `github.com/as/font` package provides a superset of the
-golang.org/x/font.Face interface and implements additional functionality for working with Go fonts and frames.
+`golang.org/x/font.Face` interface and implements additional functionality for working with Go fonts and frames.
 
 ![paint](elastic.png)
 
