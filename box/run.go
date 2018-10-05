@@ -7,7 +7,7 @@ import (
 )
 
 // MaxBytes is the largest capacity of bytes in a box
-var MaxBytes = 256 + 3
+var MaxBytes = 253 + 3
 
 func NewRun(minDx, maxDx int, ft font.Face) Run {
 	r := Run{
@@ -120,9 +120,9 @@ func (f *Run) Split(bn, n int) {
 
 // Chop drops the first n chars in box b
 func (f *Run) Chop(b *Box, n int) {
-	if b.Nrune < 0 || b.Nrune < n {
-		panic("Chop")
-	}
+//	if b.Nrune < 0 || b.Nrune < n {
+//		panic("Chop")
+//	}
 	copy(b.Ptr, b.Ptr[n:])
 	b.Nrune -= n
 	b.Ptr = b.Ptr[:b.Nrune]
@@ -130,9 +130,9 @@ func (f *Run) Chop(b *Box, n int) {
 }
 
 func (f *Run) Truncate(b *Box, n int) {
-	if b.Nrune < 0 || b.Nrune < n {
-		panic("Truncate")
-	}
+//	if b.Nrune < 0 || b.Nrune < n {
+//		panic("Truncate")
+//	}
 	b.Nrune -= n
 	b.Ptr = b.Ptr[:b.Nrune]
 	b.Width = f.Face.Dx(b.Ptr)
@@ -140,9 +140,9 @@ func (f *Run) Truncate(b *Box, n int) {
 
 // Add adds n boxes after box bn, the rest are shifted up
 func (f *Run) Add(bn, n int) {
-	if bn > f.Nbox {
-		panic("Frame.Add")
-	}
+//	if bn > f.Nbox {
+//		panic("Frame.Add")
+//	}
 	if f.Nbox+n > f.Nalloc {
 		f.Grow(n + SLOP)
 	}
@@ -152,9 +152,9 @@ func (f *Run) Add(bn, n int) {
 
 // Delete closes and deallocates n0-n1 inclusively
 func (f *Run) Delete(n0, n1 int) {
-	if n0 >= f.Nbox || n1 >= f.Nbox || n1 < n0 {
-		panic("Delete")
-	}
+//	if n0 >= f.Nbox || n1 >= f.Nbox || n1 < n0 {
+//		panic("Delete")
+//	}
 	f.Free(n0, n1)
 	f.Close(n0, n1)
 }
@@ -164,9 +164,9 @@ func (f *Run) Free(n0, n1 int) {
 	if n1 < n0 {
 		return
 	}
-	if n0 >= f.Nbox || n1 >= f.Nbox {
-		panic("Free")
-	}
+//	if n0 >= f.Nbox || n1 >= f.Nbox {
+//		panic("Free")
+//	}
 	for i := n0; i < n1; i++ {
 		if f.Box[i].Nrune >= 0 {
 			f.Box[i].Ptr = nil
@@ -183,20 +183,26 @@ func (f *Run) Grow(delta int) {
 
 // Dup copies the contents of box bn to box bn+1
 func (f *Run) Dup(bn int) {
-	if f.Box[bn].Nrune < 0 {
-		panic("Frame.Dup")
-	}
+//	if f.Box[bn].Nrune < 0 {
+//		panic("Frame.Dup")
+//	}
 	f.Add(bn, 1)
 	//	if f.Box[bn].Nrune >= 0 {
+	
+	p := make([]byte, len(f.Box[bn].Ptr))
+	copy(p, f.Box[bn].Ptr)
+	f.Box[bn+1].Ptr = p
+	
+	//copy(f.Box[bn+1].Ptr, f.Box[bn].Ptr)
 	f.Box[bn+1].Ptr = append([]byte{}, f.Box[bn].Ptr...)
 	//	}
 }
 
 // Close closess box n0-n1 inclusively. The rest are shifted down
 func (f *Run) Close(n0, n1 int) {
-	if n0 >= f.Nbox || n1 >= f.Nbox || n1 < n0 {
-		panic("Frame.Close")
-	}
+//	if n0 >= f.Nbox || n1 >= f.Nbox || n1 < n0 {
+//		panic("Frame.Close")
+//	}
 	n1++
 	for i := n1; i < f.Nbox; i++ {
 		f.Box[i-(n1-n0)] = f.Box[i]

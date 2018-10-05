@@ -5,13 +5,15 @@ import "unicode/utf8"
 //import "log"
 
 func (r *Run) ensure(nb int) {
-	if nb == r.Nalloc {
-		r.Grow(r.delta)
-		if r.delta < 32768 {
-			r.delta *= 2
-		}
+	if nb != r.Nalloc {
+		return
+	}
+	r.Grow(r.delta)
+	if r.delta < 32768 {
+		r.delta *= 2
 	}
 }
+
 func min(a, b int) int {
 	if a < b {
 		return a
@@ -79,58 +81,57 @@ func (r *Run) Runescan(s []byte, ymax int) {
 }
 func (r *Run) Boxscan(s []byte, ymax int) {
 	r.Nbox = 0
-	r.Nchars = 0
-	r.Nchars += int64(len(s))
+	r.Nchars = int64(len(s))
 	i := 0
 	nb := 0
+	
 
 	for nl := 0; nl <= ymax; nb++ {
-		if nb == r.Nalloc {
-			r.Grow(r.delta)
-			if r.delta < 32768 {
-				r.delta *= 2
-			}
-		}
 		if i == len(s) {
 			break
 		}
 		i++
-		c := s[i-1]
-		switch c {
-		default:
-			for _, c = range s[i:min(len(s), MaxBytes)] {
-				if special(c) {
+		if nb == r.Nalloc {
+			r.Nalloc += r.delta
+			r.Box = append(r.Box, make([]Box, r.delta)...)
+			// r.Grow(r.delta)
+			if r.delta < 32768 {
+				r.delta <<= 1
+			}
+		}
+		if c := s[i-1]; c != '\t' && c != '\n' {
+			span := len(s)
+			if span > MaxBytes{
+				span = MaxBytes
+			}
+			for _, c = range s[i:span] {
+				if c == '\t' || c == '\n' {
 					break
 				}
 				i++
 			}
-			r.Box[nb] = Box{
-				Nrune: i,
-				Ptr:   s[:i],
-				Width: r.Face.Dx(s[:i]),
-			}
-		case '\t':
-			r.Box[nb] = Box{
-				Nrune:    -1,
-				Ptr:      s[:i],
-				Width:    r.minDx,
-				Minwidth: r.minDx,
-			}
-		case '\n':
-			r.Box[nb] = Box{
-				Nrune: -1,
-				Ptr:   s[:i],
-				Width: r.maxDx,
-			}
+			r.Box[nb].Nrune = i
+			r.Box[nb].Ptr = s[:i]
+		} else if c == '\t' {
+			r.Box[nb].Nrune = -1
+			r.Box[nb].Ptr = s[:i]
+			r.Box[nb].Width = r.minDx
+			r.Box[nb].Minwidth = r.minDx
+		} else {
+			r.Box[nb].Nrune = -1
+			r.Box[nb].Ptr = s[:i]
+			r.Box[nb].Width = r.maxDx
 			nl++
 		}
 		s = s[i:]
 		i = 0
 	}
 	r.Nchars -= int64(len(s))
+	for i := range r.Box[r.Nbox:r.Nbox+nb] {
+		if b := &r.Box[i]; b.Nrune > 0 {
+			b.Width = r.Face.Dx(b.Ptr)
+		}
+	}
 	r.Nbox += nb
 }
 
-func special(c byte) bool {
-	return c == '\t' || c == '\n'
-}
