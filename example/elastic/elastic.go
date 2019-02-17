@@ -1,3 +1,5 @@
+// +build ignore
+
 package main
 
 import (
@@ -66,7 +68,7 @@ The C++ Programming Language by Bjarne Stroustrup	49	42
 					fr.Select(p0, p0)
 
 					flush()
-					fr.Sweep(wind, flush)
+					frameSweep(fr, wind, flush)
 					wind.Send(paint.Event{})
 				}
 			case key.Event:
@@ -106,4 +108,26 @@ The C++ Programming Language by Bjarne Stroustrup	49	42
 			}
 		}
 	})
+}
+
+func frameSweep(f *frame.Frame, ep screen.Window, flush func()) {
+	p0, p1 := f.Dot()
+	for {
+		switch e := ep.NextEvent().(type) {
+		case mouse.Event:
+			if e.Direction != 0 {
+				ep.SendFirst(e)
+				return
+			}
+			if p1 = f.IndexOf(pt(e)); p0 > p1 {
+				f.Select(p1, p0)
+			} else {
+				f.Select(p0, p1)
+			}
+			flush()
+		case interface{}:
+			ep.SendFirst(e)
+			return
+		}
+	}
 }

@@ -1,12 +1,14 @@
 package box
 
-const SLOP = 25
+import "golang.org/x/image/math/fixed"
+
+type i26 = fixed.Int26_6
 
 type Box struct {
 	Ptr      []byte
 	Nrune    int
-	Width    int
-	Minwidth int
+	Width    i26
+	Minwidth i26
 }
 
 func (b Box) Break() byte {
@@ -24,10 +26,10 @@ func (b Box) Len() int {
 }
 
 func (b Box) Bytes() []byte {
-	if b.Nrune > 0{
+	if b.Nrune > 0 {
 		return b.Ptr[:b.Nrune]
 	}
-	if b.Nrune < 0{
+	if b.Nrune < 0 {
 		return b.Ptr[:1]
 	}
 	return nil

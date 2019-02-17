@@ -1,8 +1,6 @@
 package frame
 
 import (
-	"image"
-
 	"github.com/as/font"
 	"github.com/as/frame/box"
 )
@@ -14,7 +12,8 @@ const (
 )
 
 // bxscan resets the measuring function and calls Bxscan in the embedded run
-func (f *Frame) boxscan(s []byte, pt image.Point) (image.Point, image.Point) {
+func (f *Frame) boxscan(s []byte, pt p26 ) (p26, p26) {
+	{
 	switch f.Face.(type) {
 	case font.Rune:
 		f.ir.Runescan(s, f.maxlines)
@@ -36,9 +35,10 @@ func (f *Frame) boxscan(s []byte, pt image.Point) (image.Point, image.Point) {
 	}
 	pt = f.wrapMin(pt, &f.ir.Box[0])
 	return pt, f.boxscan2D(f.ir, pt)
+	}
 }
 
-func (f *Frame) boxscan2D(r *box.Run, pt image.Point) image.Point {
+func (f *Frame) boxscan2D(r *box.Run, pt p26)p26{
 	n := 0
 	for nb := 0; nb < r.Nbox; nb++ {
 		b := &r.Box[nb]
@@ -70,3 +70,4 @@ func (f *Frame) boxscan2D(r *box.Run, pt image.Point) image.Point {
 	}
 	return pt
 }
+

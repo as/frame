@@ -1,5 +1,7 @@
 package box
 
+import "golang.org/x/image/math/fixed"
+
 func (f *Run) Stretch2(nb int, bx []Box) (pb int) {
 	panic("unimplemented")
 }
@@ -22,7 +24,7 @@ func (f *Run) Stretch(nb int) (pb int) {
 	//	fmt.Printf("\n\ntrace bn=%d\n", nb)
 	nc := 0
 	nl := 0
-	dx := 0
+	dx := i26(0)
 
 	cmax := make(map[int]int)
 	cbox := make(map[int][]int)
@@ -41,8 +43,8 @@ Loop:
 			dx += b.Width
 			cbox[nc] = append(cbox[nc], nb)
 			max := cmax[nc]
-			if dx > max {
-				cmax[nc] = dx
+			if dx.Ceil() > max {
+				cmax[nc] = dx.Ceil()
 			}
 			nc++
 			//			fmt.Printf("	tab: dx=%d ncol=%d\n", dx, nc)
@@ -63,7 +65,7 @@ Loop:
 		}
 	}
 	for c, bns := range cbox {
-		max := cmax[c]
+		max := fixed.I(cmax[c])
 		for _, bn := range bns {
 			b := &f.Box[bn]
 			b.Width = max
@@ -83,7 +85,8 @@ Loop:
 	return pb
 }
 
-func (f *Run) Findcol(bn int, coln int) (cbn int, xmax int) {
+func (f *Run) Findcol(bn int, coln int) (int,  int) {
+	xmax := i26(0)
 	c := 0
 	for ; bn < f.Nbox; bn++ {
 		b := &f.Box[bn]
@@ -101,11 +104,13 @@ func (f *Run) Findcol(bn int, coln int) (cbn int, xmax int) {
 	if c != coln {
 		return -1, 0
 	}
-	return bn, xmax
+	return bn, xmax.Ceil()
 
 }
 
-func (f *Run) Colof(bn int) (coln, xmax int) {
+func (f *Run) Colof(bn int) (int, int) {
+	coln := 0
+	xmax := i26(0)
 	if bn == 0 {
 		return 0, 0
 	}
@@ -126,7 +131,7 @@ func (f *Run) Colof(bn int) (coln, xmax int) {
 	if xmax != 0 {
 		coln++
 	}
-	return coln, xmax
+	return coln, xmax.Ceil()
 }
 
 // EndCell returns the first box beyond the end of the

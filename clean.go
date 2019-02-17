@@ -1,10 +1,6 @@
 package frame
 
-import (
-	"image"
-)
-
-func (f *Frame) clean(pt image.Point, n0, n1 int) {
+func (f *Frame) clean(pt p26, n0, n1 int) {
 	c := f.r.Max.X
 	for ; n0 < n1-1; n0++ {
 		b0 := &f.Box[n0]

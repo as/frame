@@ -29,18 +29,18 @@ type Frame struct {
 	p0 int64
 	p1 int64
 	b  draw.Image
-	r  image.Rectangle
+	r  r26
 	ir *box.Run
 
 	Face font.Face
 	Color
 	Ticked bool
 	Scroll func(int)
-	Drawer
+	*drawer
 	op draw.Op
 
-	mintab int
-	maxtab int
+	mintab i26
+	maxtab i26
 	full   int
 
 	tick     draw.Image
@@ -49,10 +49,12 @@ type Frame struct {
 	maxlines int
 	modified bool
 
-	pts [][2]image.Point
+	pts [][2]p26
 
 	flags int
 }
+
+const maxrun = i26(5000<<6)
 
 func New(dst draw.Image, r image.Rectangle, conf *Config) *Frame {
 	if dst == nil {
@@ -65,11 +67,11 @@ func New(dst draw.Image, r image.Rectangle, conf *Config) *Frame {
 	fl := conf.Flag
 	face := negotiateFace(conf.Face, fl)
 	mintab, maxtab := tabMinMax(face, fl&FrElastic != 0)
+	drawer := newDrawer(dst, nil, face, p26{})
 	f := &Frame{
 		Face:   face,
 		Color:  conf.Color,
-		Drawer: conf.Drawer,
-		Run:    box.NewRun(mintab, 5000, face),
+		Run:    box.NewRun(mintab, maxrun, face, drawer),
 		op:     draw.Src,
 		mintab: mintab,
 		maxtab: maxtab,
@@ -77,7 +79,7 @@ func New(dst draw.Image, r image.Rectangle, conf *Config) *Frame {
 	}
 	f.setrects(r, dst)
 	f.inittick()
-	run := box.NewRun(mintab, 5000, face)
+	run := box.NewRun(mintab, maxrun, face, drawer)
 	f.ir = &run
 	return f
 }
@@ -112,13 +114,13 @@ func (f *Frame) elastic() bool {
 	return f.flags&FrElastic != 0
 }
 
-func tabMinMax(ft font.Face, elastic bool) (min, max int) {
+func tabMinMax(ft font.Face, elastic bool) (min, max i26) {
 	mintab := ft.Dx([]byte{' '})
 	maxtab := mintab * 4
 	if elastic {
 		mintab = maxtab
 	}
-	return mintab, maxtab
+	return int26(mintab), int26(maxtab)
 }
 
 func (f *Frame) RGBA() *image.RGBA {
@@ -126,7 +128,7 @@ func (f *Frame) RGBA() *image.RGBA {
 	return rgba
 }
 func (f *Frame) Size() image.Point {
-	return f.r.Size()
+	return r26rect(f.r).Size()
 }
 
 // Dirty returns true if the contents of the frame have changes since the last redraw
@@ -156,14 +158,14 @@ func (f *Frame) Close() error {
 
 // Reset resets the frame to display on image b with bounds r and font ft.
 func (f *Frame) Reset(r image.Rectangle, b *image.RGBA, ft font.Face) {
-	f.r = r
+	f.r = rect26(r)
 	f.b = b
 	f.SetFont(ft)
 }
 
 // Bounds returns the frame's clipping rectangle
 func (f *Frame) Bounds() image.Rectangle {
-	return f.r.Bounds()
+	return r26rect(f.r).Bounds()
 }
 
 // Full returns true if the last line in the frame is full.
@@ -205,8 +207,9 @@ func (f *Frame) Dot() (p0, p1 int64) {
 
 func (f *Frame) setrects(r image.Rectangle, b draw.Image) {
 	f.b = b
-	f.r = r
-	h := f.Face.Dy()
-	f.r.Max.Y -= f.r.Dy() % h
-	f.maxlines = f.r.Dy() / h
+	f.r = rect26(r)
+	h := f.dy()
+	dy := f.r.Max.Y-f.r.Min.Y
+	f.r.Max.Y -= dy % h
+	f.maxlines = (dy / h).Ceil()
 }

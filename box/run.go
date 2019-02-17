@@ -2,6 +2,8 @@ package box
 
 import (
 	"fmt"
+	"image"
+	"image/draw"
 
 	"github.com/as/font"
 )
@@ -9,12 +11,17 @@ import (
 // MaxBytes is the largest capacity of bytes in a box
 var MaxBytes = 253 + 3
 
-func NewRun(minDx, maxDx int, ft font.Face) Run {
+func NewRun(minDx, maxDx i26, ft font.Face, d interface {
+		MaxFit(p []byte, dx i26) int
+		Dx(p []byte) i26
+		Draw(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, op draw.Op)
+	}) Run {
 	r := Run{
 		delta: 32,
 		minDx: minDx,
 		maxDx: maxDx,
 		Face:  ft,
+		Drawer: d,
 	}
 	r.ensure(r.delta)
 	return r
@@ -26,11 +33,16 @@ type Run struct {
 	Box    []Box
 	Nalloc int
 	Nbox   int
+	Drawer interface {
+		MaxFit(p []byte, dx i26) int
+		Dx(p []byte) i26
+		Draw(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, op draw.Op)
+	}
 	Face   font.Face
 	Nchars int64
 	Nlines int
 
-	minDx, maxDx int
+	minDx, maxDx i26
 	delta        int
 }
 
@@ -120,31 +132,22 @@ func (f *Run) Split(bn, n int) {
 
 // Chop drops the first n chars in box b
 func (f *Run) Chop(b *Box, n int) {
-//	if b.Nrune < 0 || b.Nrune < n {
-//		panic("Chop")
-//	}
 	copy(b.Ptr, b.Ptr[n:])
 	b.Nrune -= n
 	b.Ptr = b.Ptr[:b.Nrune]
-	b.Width = f.Face.Dx(b.Ptr)
+	b.Width = f.Drawer.Dx(b.Ptr)
 }
 
 func (f *Run) Truncate(b *Box, n int) {
-//	if b.Nrune < 0 || b.Nrune < n {
-//		panic("Truncate")
-//	}
 	b.Nrune -= n
 	b.Ptr = b.Ptr[:b.Nrune]
-	b.Width = f.Face.Dx(b.Ptr)
+	b.Width = f.Drawer.Dx(b.Ptr)
 }
 
 // Add adds n boxes after box bn, the rest are shifted up
 func (f *Run) Add(bn, n int) {
-//	if bn > f.Nbox {
-//		panic("Frame.Add")
-//	}
 	if f.Nbox+n > f.Nalloc {
-		f.Grow(n + SLOP)
+		f.Grow(n + 25)
 	}
 	copy(f.Box[bn+n:], f.Box[bn:f.Nbox])
 	f.Nbox += n
@@ -152,9 +155,9 @@ func (f *Run) Add(bn, n int) {
 
 // Delete closes and deallocates n0-n1 inclusively
 func (f *Run) Delete(n0, n1 int) {
-//	if n0 >= f.Nbox || n1 >= f.Nbox || n1 < n0 {
-//		panic("Delete")
-//	}
+	//	if n0 >= f.Nbox || n1 >= f.Nbox || n1 < n0 {
+	//		panic("Delete")
+	//	}
 	f.Free(n0, n1)
 	f.Close(n0, n1)
 }
@@ -164,9 +167,9 @@ func (f *Run) Free(n0, n1 int) {
 	if n1 < n0 {
 		return
 	}
-//	if n0 >= f.Nbox || n1 >= f.Nbox {
-//		panic("Free")
-//	}
+	//	if n0 >= f.Nbox || n1 >= f.Nbox {
+	//		panic("Free")
+	//	}
 	for i := n0; i < n1; i++ {
 		if f.Box[i].Nrune >= 0 {
 			f.Box[i].Ptr = nil
@@ -183,16 +186,13 @@ func (f *Run) Grow(delta int) {
 
 // Dup copies the contents of box bn to box bn+1
 func (f *Run) Dup(bn int) {
-//	if f.Box[bn].Nrune < 0 {
-//		panic("Frame.Dup")
-//	}
 	f.Add(bn, 1)
 	//	if f.Box[bn].Nrune >= 0 {
-	
+
 	p := make([]byte, len(f.Box[bn].Ptr))
 	copy(p, f.Box[bn].Ptr)
 	f.Box[bn+1].Ptr = p
-	
+
 	//copy(f.Box[bn+1].Ptr, f.Box[bn].Ptr)
 	f.Box[bn+1].Ptr = append([]byte{}, f.Box[bn].Ptr...)
 	//	}
@@ -200,9 +200,6 @@ func (f *Run) Dup(bn int) {
 
 // Close closess box n0-n1 inclusively. The rest are shifted down
 func (f *Run) Close(n0, n1 int) {
-//	if n0 >= f.Nbox || n1 >= f.Nbox || n1 < n0 {
-//		panic("Frame.Close")
-//	}
 	n1++
 	for i := n1; i < f.Nbox; i++ {
 		f.Box[i-(n1-n0)] = f.Box[i]

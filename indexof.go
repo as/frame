@@ -8,10 +8,10 @@ import (
 // point pt.
 func (f *Frame) IndexOf(pt image.Point) (p int64) {
 	pt.X += 1
-	return f.indexOf(pt)
+	return f.indexOf(pt26(pt))
 }
 
-func (f *Frame) indexOf(pt image.Point) (p int64) {
+func (f *Frame) indexOf(pt p26) (p int64) {
 	pt = f.grid(pt)
 	qt := f.r.Min
 	bn := 0
@@ -36,7 +36,7 @@ func (f *Frame) indexOf(pt image.Point) (p int64) {
 				qt = f.advance(qt, b)
 			} else {
 				left := pt.X - qt.X
-				p += int64(f.Face.Fits(b.Ptr, left))
+				p += int64(f.Face.Fits(b.Ptr, left.Ceil()))
 				qt.X += left
 			}
 		} else {

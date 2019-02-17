@@ -12,12 +12,12 @@ const (
 
 func (f *Frame) Untick() {
 	if f.p0 == f.p1 {
-		f.tickat(f.PointOf(int64(f.p0)), false)
+		f.tickat(f.point0(int64(f.p0)), false)
 	}
 }
 func (f *Frame) Tick() {
 	if f.p0 == f.p1 {
-		f.tickat(f.PointOf(int64(f.p0)), true)
+		f.tickat(f.point0(int64(f.p0)), true)
 	}
 }
 
@@ -90,21 +90,23 @@ func (f *Frame) inittick() {
 }
 
 // Put
-func (f *Frame) tickat(pt image.Point, ticked bool) {
-	if f.Ticked == ticked || f.tick == nil || !pt.In(f.Bounds().Inset(-1)) {
+func (f *Frame) tickat(pt p26, ticked bool) {
+	if f.Ticked == ticked || f.tick == nil || !pt.In(rect26(f.Bounds().Inset(-1))) {
 		return
 	}
 	pt.X -= 1
 	//pt.Y -= f.Font.Letting() / 4
-	r := f.tick.Bounds().Add(pt)
+	r := rect26(f.tick.Bounds()).Add(pt)
 	if r.Max.X > f.r.Max.X {
 		r.Max.X = f.r.Max.X
 	}
+		tbr :=  rect26(f.tickback.Bounds())
 	if ticked {
-		f.Draw(f.tickback, f.tickback.Bounds(), f.b, pt.Add(f.tickback.Bounds().Min), draw.Src)
-		f.Draw(f.b, r, f.tick, f.tick.Bounds().Min, draw.Src)
+		tr :=  rect26(f.tick.Bounds())
+		f.draw26(f.tickback, tbr, f.b, pt.Add(tbr.Min), draw.Src)
+		f.draw26(f.b, r, f.tick, tr.Min, draw.Src)
 	} else {
-		f.Draw(f.b, r, f.tickback, f.tickback.Bounds().Min, draw.Src)
+		f.draw26(f.b, r, f.tickback, tbr.Min, draw.Src)
 	}
 	//f.Flush(r.Inset(-1))
 	f.Ticked = ticked
