@@ -50,7 +50,7 @@ func (f *Frame) paint26(p0, p1 p26, col image.Image) {
 	}
 }
 func (f *Frame) Paint(p0, p1 image.Point, col image.Image) {
-	f.paint26(pt26(p0), pt26(p0), col)
+	f.paint26(pt26(p0), pt26(p1), col)
 }
 
 // Refresh renders the entire frame, including the underlying
@@ -166,6 +166,7 @@ func (f *Frame) drawsel(pt p26, p0, p1 int64, back, text image.Image) p26 {
 				f.drawer.drawBG(back, maxx)
 			}
 			f.drawer.move(pt)
+			//
 		}
 		for ; nb < f.Nbox && q0 < p1; nb++ {
 			b = &f.Box[nb]

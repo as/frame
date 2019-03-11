@@ -94,7 +94,8 @@ func (d *drawer) MaxFit(p []byte, dx i26) (n int) {
 	return n
 }
 func (d *drawer) DrawBG(bg image.Image, maxx int) {
-	p := image.Point{d.Dot.X.Ceil(), (d.Dot.Y-d.height).Ceil()}
+//	p := image.Point{d.Dot.X.Ceil(), (d.Dot.Y-d.height).Ceil()}
+	p := image.Point{d.Dot.X.Ceil(), (d.Dot.Y).Ceil()}
 	r := image.Rectangle{Min: p, Max: p}
 	h := d.height.Ceil()
 	dy := h + h/2
