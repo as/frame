@@ -194,7 +194,7 @@ func (f *Run) Dup(bn int) {
 	f.Box[bn+1].Ptr = p
 
 	//copy(f.Box[bn+1].Ptr, f.Box[bn].Ptr)
-	f.Box[bn+1].Ptr = append([]byte{}, f.Box[bn].Ptr...)
+	//f.Box[bn+1].Ptr = append([]byte{}, f.Box[bn].Ptr...)
 	//	}
 }
 
