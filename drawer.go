@@ -66,7 +66,7 @@ func (d *drawer) Move(p image.Point) {
 }
 func (d *drawer) move(p p26) {
 	d.Dot = p
-	d.Dot.Y += d.height
+	d.Dot.Y += d.Dy()
 }
 
 func (d *drawer) Dy() i26 {
@@ -88,14 +88,14 @@ func (d *drawer) MaxFit(p []byte, dx i26) (n int) {
 		w, _ := d.Face.GlyphAdvance(rune(c))
 		dx -= w
 		if dx < 0 {
-			return n
+			return n-1
 		}
 	}
 	return n
 }
 func (d *drawer) DrawBG(bg image.Image, maxx int) {
-//	p := image.Point{d.Dot.X.Ceil(), (d.Dot.Y-d.height).Ceil()}
-	p := image.Point{d.Dot.X.Ceil(), (d.Dot.Y).Ceil()}
+	p := image.Point{d.Dot.X.Ceil(), (d.Dot.Y-d.height).Ceil()}
+//	p := image.Point{d.Dot.X.Ceil(), (d.Dot.Y).Ceil()}
 	r := image.Rectangle{Min: p, Max: p}
 	h := d.height.Ceil()
 	dy := h + h/2

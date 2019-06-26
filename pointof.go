@@ -2,6 +2,7 @@ package frame
 
 import (
 	"image"
+	"log"
 )
 
 // Grid returns a grid-aligned point on the frame relative to pt
@@ -50,6 +51,7 @@ func (f *Frame) pointOf(p int64, pt p26, bn int) (x p26) {
 		p -= int64(l)
 		pt = f.advance(pt, b)
 	}
+	log.Printf("point of index %d is %s", p, pt)
 	return pt
 }
 
