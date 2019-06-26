@@ -2,8 +2,9 @@ package frame
 
 import (
 	"image"
-	"log"
 )
+
+const enablePointProximity = false
 
 // IndexOf returns the chracter index under the
 // point pt.
@@ -45,6 +46,24 @@ func (f *Frame) indexOf(pt p26) (p int64) {
 			qt = f.advance(qt, b)
 		}
 	}
-	log.Printf("index of %s is %d", pt, p)
+
+	if enablePointProximity {
+		// NOTE(as): Slow, but nice. If the cursor 2/3s of the way
+		// out of the glyph, assume we wanted the next glyph
+		// instead.
+		//
+		// This should probably be in its own function, and not
+		// call point twice (or even once).
+		pt0 := f.point0(p)
+		qt0 := f.point0(p + 1)
+		if qt0.Y == pt0.Y {
+			dx := pt.X - pt0.X
+			dx = 3 * dx / 2
+			if pt0.X+dx > qt0.X {
+				p++
+			}
+		}
+	}
+
 	return p
 }

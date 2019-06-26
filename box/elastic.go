@@ -85,7 +85,7 @@ Loop:
 	return pb
 }
 
-func (f *Run) Findcol(bn int, coln int) (int,  int) {
+func (f *Run) Findcol(bn int, coln int) (int, int) {
 	xmax := i26(0)
 	c := 0
 	for ; bn < f.Nbox; bn++ {

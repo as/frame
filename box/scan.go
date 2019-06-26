@@ -25,7 +25,7 @@ func (r *Run) Boxscan(s []byte, ymax int) {
 	r.Nchars = int64(len(s))
 	i := 0
 	nb := 0
-	
+
 	for nl := 0; nl <= ymax; nb++ {
 		if i == len(s) {
 			break
@@ -41,7 +41,7 @@ func (r *Run) Boxscan(s []byte, ymax int) {
 		}
 		if c := s[i-1]; c != '\t' && c != '\n' {
 			span := len(s)
-			if span > MaxBytes{
+			if span > MaxBytes {
 				span = MaxBytes
 			}
 			for _, c = range s[i:span] {
@@ -67,11 +67,10 @@ func (r *Run) Boxscan(s []byte, ymax int) {
 		i = 0
 	}
 	r.Nchars -= int64(len(s))
-	for i := range r.Box[r.Nbox:r.Nbox+nb] {
+	for i := range r.Box[r.Nbox : r.Nbox+nb] {
 		if b := &r.Box[i]; b.Nrune > 0 {
 			b.Width = r.Drawer.Dx(b.Ptr)
 		}
 	}
 	r.Nbox += nb
 }
-

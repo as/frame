@@ -14,7 +14,7 @@ type (
 )
 
 func int26(i int) i26 {
-	return i26(i<<6)
+	return i26(i << 6)
 }
 func pt26(p image.Point) p26 {
 	return p26{i26(p.X << 6), i26(p.Y << 6)}
@@ -22,10 +22,10 @@ func pt26(p image.Point) p26 {
 func rect26(r image.Rectangle) r26 {
 	return r26{pt26(r.Min), pt26(r.Max)}
 }
-func pt26point(p p26 )  image.Point{ 
+func pt26point(p p26) image.Point {
 	return image.Point{p.X.Ceil(), p.Y.Ceil()}
 }
-func r26rect(r r26 )  image.Rectangle{ 
+func r26rect(r r26) image.Rectangle {
 	return image.Rectangle{
 		pt26point(r.Min),
 		pt26point(r.Max),

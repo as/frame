@@ -12,15 +12,15 @@ import (
 var MaxBytes = 253 + 3
 
 func NewRun(minDx, maxDx i26, ft font.Face, d interface {
-		MaxFit(p []byte, dx i26) int
-		Dx(p []byte) i26
-		Draw(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, op draw.Op)
-	}) Run {
+	MaxFit(p []byte, dx i26) int
+	Dx(p []byte) i26
+	Draw(dst draw.Image, r image.Rectangle, src image.Image, sp image.Point, op draw.Op)
+}) Run {
 	r := Run{
-		delta: 32,
-		minDx: minDx,
-		maxDx: maxDx,
-		Face:  ft,
+		delta:  32,
+		minDx:  minDx,
+		maxDx:  maxDx,
+		Face:   ft,
 		Drawer: d,
 	}
 	r.ensure(r.delta)

@@ -54,7 +54,7 @@ type Frame struct {
 	flags int
 }
 
-const maxrun = i26(5000<<6)
+const maxrun = i26(5000 << 6)
 
 func New(dst draw.Image, r image.Rectangle, conf *Config) *Frame {
 	if dst == nil {
@@ -209,7 +209,7 @@ func (f *Frame) setrects(r image.Rectangle, b draw.Image) {
 	f.b = b
 	f.r = rect26(r)
 	h := f.dy()
-	dy := f.r.Max.Y-f.r.Min.Y
+	dy := f.r.Max.Y - f.r.Min.Y
 	f.r.Max.Y -= dy % h
 	f.maxlines = (dy / h).Ceil()
 }

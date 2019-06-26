@@ -12,33 +12,33 @@ const (
 )
 
 // bxscan resets the measuring function and calls Bxscan in the embedded run
-func (f *Frame) boxscan(s []byte, pt p26 ) (p26, p26) {
+func (f *Frame) boxscan(s []byte, pt p26) (p26, p26) {
 	{
-	switch f.Face.(type) {
-	case font.Rune:
-		f.ir.Runescan(s, f.maxlines)
-	case interface{}:
-		f.ir.Boxscan(s, f.maxlines)
-	}
-	if f.elastic() {
-		// TODO(as): remove this after adding tests since its redundant
-		//
-		// Just to see if the algorithm works not ideal to sift through all of
-		// the boxes per insertion, although surprisingly faster than expected
-		// to the point of where its almost unnoticable without the print
-		// statements
-		bn := f.ir.Nbox
-		for bn > 0 {
-			bn = f.ir.Stretch(bn)
+		switch f.Face.(type) {
+		case font.Rune:
+			f.ir.Runescan(s, f.maxlines)
+		case interface{}:
+			f.ir.Boxscan(s, f.maxlines)
 		}
-		f.ir.Stretch(bn)
-	}
-	pt = f.wrapMin(pt, &f.ir.Box[0])
-	return pt, f.boxscan2D(f.ir, pt)
+		if f.elastic() {
+			// TODO(as): remove this after adding tests since its redundant
+			//
+			// Just to see if the algorithm works not ideal to sift through all of
+			// the boxes per insertion, although surprisingly faster than expected
+			// to the point of where its almost unnoticable without the print
+			// statements
+			bn := f.ir.Nbox
+			for bn > 0 {
+				bn = f.ir.Stretch(bn)
+			}
+			f.ir.Stretch(bn)
+		}
+		pt = f.wrapMin(pt, &f.ir.Box[0])
+		return pt, f.boxscan2D(f.ir, pt)
 	}
 }
 
-func (f *Frame) boxscan2D(r *box.Run, pt p26)p26{
+func (f *Frame) boxscan2D(r *box.Run, pt p26) p26 {
 	n := 0
 	for nb := 0; nb < r.Nbox; nb++ {
 		b := &r.Box[nb]
@@ -70,4 +70,3 @@ func (f *Frame) boxscan2D(r *box.Run, pt p26)p26{
 	}
 	return pt
 }
-

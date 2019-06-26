@@ -100,9 +100,9 @@ func (f *Frame) tickat(pt p26, ticked bool) {
 	if r.Max.X > f.r.Max.X {
 		r.Max.X = f.r.Max.X
 	}
-		tbr :=  rect26(f.tickback.Bounds())
+	tbr := rect26(f.tickback.Bounds())
 	if ticked {
-		tr :=  rect26(f.tick.Bounds())
+		tr := rect26(f.tick.Bounds())
 		f.draw26(f.tickback, tbr, f.b, pt.Add(tbr.Min), draw.Src)
 		f.draw26(f.b, r, f.tick, tr.Min, draw.Src)
 	} else {
