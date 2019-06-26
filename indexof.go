@@ -2,6 +2,7 @@ package frame
 
 import (
 	"image"
+	"log"
 )
 
 // IndexOf returns the chracter index under the
@@ -44,5 +45,6 @@ func (f *Frame) indexOf(pt p26) (p int64) {
 			qt = f.advance(qt, b)
 		}
 	}
+	log.Printf("index of %s is %d", pt, p)
 	return p
 }

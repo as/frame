@@ -5,8 +5,8 @@ import (
 	"image/draw"
 
 	. "github.com/as/font"
-	"golang.org/x/image/math/fixed"
 	"golang.org/x/image/font"
+	"golang.org/x/image/math/fixed"
 )
 
 // Drawer implements the set of methods a frame needs to draw on a draw.Image. The frame's default behavior is to use
@@ -21,7 +21,7 @@ func NewDefaultDrawer() Drawer {
 	return &defaultDrawer{}
 }
 
-type defaultDrawer struct{
+type defaultDrawer struct {
 	drawer
 }
 
@@ -70,10 +70,10 @@ func (d *drawer) move(p p26) {
 }
 
 func (d *drawer) Dy() i26 {
-	return d.height + d.height/2
+	return d.height //+ d.height/2
 }
 func (d *drawer) Dx(p []byte) (dx i26) {
-	if d == nil || d.Face == nil{
+	if d == nil || d.Face == nil {
 		return 0
 	}
 	for _, c := range p {
@@ -88,18 +88,18 @@ func (d *drawer) MaxFit(p []byte, dx i26) (n int) {
 		w, _ := d.Face.GlyphAdvance(rune(c))
 		dx -= w
 		if dx < 0 {
-			return n-1
+			return n
 		}
 	}
 	return n
 }
 func (d *drawer) DrawBG(bg image.Image, maxx int) {
-	p := image.Point{d.Dot.X.Ceil(), (d.Dot.Y-d.height).Ceil()}
-//	p := image.Point{d.Dot.X.Ceil(), (d.Dot.Y).Ceil()}
+	p := image.Point{d.Dot.X.Ceil(), (d.Dot.Y - d.height).Ceil()}
+	//	p := image.Point{d.Dot.X.Ceil(), (d.Dot.Y).Ceil()}
 	r := image.Rectangle{Min: p, Max: p}
 	h := d.height.Ceil()
 	dy := h + h/2
-	r.Max.Y += dy+1
+	r.Max.Y += dy + 1
 	r.Max.X = maxx
 	draw.Draw(d.Dst, r, bg, image.ZP, draw.Src)
 }
@@ -157,5 +157,3 @@ func negotiateFace(f font.Face, flags int) Face {
 	}
 	return Open(f)
 }
-
-

@@ -32,8 +32,8 @@ func (f *Frame) paint26(p0, p1 p26, col image.Image) {
 	}
 	h := f.dy()
 	q0, q1 := p0, p1
-	q0.Y+= h
-	q1.Y+= h
+	q0.Y += h
+	q1.Y += h
 	n := (p1.Y - p0.Y) / h
 
 	if n == 0 { // one line
@@ -83,7 +83,7 @@ func (f *Frame) RedrawAt(pt image.Point, text, back image.Image) {
 
 // Redraw draws the range [p0:p1] at the given pt.
 func (f *Frame) Redraw(pt image.Point, p0, p1 int64, issel bool) {
-	f.redraw(pt26(pt), p0,p1, issel)
+	f.redraw(pt26(pt), p0, p1, issel)
 }
 
 func (f *Frame) redraw(pt p26, p0, p1 int64, issel bool) {
@@ -100,7 +100,6 @@ func (f *Frame) redraw(pt p26, p0, p1 int64, issel bool) {
 	}
 	f.drawsel(pt, p0, p1, pal.Back, pal.Text)
 }
-
 
 // Recolor redraws the range p0:p1 with the given palette
 func (f *Frame) Recolor(pt image.Point, p0, p1 int64, cols Palette) {
@@ -160,13 +159,12 @@ func (f *Frame) drawsel(pt p26, p0, p1 int64, back, text image.Image) p26 {
 		// Step into box, start coloring it
 		// How much does this lambda slow things down?
 		stepFill := func() {
-			pt0 := pt
+			qt := pt
 			pt = f.wrapMax(pt, b)
-			if pt.Y > pt0.Y {
+			if pt.Y > qt.Y {
+				f.drawer.move(qt)
 				f.drawer.drawBG(back, maxx)
 			}
-			f.drawer.move(pt)
-			//
 		}
 		for ; nb < f.Nbox && q0 < p1; nb++ {
 			b = &f.Box[nb]
@@ -188,12 +186,13 @@ func (f *Frame) drawsel(pt p26, p0, p1 int64, back, text image.Image) p26 {
 				trim = true
 			}
 			w := f.widthBox(b, ptr)
+			f.drawer.move(pt)
 			f.drawer.drawBG(back, min(pt.X+w, maxx))
 			if b.Nrune > 0 {
+				f.drawer.move(pt)
 				f.drawer.Write(ptr)
 			}
 			pt.X += w
-			f.drawer.move(pt)
 			if q0 += len(ptr); q0 > p1 {
 				break
 			}
